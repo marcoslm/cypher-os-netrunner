@@ -1,39 +1,20 @@
-# --- Gitignore — CYPHER://OS ---
-# Proyecto web sin build, sin frameworks ni dependencias externas.
-# Solo se versiona el código fuente del juego (HTML/CSS/JS) y las pruebas.
-
-# Documentos operativoternos en markdown (AGENTS.md, CONTRACTS.md, pendiente.md,
-# LORE.md, tests/README.md…): TODO lo .md queda FUERA del repositorio público.
-# Única excepción: el README.md de la raíz (anclado con /), que presenta el
-# juego en GitHub. Ojo: sin la barra, la excepción rescataría también
-# tests/README.md, que sí debe quedarse fuera.
 *.md
 !/README.md
 
-# Archivos de sistema operativo
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Editores / IDEs
 .vscode/
 idea/
 *.swp
 *.swo
 
-# Herramientas / entornos (por si acaso)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Estado local / backups del propio juego
-# El guardado corre por localStorage en el navegador; no se versiona nada así.
 *.bak
 backup/
-
-# Música local opcional (mp3): se reproduce en el juego si existe,
-# pero no se versiona (decisión del propietario). El juego funciona sin ella.
-# Cuando haya música definitiva libre de derechos (o generada con IA) se
-# adjuntará al repo: habrá que quitar esta línea y darla de alta.
 music/
