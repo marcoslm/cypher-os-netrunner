@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>CYPHER://OS  ·  v9.2.7</title>
+<link rel="stylesheet" href="cypher_os.css?v=28">
+</head>
+<body>
+
+<!-- ============================================================
+     CYPHER://OS · interfaz principal
+     HTML + CSS + JS en archivos separados. Sin frameworks.
+     ============================================================ -->
+
+<div id="os">
+
+  <!-- Barra superior de estado -->
+  <div id="topbar">
+    <div class="seg"><span class="magenta glow">◈</span><span class="glow">CYPHER://OS</span></div>
+    <div class="seg stat-mini">
+      <div class="seg">CPU <b id="h-cpu">100</b></div>
+      <div class="seg">CALOR <b id="h-heat">0</b></div>
+      <div class="seg">₡ <b id="h-cc">500</b></div>
+      <div class="seg">RAM <b id="h-ram">0/6</b></div>
+      <div class="seg">NIV <b id="h-lvl">1</b></div>
+      <div class="seg xp-bar-wrap" id="h-xp-wrap"><div class="xp-bar"><div class="xp-fill" id="h-xp-fill"></div></div><span class="xp-label" id="h-xp-label">XP 0/120</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="seg clk" id="h-clock">23:47</div>
+    <div class="seg muted" id="h-snd">FX: ON</div>
+    <div class="seg muted" id="h-amb">AMB: OFF</div>
+    <div class="seg muted" id="h-mus">MUS: ON</div>
+    <div class="seg lum-ctl">
+      <button class="btn small" data-action="lumDown" title="bajar brillo">−</button>
+      <span class="muted lum-val" id="h-brillo-wrap" title="brillo de pantalla · clic = 100%"><span class="lum-k">LUM </span><span id="h-brillo">100%</span></span>
+      <button class="btn small" data-action="lumUp" title="subir brillo">+</button>
+    </div>
+    <div class="seg fs-ctl">
+      <button class="btn small fs-btn" id="h-fs" data-action="toggleFs" title="pantalla completa · alternar">FULL: OFF</button>
+    </div>
+  </div>
+
+  <!-- Zona central -->
+  <div id="main">
+
+    <!-- Menú lateral -->
+    <nav id="sidebar">
+      <button class="navbtn" data-view="inicio"><span class="ic">◈</span><span class="lbl">INICIO</span></button>
+      <button class="navbtn" data-view="red"><span class="ic">⬡</span><span class="lbl">RED</span></button>
+      <button class="navbtn" data-view="contactos"><span class="ic">⌘</span><span class="lbl">CONTACTOS</span><span class="notif-dot" id="notif-contactos"></span></button>
+      <button class="navbtn" data-view="mensajes"><span class="ic">✉</span><span class="lbl">MENSAJES</span><span class="notif-dot" id="notif-mensajes"></span></button>
+      <button class="navbtn" data-view="trabajos"><span class="ic">▤</span><span class="lbl">TRABAJOS</span><span class="notif-dot" id="notif-trabajos"></span></button>
+      <button class="navbtn" data-view="tienda"><span class="ic">⛿</span><span class="lbl">MERCADO NEGRO</span></button>
+      <button class="navbtn" data-view="estado"><span class="ic">▦</span><span class="lbl">ESTADO</span><span class="notif-dot" id="notif-estado"></span></button>
+      <button class="navbtn" data-view="informes"><span class="ic">▤</span><span class="lbl">INFORMES</span><span class="notif-dot" id="notif-informes"></span></button>
+      <button class="navbtn" data-view="registro"><span class="ic">◧</span><span class="lbl">REGISTRO</span></button>
+      <button class="navbtn" data-view="logros"><span class="ic">★</span><span class="lbl">LOGROS</span></button>
+      <button class="navbtn" data-view="ayuda"><span class="ic">?</span><span class="lbl">AYUDA</span></button>
+      <div class="spacer"></div>
+      <button class="navbtn" id="btn-save"><span class="ic">◰</span><span class="lbl">GUARDAR</span></button>
+      <button class="navbtn" id="btn-export"><span class="ic">⇗</span><span class="lbl">EXPORTAR</span></button>
+      <button class="navbtn" id="btn-import"><span class="ic">⇘</span><span class="lbl">IMPORTAR</span></button>
+      <button class="navbtn" id="btn-reset"><span class="ic">⌫</span><span class="lbl">RESET</span></button>
+    </nav>
+
+    <!-- Panel principal -->
+    <div id="panel">
+      <div id="panel-scroll"></div>
+
+      <!-- Overlay (modales genéricos / grid hud) -->
+      <div id="overlay"><div id="overlay-inner"></div></div>
+
+      <!-- Línea de mensajes / estado -->
+      <div id="msgbar"><span class="txt" id="msg">bienvenido al cable, corvo.</span></div>
+    </div>
+  </div>
+
+  <!-- Terminal inferior -->
+  <div id="term">
+    <span class="prompt">CORVO-7://&gt;</span>
+    <input id="cmd" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="? ayuda">
+    <button class="btn small" id="cmd-enter">▸</button>
+  </div>
+</div>
+
+<!-- Overlay de combat (ICE / daemon) -->
+<div id="combat"></div>
+
+<!-- Secuencia de arranque (boot) -->
+<div id="boot"><div id="boot-body"></div></div>
+
+<!-- Intro simple con botón de comenzar -->
+<div id="intro">
+  <div id="intro-body">
+    <div class="intro-logo"><span class="glow">◈</span> CYPHER://OS</div>
+    <div class="intro-sub">v9.2.7 · NEON DYNAMICS</div>
+    <div class="intro-tag">El cable no duerme. Solo parpadea.</div>
+    <button id="intro-start" data-action="startIntro">▶ COMENZAR</button>
+    <div class="intro-diff">
+      <div class="intro-diff-title">DIFICULTAD</div>
+      <label class="diff-opt verde"><input type="radio" name="diff" value="normal" checked> NORMAL</label>
+      <label class="diff-opt ambar"><input type="radio" name="diff" value="hardcore"> HARDCORE</label>
+      <label id="legendary-opt" class="diff-opt magenta"><input type="radio" name="diff" value="legendario"> LEGENDARIO</label>
+    </div>
+    <div class="intro-hint">pulsa ▶ COMENZAR para conectar con el cable · corvo-7</div>
+  </div>
+</div>
+
+<!-- Flatline / game over -->
+<div id="flatline"></div>
+
+<!-- Confirmación del juego. NUNCA alert/confirm nativos: en pantalla completa
+     los diálogos del navegador quedan ocultos detrás del juego y bloquean la
+     interfaz (en tablet/móvil sin teclado no hay forma de salir). -->
+<div id="confirm-overlay"></div>
+
+<!-- Indicador de guardado automático -->
+<div id="save-indicador" class="save-indicador">guardado ✓</div>
+
+<!-- Banner llamativo: logros y subidas de nivel -->
+<div id="banner" class="banner">
+  <div class="banner-icon" id="banner-icon">★</div>
+  <div class="banner-body">
+    <div class="banner-title" id="banner-title"></div>
+    <div class="banner-sub" id="banner-sub"></div>
+  </div>
+</div>
+
+<!-- Input oculto para importar partida -->
+<input type="file" id="import-file" accept=".json" class="hidden">
+
+<!-- Overlay de árbol de habilidades -->
+<div id="skilltree-overlay" class="hidden"></div>
+
+<script src="cypher_os_help.js?v=27"></script>
+<script src="cypher_os_data.js?v=1"></script>
+<script src="cypher_os_core.js?v=1"></script>
+<script src="cypher_os_audio.js?v=1"></script>
+<script src="cypher_os_grid.js?v=1"></script>
+<script src="cypher_os_combat.js?v=1"></script>
+<script src="cypher_os_ui.js?v=2"></script>
+</body>
+</html>
