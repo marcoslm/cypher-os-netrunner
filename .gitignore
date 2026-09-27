@@ -2,11 +2,13 @@
 # Proyecto web sin build, sin frameworks ni dependencias externas.
 # Solo se versiona el código fuente del juego (HTML/CSS/JS) y las pruebas.
 
-# Documentos operativos en markdown (AGENTS.md, CONTRACTS.md, pendiente.md,
+# Documentos operativoternos en markdown (AGENTS.md, CONTRACTS.md, pendiente.md,
 # LORE.md, tests/README.md…): TODO lo .md queda FUERA del repositorio público.
-# Son trabajo interno; si un día se quiere publicar un README.md habrá que
-# añadir una excepción (!README.md) o forzar su alta (git add -f).
+# Única excepción: el README.md de la raíz (anclado con /), que presenta el
+# juego en GitHub. Ojo: sin la barra, la excepción rescataría también
+# tests/README.md, que sí debe quedarse fuera.
 *.md
+!/README.md
 
 # Archivos de sistema operativo
 .DS_Store
