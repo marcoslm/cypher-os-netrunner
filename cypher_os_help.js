@@ -14,7 +14,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<li><b>La red —"el cable"— lo es todo</b>: dinero, tráfico, vigilancia. Desde hace años está <b>viva</b>: nadie sabe si es una máquina, un organismo o un sueño.</li>'+
 '<li><b>El Núcleo</b> es lo que gobierna la red desde lo más profundo (capa 5). En 2091 alguien lo apagó 11 segundos… y desapareció. Ese misterio es la historia del juego.</li>'+
 '<li><b>Tu trabajo</b>: aceptar contratos de los fixers, bajar a la red, cumplir el objetivo y volver a la superficie a cobrar. El riesgo se mide en <b>calor</b> (tu rastro) y <b>CPU</b> (tu cordura dentro de la red).</li>'+
-'<li><b>La historia</b> se lee en INFORMES y cada uno empieza con una glosa <b>EN CLARO</b>. La serie <b>«Cómo llegamos aquí»</b> cuenta el mundo entero en 6 lecturas. Y lo que otros te mandan queda en <b>MENSAJES</b> (la bandeja del deck): si un aviso se te pasa en la línea inferior, siempre queda la carta.</li>'+
+'<li><b>La historia</b> se lee en INFORMES y cada uno empieza con una glosa en claro marcada con ▸. La serie <b>«Cómo llegamos aquí»</b> cuenta el mundo entero en 6 lecturas. Y lo que otros te mandan queda en <b>MENSAJES</b> (la bandeja del deck): si un aviso se te pasa en la línea inferior, siempre queda la carta.</li>'+
 '</ol>'+
 '<div class="callout cyan">💡 Toda la jerga está explicada en una línea en <b>GLOSARIO</b> (⑰, al final de esta pantalla) o escribe <b>glosario</b> en el terminal.</div>'+
 '</div>'+
@@ -256,7 +256,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="lg-key">créditos (₡)</span><span class="lg-desc">la moneda de la calle.</span></div>'+
 '<div class="legend-row"><span class="lg-key">las Torres</span><span class="lg-desc">macro-obras que se dejaron de construir en 2071. Nadie habla de por qué.</span></div>'+
 '<div class="legend-row"><span class="lg-key">el Parpadeo</span><span class="lg-desc">2091: alguien apagó el Núcleo 11 segundos. La calle recuerda 3.</span></div>'+
-'<div class="legend-row"><span class="lg-key">corporaciones y proyectos</span><span class="lg-desc">quién manda en la ciudad y qué esconde cada uno: todo en INFORMES, con la glosa EN CLARO.</span></div>'+
+'<div class="legend-row"><span class="lg-key">corporaciones y proyectos</span><span class="lg-desc">quién manda en la ciudad y qué esconde cada uno: todo en INFORMES, con su glosa en claro (▸).</span></div>'+
 '</div>'+
 '</div>'+
 

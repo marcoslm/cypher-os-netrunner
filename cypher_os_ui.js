@@ -500,8 +500,8 @@ function offerHtml(o,c){
   if(taken) action='<span class="verde">✓</span>';
   else if(resolved) action=resolved.failed?'<span class="rojo">✗</span>':'<span class="verde">✓</span>';
   else action=' <button class="btn small" data-action="acceptJob" data-id="'+o.id+'" data-contact="'+c.id+'">ACEPTAR</button>';
-  return '<div class="offer"><div class="desc">'+o.title+'<div class="muted text-xs">'+o.desc+'</div>'+
-    (o.why?'<div class="offer-why">por qué · '+o.why+'</div>':'')+'</div>'+
+  return '<div class="offer"><div class="desc">'+o.title+'<div class="task-line text-xs">'+o.desc+'</div>'+
+    (o.why?'<div class="offer-why">'+o.why+'</div>':'')+'</div>'+
     '<span class="tag '+riskCls+'">'+RISK_TXT[o.risk]+'</span> <span class="gris">₡'+o.reward+'</span>'+action+'</div>';
 }
 
@@ -517,7 +517,7 @@ ACTIONS.acceptJob = function(btn){
   }
   var job={ id:o.id, title:o.title, desc:o.desc, type:o.type, contact:o.contact,
     risk:o.risk, reward:o.reward, xp:o.xp, n:o.n, targetDepth:o.targetDepth, project:o.project,
-    why:o.why, prog:newProg(o.type), done:false, failed:false };
+    why:o.why, ts:Date.now(), prog:newProg(o.type), done:false, failed:false };
   S.jobs.push(job);
   unlock("fixers");
   checkMensajes();
@@ -599,18 +599,28 @@ function renderTrabajos(){
   var html='<h1 class="title">TRABAJOS</h1>'+
     '<div class="sub">contratos activos ('+S.jobs.filter(function(j){return !j.done;}).length+'/3) · se resuelven al superficializar</div>';
   if(!S.jobs.length) html+='<div class="box muted">sin contratos activos. ve a CONTACTOS y acepta uno.</div>';
-  else S.jobs.forEach(function(j){
-    var riskCls=j.risk||"ext";
-    var statusTxt=j.failed?"FRACASADO":(j.done?"COMPLETADO":"EN CURSO");
-    var statusCls=j.failed?"rojo":(j.done?"verde":"cyan");
-    html+='<div class="job"><div class="flex-sb">'+
-      '<div><b class="cyan">'+j.title+'</b> <span class="muted text-xs">'+j.contact+'</span>'+
-      '<div class="muted job-meta-sub">'+j.desc+'</div>'+
-      (j.why?'<div class="offer-why">por qué · '+j.why+'</div>':'')+'</div>'+
-      '<div class="text-right"><span class="tag '+riskCls+'">'+RISK_TXT[j.risk]+'</span>'+
-      '<div class="'+statusCls+' job-meta-sub">'+statusTxt+'</div></div></div>'+
-      '<div class="prog muted">'+progText(j)+'</div></div>';
-  });
+  else {
+    /* más recientes arriba (sello de aceptación); en guardados antiguos sin
+       sello, orden inverso de aceptación */
+    var list=S.jobs.map(function(j,i){ return {j:j,i:i}; });
+    list.sort(function(a,b){
+      var d=(b.j.ts||0)-(a.j.ts||0);
+      return d!==0?d:b.i-a.i;
+    });
+    list.forEach(function(e){
+      var j=e.j;
+      var riskCls=j.risk||"ext";
+      var statusTxt=j.failed?"FRACASADO":(j.done?"COMPLETADO":"EN CURSO");
+      var statusCls=j.failed?"rojo":(j.done?"verde":"cyan");
+      html+='<div class="job"><div class="flex-sb">'+
+        '<div><b class="cyan">'+j.title+'</b> <span class="muted text-xs">'+j.contact+'</span>'+
+        '<div class="task-line job-meta-sub">'+j.desc+'</div>'+
+        (j.why?'<div class="offer-why">'+j.why+'</div>':'')+'</div>'+
+        '<div class="text-right"><span class="tag '+riskCls+'">'+RISK_TXT[j.risk]+'</span>'+
+        '<div class="'+statusCls+' job-meta-sub">'+statusTxt+'</div></div></div>'+
+        '<div class="prog muted">'+progText(j)+'</div></div>';
+    });
+  }
   html+='<div class="sep"></div>'+
     '<div class="muted job-help-text">Todo contrato se evalúa cuando superficializas. Si lo cumples, se paga y sube tu reputación. Si no, sube el calor.</div>';
   scroller(html); updateTopbar();
@@ -675,7 +685,7 @@ function renderInformes(){
     '<div class="intel-grid">';
   INTEL.forEach(function(it){
     if(has(it.id)) html+='<div class="intel"><b class="cyan">'+it.t+'</b> <span class="tag '+it.r+'">'+RISK_TXT[it.r]+'</span>'+
-      (it.k?'<div class="intel-k">EN CLARO ▸ '+it.k+'</div>':'')+
+      (it.k?'<div class="intel-k">▸ '+it.k+'</div>':'')+
       '<div class="llore">'+it.l.replace(/\n/g,"<br>")+'</div></div>';
     else html+='<div class="intel"><b class="gris">▒▒▒▒▒ [CIFRADO]</b><div class="muted text-xs mt-1 intel-hint">desbloqueo: '+intelHint(it.id)+'</div></div>';
   });
