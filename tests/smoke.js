@@ -287,7 +287,12 @@ ok(src.html.indexOf('data-view="mensajes"') >= 0 && src.html.indexOf("notif-mens
    "botón MENSAJES y su notif-dot presentes en el HTML");
 ok(sandbox.HELP_HTML.indexOf("⑱") >= 0, "AYUDA documenta la bandeja (⑱)");
 
-/* ---------- resumen ---------- */
-console.log("\n================ RESUMEN ================");
-console.log("fallos: " + fails + " · avisos: " + warns);
-process.exit(fails ? 1 : 0);
+/* ---------- regresiones de comportamiento ---------- */
+require("./regressions").run().then(function(regressionFails){
+  console.log("\n================ RESUMEN ================");
+  console.log("fallos: " + (fails + regressionFails) + " · avisos: " + warns);
+  process.exit(fails + regressionFails ? 1 : 0);
+}, function(err){
+  console.error("regresiones interrumpidas:", err);
+  process.exit(1);
+});

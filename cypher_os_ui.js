@@ -794,22 +794,31 @@ function clockMin(){ return (S.player.stats.totalPlayTime||0); }
 function activityOnCooldown(act){ return clockMin() < (S._activityCooldowns[act.id]||0); }
 
 ACTIONS.dipGrid = function(){
-  if(combatActive) return;
+  if(combatActive || (S && S.player.cpu<=0)) return;
   if(inImmersion){ showView("red"); return; }
   startImmersion(S.nextDepth || 4);
 };
 ACTIONS.startIntro = beginIntro;
 ACTIONS.startEndless = function(){
-  if(combatActive) return;
+  if(combatActive || (S && S.player.cpu<=0)) return;
   if(inImmersion){ msg("ya estás en el grid. superficializa primero.","ambar"); return; }
-  /* generar grid con profundidad dinámica */
-  if(!S._endlessSurfaces) S._endlessSurfaces=0;
-  var depth=4+Math.floor(S._endlessSurfaces/2);
+  if(isLockdown()){
+    msg("LOCKDOWN ACTIVO ▸ calor demasiado alto. espera a que baje para conectarte.","rojo");
+    return;
+  }
+  /* conservar una misión pendiente si no llega a comenzar la inmersión */
+  var previousDepth=S.nextDepth, previousEndless=S.history.endlessActive;
+  var depth=4+Math.floor((S._endlessSurfaces||0)/2);
   S.nextDepth=depth;
   S.history.endlessActive=true;
+  try{ startImmersion(depth); }
+  finally {
+    if(!inImmersion){ S.nextDepth=previousDepth; S.history.endlessActive=previousEndless; }
+  }
+  if(!inImmersion) return;
   addLog("SEALED NETWORK ▸ modo supervivencia activado. Profundidad: "+depth+".");
   msg("SEALED NETWORK ▸ supervivencia. no hay contratos. sobrevive el mayor tiempo posible.","magenta");
-  startImmersion(depth);
+  save();
 };
 ACTIONS.goContactos = function(){ showView("contactos"); };
 ACTIONS.goTienda = function(){ showView("tienda"); };
@@ -924,6 +933,9 @@ function unlockSkill(branchIdx, skillIdx){
   addLog("SKILL TREE ▸ desbloqueado: "+skill.name+".");
   msg("SKILL ▸ "+skill.name+" desbloqueado.","magenta");
   sound.levelUp(); save(true); renderSkillTree(); updateTopbar();
+  var overlay=document.getElementById("skilltree-overlay");
+  var next=overlay && (overlay.querySelector('.skill-node[tabindex="0"]') || overlay.querySelector('[data-action="closeSkillTree"]'));
+  if(next) next.focus();
 }
 
 function renderSkillTree(){
@@ -942,8 +954,8 @@ function renderSkillTree(){
       var unlocked=isSkillUnlocked(sk.id);
       var available=canUnlockSkill(sk);
       var cls=unlocked?"unlocked":(available?"available":"locked");
-      html+='<div class="skill-node '+cls+'" data-branch="'+b+'" data-skill="'+s+'" '+
-        (unlocked||available?"":"disabled")+'>'+
+      html+='<div class="skill-node '+cls+'" role="button" tabindex="'+(available?"0":"-1")+'" '+
+        'aria-disabled="'+(available?"false":"true")+'" data-branch="'+b+'" data-skill="'+s+'">'+
         '<div class="sk-name">'+sk.name+'</div>'+
         '<div class="sk-desc">'+sk.desc+'</div>'+
         '<div class="sk-cost">'+(unlocked?"DESBLOQUEADO":("coste: "+sk.cost))+'</div></div>';
@@ -955,12 +967,19 @@ function renderSkillTree(){
   el.innerHTML=html;
   el.classList.remove("hidden");
   el.classList.add("show");
-  /* bind clicks */
-  var nodes=el.querySelectorAll(".skill-node:not([disabled])");
+  /* solo los nodos disponibles aceptan clic, Enter o Espacio; Tab los recorre */
+  var nodes=el.querySelectorAll('.skill-node[tabindex="0"]');
   for(var i=0;i<nodes.length;i++){
     nodes[i].addEventListener("click", function(){
-      var b=parseInt(this.getAttribute("data-branch"));
-      var s=parseInt(this.getAttribute("data-skill"));
+      var b=parseInt(this.getAttribute("data-branch"),10);
+      var s=parseInt(this.getAttribute("data-skill"),10);
+      unlockSkill(b,s);
+    });
+    nodes[i].addEventListener("keydown", function(e){
+      if(e.key!=="Enter" && e.key!==" " && e.key!=="Spacebar") return;
+      e.preventDefault();
+      var b=parseInt(this.getAttribute("data-branch"),10);
+      var s=parseInt(this.getAttribute("data-skill"),10);
       unlockSkill(b,s);
     });
   }
@@ -1115,6 +1134,7 @@ ACTIONS.exportDiario = function(){
     for(var i=0;i<copy.length;i++){
       var e=copy[i];
       if(_logCat!=="todo" && logCat(e.text)!==_logCat) continue;
+      if(_logFilterText && e.text.toLowerCase().indexOf(_logFilterText.toLowerCase())<0) continue;
       lines.push("["+e.t+"] "+e.text);
     }
     var blob=new Blob([lines.join("\n")],{type:"text/plain"});
@@ -1183,7 +1203,7 @@ CMD.brillo = CMD.lum = CMD.brightness = function(arg){
   msg("brillo de pantalla al "+Math.round(_brillo*100)+"%.","cyan");
 };
 CMD.pantalla = CMD.full = CMD.fs = function(){ toggleFs(); };
-CMD.red = CMD.net = CMD.dip = function(){ if(combatActive) return; if(!inImmersion) startImmersion(S.nextDepth || 4); showView("red"); };
+CMD.red = CMD.net = CMD.dip = function(){ if(combatActive || (S && S.player.cpu<=0)) return; if(!inImmersion) startImmersion(S.nextDepth || 4); showView("red"); };
 CMD.superficie = function(){ superficializar(); };
 CMD.contactos = CMD.contact = function(){ showView("contactos"); };
 CMD.jobs = CMD.trabajos = function(){ showView("trabajos"); };
@@ -1194,7 +1214,8 @@ CMD.log = CMD.registro = function(){ showView("registro"); };
 CMD.clear = CMD.cls = function(){ scroller("<div class='muted'>pantalla limpia.</div>"); };
 CMD.salir = CMD.back = function(){ showView("inicio"); };
 CMD.nucleo = function(){
-  if(S.player.level<5 || S.player.rep.night0X<3){ msg("EL NÚCLEO no disponible. Necesitas nivel 5 y reputación con NIGHT-0X ≥ 3."); }
+  if(S.history.finalDone){ msg("EL NÚCLEO ya cayó. El cable sigue abierto: explora SEALED NETWORK.","cyan"); }
+  else if(S.player.level<5 || S.player.rep.night0X<3){ msg("EL NÚCLEO no disponible. Necesitas nivel 5 y reputación con NIGHT-0X ≥ 3."); }
   else { S.history.finalUnlocked=true; S.nextDepth=5; addLog("NIGHT-0X ▸ misión EL NÚCLEO asignada."); msg("NIGHT-0X: baja a la capa 5 y apaga el ojo de su autor.","magenta"); save(); }
 };
 CMD.whoami = function(){ msg("eres CORVO-7 · netrunner de calle. El cable no duerme. Solo parpadea."); };
@@ -1255,20 +1276,36 @@ if(_cmdEnterEl) _cmdEnterEl.addEventListener("click", function(){
    ============================================================ */
 
 function flatline(){
+  /* Guardar el último checkpoint ANTES de persistir la muerte. El autosave de
+     FLATLINE nunca puede sustituir esta copia (vive dentro de S). */
+  if(S.difficulty!=="hardcore"){
+    var checkpoint=load();
+    if(checkpoint && checkpoint._reconnectCheckpoint) checkpoint=checkpoint._reconnectCheckpoint;
+    if(!checkpoint || !checkpoint.player || checkpoint.player.cpu<=0 || checkpoint.difficulty!==S.difficulty){
+      /* localStorage bloqueado: conservar el progreso de la sesión en memoria. */
+      checkpoint=JSON.parse(JSON.stringify(S));
+      checkpoint.player.cpu=1;
+    }
+    delete checkpoint._reconnectCheckpoint;
+    S._reconnectCheckpoint=checkpoint;
+  } else delete S._reconnectCheckpoint;
   var p=S.player; p.cpu=0;
   combatActive=false;
   clearInterval(combatTimer);
+  clearInterval(loopId);
   if(COM){ COM.alive=false; closeCombat(); COM=null; }
   if(inImmersion){ stopGridRender(); inImmersion=null; }
   sound.flatline();
   startAmbient("flatline");
   stopMusic();
   addLog("# FLATLINE · desincronización neural.");
+  save();
   showFlatline();
 }
 
 function showFlatline(){
   var el=document.getElementById("flatline");
+  if(!el) return;
   el.classList.add("show");
   var isHardcore=S && S.difficulty==="hardcore";
   el.innerHTML=
@@ -1287,13 +1324,34 @@ function showFlatline(){
 }
 
 ACTIONS.reconnect = function(){
-  var el=document.getElementById("flatline"); el.classList.remove("show");
-  if(inImmersion) addLog("reconexión ▸ datos perdidos en la inmersión.");
+  /* La guardia también impide invocar el handler a mano en HARDCORE o en vida. */
+  if(!S || !S.player || S.player.cpu>0 || S.difficulty==="hardcore") return;
+  var checkpoint=S._reconnectCheckpoint;
+  if(!checkpoint || !checkpoint.player || checkpoint.difficulty!==S.difficulty){
+    /* Guardados FLATLINE antiguos: no hay copia previa, recuperar lo posible. */
+    checkpoint=JSON.parse(JSON.stringify(S));
+  } else checkpoint=JSON.parse(JSON.stringify(checkpoint));
+  delete checkpoint._reconnectCheckpoint;
+  var lostImmersion=checkpoint._inImmersion;
+  stopGridRender(); inImmersion=null;
+  S=checkpoint;
+  ensureStateIntegrity();
+  S._inImmersion=null;
+  if(S.history.endlessActive) S.history.endlessActive=false;
+  /* Si la inmersión perdida era la misión final, volver a dejarla pendiente. */
+  if(lostImmersion && lostImmersion.grid && Array.isArray(lostImmersion.grid.nodes) &&
+     lostImmersion.grid.nodes.some(function(n){ return n.boss; })) S.nextDepth=5;
   S.player.cpu=Math.round(S.player.maxCpu*0.5);
   S.player.heat=Math.round(clamp(S.player.heat*0.4,0,100));
-  stopGridRender(); inImmersion=null;
-  for(var i=0;i<S.jobs.length;i++){ if(!S.jobs[i].done){ S.jobs[i].done=true; S.jobs[i].failed=true; } }
-  updateBest(); save(); updateTopbar();
+  var failed=0;
+  for(var i=0;i<S.jobs.length;i++){
+    if(!S.jobs[i].done){ S.jobs[i].done=true; S.jobs[i].failed=true; failed++; }
+  }
+  S.player.stats.jobsFailed=(S.player.stats.jobsFailed||0)+failed;
+  addLog("RECONEXIÓN ▸ inmersión cancelada, datos perdidos y "+failed+" contrato(s) fracasado(s).");
+  var el=document.getElementById("flatline"); if(el) el.classList.remove("show");
+  closeOverlay();
+  save(); updateBest(); startClock();
   showView("inicio");
   msg("reconectado. sigues en el cable, corvo. pero más débil.","ambar");
 };
@@ -1316,7 +1374,7 @@ ACTIONS.newRecord = function(){
       addLog("NUEVO REGISTRO ▸ progreso reiniciado.");
       save();
       stopGridRender(); inImmersion=null;
-      showView("inicio");
+      startClock(); showView("inicio");
       msg("nuevo registro iniciado. la calle te ve de nuevo desde cero.","cyan");
       updateTopbar();
     }
@@ -1343,6 +1401,9 @@ if(_btnSave) _btnSave.addEventListener("click", function(){
 var _btnExport=document.getElementById("btn-export");
 if(_btnExport) _btnExport.addEventListener("click", function(){
   try {
+    /* Reflejar el punto exacto de inmersión en el archivo, no la copia del
+       último autosave (que podría ser anterior al último movimiento). */
+    S._inImmersion=inImmersion ? JSON.parse(JSON.stringify(inImmersion)) : null;
     var data = JSON.stringify(S);
     var blob = new Blob([data], {type:"application/json"});
     var url = URL.createObjectURL(blob);
@@ -1356,6 +1417,145 @@ if(_btnExport) _btnExport.addEventListener("click", function(){
     sound.buy();
   } catch(e){ msg("error al exportar: "+e.message,"rojo"); }
 });
+/* Validar ANTES de asignar S: ensureStateIntegrity migra campos opcionales de
+   guardados antiguos, pero no corrige tipos incompatibles ni un player escalar. */
+function importObject(v){ return !!v && typeof v==="object" && !Array.isArray(v); }
+function importNumber(v){ return typeof v==="number" && isFinite(v); }
+function validImportState(o){
+  if(!importObject(o) || !importObject(o.player)) return false;
+  var p=o.player, i, key, j;
+  var nums=["cpu","maxCpu","heat","credits","level","xp","skillPoints",
+    "hack","sigilo","nervios","ramUp","fwUp","linkUp","breakerUp","decoys","virus"];
+  for(i=0;i<nums.length;i++) if(!importNumber(p[nums[i]])) return false;
+  if(p.maxCpu<=0 || p.level<1) return false;
+  if(p.rep!=null && !importObject(p.rep)) return false;
+  if(p.rep){
+    var reps=["mamaWire","doctorSudario","night0X","kairos"];
+    for(i=0;i<reps.length;i++) if(p.rep[reps[i]]!=null && !importNumber(p.rep[reps[i]])) return false;
+  }
+  if(p.stats!=null && !importObject(p.stats)) return false;
+  if(p.stats){
+    var stats=["immerse","ice","daemons","data","credits","maxDepth",
+      "jobsCompleted","jobsFailed","totalPlayTime","maxHeat"];
+    for(i=0;i<stats.length;i++) if(p.stats[stats[i]]!=null && !importNumber(p.stats[stats[i]])) return false;
+    if(p.stats.iceByTier!=null && !importObject(p.stats.iceByTier)) return false;
+  }
+  var lists=["jobs","offers","intel","achievements","mensajes","log","_seenTransmissions"];
+  for(i=0;i<lists.length;i++){
+    key=lists[i]; if(o[key]!=null && !Array.isArray(o[key])) return false;
+  }
+  if(o.jobs){
+    for(i=0;i<o.jobs.length;i++){
+      j=o.jobs[i];
+      if(!importObject(j) || typeof j.id!=="string" || typeof j.title!=="string" ||
+         typeof j.desc!=="string" || typeof j.type!=="string" ||
+         typeof j.contact!=="string" || !importObject(j.prog) || typeof j.done!=="boolean") return false;
+    }
+  }
+  if(o.offers){
+    for(i=0;i<o.offers.length;i++){
+      j=o.offers[i];
+      if(!importObject(j) || typeof j.id!=="string" || typeof j.title!=="string" ||
+         typeof j.desc!=="string" || typeof j.contact!=="string" ||
+         typeof j.type!=="string" || !importNumber(j.reward)) return false;
+    }
+  }
+  if(o.log){
+    for(i=0;i<o.log.length;i++){
+      j=o.log[i]; if(!importObject(j) || typeof j.text!=="string" || typeof j.t!=="string") return false;
+    }
+  }
+  if(o.mensajes){
+    for(i=0;i<o.mensajes.length;i++){
+      j=o.mensajes[i]; if(!importObject(j) || typeof j.id!=="string") return false;
+    }
+  }
+  var stringLists=["intel","achievements"];
+  for(i=0;i<stringLists.length;i++){
+    var list=o[stringLists[i]];
+    if(list && list.some(function(v){ return typeof v!=="string"; })) return false;
+  }
+  if(o._seenTransmissions && o._seenTransmissions.some(function(v){
+    return !importNumber(v) || v<0 || Math.floor(v)!==v;
+  })) return false;
+  if(o.history!=null && !importObject(o.history)) return false;
+  if(o.best!=null && !importObject(o.best)) return false;
+  if(o._seenPanels!=null && !importObject(o._seenPanels)) return false;
+  if(o.clock!=null && !importNumber(o.clock)) return false;
+  if(o.difficulty!=null && ["normal","hardcore","legendario"].indexOf(o.difficulty)<0) return false;
+  if(o._inImmersion!=null){
+    var inm=o._inImmersion;
+    if(!importObject(inm) || !importObject(inm.grid) || !Array.isArray(inm.grid.nodes) ||
+       !importObject(inm.grid.adj) || !Array.isArray(inm.grid.byLayer) ||
+       typeof inm.grid.entry!=="string" || !importNumber(inm.grid.maxDepth) ||
+       typeof inm.current!=="string" || !importNumber(inm.depth) ||
+       !importNumber(inm.dataUsed) || !Array.isArray(inm.data) ||
+       !importNumber(inm.maxDepthReached) || !importNumber(inm.moves)) return false;
+    if(!inm.grid.nodes.some(function(n){ return n && n.id===inm.current; })) return false;
+    for(key in inm.grid.adj){
+      if(Object.prototype.hasOwnProperty.call(inm.grid.adj,key) &&
+         (!Array.isArray(inm.grid.adj[key]) || inm.grid.adj[key].some(function(v){ return typeof v!=="string"; }))) return false;
+    }
+    for(i=0;i<inm.grid.byLayer.length;i++) if(!Array.isArray(inm.grid.byLayer[i])) return false;
+    for(i=0;i<inm.grid.nodes.length;i++){
+      j=inm.grid.nodes[i];
+      if(!importObject(j) || typeof j.id!=="string" || !importNumber(j.x) ||
+         !importNumber(j.y) || !importNumber(j.layer) || typeof j.type!=="string") return false;
+    }
+    for(i=0;i<inm.data.length;i++){
+      j=inm.data[i]; if(!importObject(j) || !importNumber(j.value)) return false;
+    }
+  }
+  if(o._reconnectCheckpoint!=null){
+    if(!importObject(o._reconnectCheckpoint) || o._reconnectCheckpoint._reconnectCheckpoint!=null ||
+       !validImportState(o._reconnectCheckpoint)) return false;
+  }
+  return true;
+}
+function importGameState(imported){
+  if(!validImportState(imported)){
+    msg("archivo inválido: datos de partida incompletos o dañados.","rojo"); sound.error(); return false;
+  }
+  var previousS=S, previousImmersion=inImmersion, previousView=currentView;
+  var viewChanged=false;
+  try{
+    /* Migración sobre el candidato aislado: ante cualquier excepción, volver al
+       estado anterior sin guardar progreso local en el archivo importado. */
+    S=imported;
+    ensureStateIntegrity();
+    stopGridRender();
+    inImmersion=S.player.cpu<=0 ? null : (S._inImmersion || null);
+    if(S.player.cpu<=0){
+      clearInterval(loopId);
+      viewChanged=true; showView("inicio");
+      stopMusic(); startAmbient("flatline"); showFlatline();
+    } else {
+      var flat=document.getElementById("flatline"); if(flat) flat.classList.remove("show");
+      viewChanged=true; showView(inImmersion ? "red" : "inicio"); startClock();
+    }
+    save(true);
+    msg("partida importada. corvo-7 de vuelta en "+(inImmersion?"el grid":"la calle")+".","verde");
+    sound.success();
+    return true;
+  }catch(err){
+    S=previousS; inImmersion=previousImmersion;
+    if(viewChanged && previousS){
+      /* showView guarda al marcar el panel visto: si falló a mitad, deshacer
+         también esa escritura y recuperar el panel de la partida anterior. */
+      try{
+        var oldFlat=document.getElementById("flatline");
+        if(oldFlat) oldFlat.classList.remove("show");
+        showView(previousView || "inicio");
+        if(previousS.player.cpu<=0){
+          clearInterval(loopId); stopMusic(); startAmbient("flatline"); showFlatline();
+        } else startClock();
+      }catch(restoreErr){ currentView=previousView; }
+      save();
+    }
+    msg("error al importar: "+err.message,"rojo"); sound.error();
+    return false;
+  }
+}
 var _btnImport=document.getElementById("btn-import");
 if(_btnImport) _btnImport.addEventListener("click", function(){
   var f=document.getElementById("import-file");
@@ -1367,18 +1567,7 @@ if(_importFile) _importFile.addEventListener("change", function(e){
   var reader=new FileReader();
   reader.onload=function(ev){
     try {
-      var imported=JSON.parse(ev.target.result);
-      if(!imported || !imported.player){ msg("archivo inválido: no contiene datos de partida.","rojo"); sound.error(); return; }
-      /* la partida importada se toma TAL CUAL: no hereda NADA del estado
-         local (ni mejor registro ni marcas), para no filtrar progreso */
-      S=imported;
-      if(!S.best) S.best={};
-      ensureStateIntegrity();
-      save(true);
-      stopGridRender(); inImmersion=null;
-      showView("inicio");
-      msg("partida importada. corvo-7 de vuelta en la calle.","verde");
-      sound.success();
+      importGameState(JSON.parse(ev.target.result));
     } catch(err){ msg("error al leer archivo: "+err.message,"rojo"); sound.error(); }
   };
   reader.readAsText(file);
@@ -1452,7 +1641,7 @@ document.addEventListener("pointerdown", function(e){
 var loopId=null;
 var _gameLoopTick=0;
 function gameLoop(){
-  if(!S) return;
+  if(!S || !S.player || S.player.cpu<=0) return;
   S.clock=(S.clock+1)%1440;
   S.player.stats.totalPlayTime=(S.player.stats.totalPlayTime||0)+1;
   var heatDecay=S.difficulty==="hardcore"?1/28:1/20;
@@ -1531,14 +1720,22 @@ function afterBoot(){
   ensureStateIntegrity();
   if(saved) addLog("partida restaurada desde el cable.");
   else { generateOffers(); addLog("registro nuevo · corvo-7 en la calle."); }
-  /* la dificultad elegida en el intro se aplica SIEMPRE (dificultad ajustable);
-     el radio viene preseleccionado con la del guardado, así que reanudar es neutro */
-  if(_pendingDifficulty){
+  /* la dificultad elegida en el intro solo afecta a partidas VIVAS: cambiar
+     el radio no puede resucitar un guardado HARDCORE tras una recarga. */
+  if(_pendingDifficulty && S.player.cpu>0){
     if(_pendingDifficulty==="legendario" && !finalDoneEver()){
       _pendingDifficulty="normal"; /*legendario solo si ya se derrotó al Núcleo alguna vez*/
     }
     S.difficulty=_pendingDifficulty;
-    _pendingDifficulty=null;
+  }
+  _pendingDifficulty=null;
+  startGlitchLoop();
+  if(S.player.cpu<=0){
+    inImmersion=null; /* no reanudar un grid tras FLATLINE */
+    save(); updateNotifications(); showView("inicio");
+    stopMusic(); startAmbient("flatline"); showFlatline();
+    updateLegendaryOption(); initDifficultySelect();
+    return;
   }
   if(S._inImmersion && S._inImmersion.grid && S._inImmersion.grid.nodes){
     inImmersion = S._inImmersion;
@@ -1546,7 +1743,6 @@ function afterBoot(){
   }
   save(); updateBest();
   startClock();
-  startGlitchLoop();
   checkUnlocks();
   checkMensajes();
   updateNotifications();
@@ -1657,6 +1853,9 @@ document.addEventListener("keydown", function(e){
     var ov=document.getElementById("overlay");
     if(ov && ov.classList.contains("show")){ closeOverlay(); e.preventDefault(); }
   }
+  /* FLATLINE solo acepta guardar y el diálogo NUEVO REGISTRO; no hay DIP
+     secreto por Ctrl+G aunque se cambie el radio de dificultad en el intro. */
+  if(S && S.player.cpu<=0) return;
   if(inInput) return;
   /* con un modal abierto no se ejecutan atajos (evita actuar detrás del modal) */
   if(modalOpen()) return;

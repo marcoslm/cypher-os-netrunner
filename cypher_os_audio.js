@@ -250,9 +250,11 @@ function updateAmbient(){
   /* la música es independiente de los otros canales */
   updateMusic();
   if(!S || S.amb!==true){ stopAmbient(); return; }
-  if(combatActive && AMBIENT.activeMode!=="combat") startAmbient("combat");
-  else if(inImmersion && AMBIENT.activeMode!=="grid") startAmbient("grid");
-  else if(!inImmersion && !combatActive && AMBIENT.activeMode!=="street") startAmbient("street");
+  if(combatActive){
+    if(AMBIENT.activeMode!=="combat") startAmbient("combat");
+  } else if(inImmersion){
+    if(AMBIENT.activeMode!=="grid") startAmbient("grid");
+  } else if(AMBIENT.activeMode!=="street") startAmbient("street");
 }
 /* volumen de ruido según estrés: CPU baja + calor alto → más ruido */
 function updateAmbientStress(){
@@ -463,24 +465,42 @@ function fsSupported(){
 function fsActive(){
   return !!(document.fullscreenElement || document.webkitFullscreenElement);
 }
-function enterFs(){
+var _fsRequestSerial=0;
+function finishFsRequest(serial, succeeded, entering, onDone){
+  if(serial!==_fsRequestSerial) return;
+  var active=fsActive();
+  setFsWants(active); updateFsIndicator();
+  if(onDone) onDone(succeeded && (entering ? active : !active));
+}
+function enterFs(onDone){
   var el=document.documentElement;
   var req=el && (el.requestFullscreen || el.webkitRequestFullscreen);
-  if(!req) return false;
+  if(!req){ if(onDone) onDone(false); return false; }
+  var serial=++_fsRequestSerial;
   try{
     var r=req.call(el);
-    if(r && typeof r.catch==="function") r.catch(function(){ /* el navegador deniega el gesto: seguimos en ventana */ });
+    if(r && typeof r.then==="function"){
+      r.then(function(){ finishFsRequest(serial,true,true,onDone); },
+        function(){ finishFsRequest(serial,false,true,onDone); });
+    } else {
+      /* WebKit antiguo devuelve undefined: esperar a que llegue fullscreenchange. */
+      setTimeout(function(){ finishFsRequest(serial,fsActive(),true,onDone); },100);
+    }
     return true;
-  }catch(e){ return false; }
+  }catch(e){ finishFsRequest(serial,false,true,onDone); return false; }
 }
-function exitFs(){
+function exitFs(onDone){
   var req=document.exitFullscreen || document.webkitExitFullscreen;
-  if(!req) return false;
+  if(!req){ if(onDone) onDone(false); return false; }
+  var serial=++_fsRequestSerial;
   try{
     var r=req.call(document);
-    if(r && typeof r.catch==="function") r.catch(function(){ /* sin cambios */ });
+    if(r && typeof r.then==="function"){
+      r.then(function(){ finishFsRequest(serial,true,false,onDone); },
+        function(){ finishFsRequest(serial,false,false,onDone); });
+    } else setTimeout(function(){ finishFsRequest(serial,!fsActive(),false,onDone); },100);
     return true;
-  }catch(e){ return false; }
+  }catch(e){ finishFsRequest(serial,false,false,onDone); return false; }
 }
 function setFsWants(v){
   _fsWants=!!v; saveFsPref();
@@ -499,12 +519,14 @@ function toggleFs(){
     return;
   }
   if(fsActive()){
-    setFsWants(false);
-    if(exitFs()) msg("pantalla completa desactivada.","cyan");
+    exitFs(function(ok){
+      msg(ok?"pantalla completa desactivada.":"no se pudo salir de pantalla completa.",ok?"cyan":"ambar");
+    });
   } else {
-    setFsWants(true);
-    if(enterFs()) msg("pantalla completa activada. sales con ESC o con el botón FULL.","cyan");
-    else setFsWants(false);
+    enterFs(function(ok){
+      msg(ok?"pantalla completa activada. sales con ESC o con el botón FULL.":
+        "el navegador rechazó la pantalla completa. sigues en ventana.",ok?"cyan":"ambar");
+    });
   }
   updateFsIndicator();
 }

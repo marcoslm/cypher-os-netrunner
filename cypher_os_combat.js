@@ -14,7 +14,12 @@
 
 var COM=null; var combatTimer=null;
 
-
+function clearMemoriaTimers(battle){
+  if(!battle || battle.mode!=="memoria") return;
+  clearTimeout(battle.memRevealTimer);
+  clearTimeout(battle.memFadeTimer);
+  battle.memRevealTimer=null; battle.memFadeTimer=null;
+}
 
 function startCombat(ctx){
   if(combatActive) return;
@@ -282,6 +287,9 @@ function winCombat(){
   updateAmbient();
 }
 function closeCombat(){
+  clearInterval(combatTimer); combatTimer=null;
+  clearMemoriaTimers(COM);
+  clearVaultTimers(VAULT_PUZZLE);
   if(_scannerRAF) cancelAnimationFrame(_scannerRAF);
   _scannerRAF=null;
   document.removeEventListener("keydown", onScannerKey);
@@ -350,11 +358,15 @@ function renderCombatMemoria(){
 
 function startMemoriaPhase(){
   if(!COM||!COM.alive) return;
+  var battle=COM;
+  clearMemoriaTimers(battle);
+  battle.memPhaseSerial=(battle.memPhaseSerial||0)+1;
+  var phaseSerial=battle.memPhaseSerial;
   clearInterval(combatTimer);
   /* generar secuencia aleatoria: 4+phase*1 caracteres hex */
-  var len=3+COM.phase+Math.min(COM.tier-1,1);
+  var len=3+battle.phase+Math.min(battle.tier-1,1);
   var s=""; for(var i=0;i<len;i++) s+=HEX[randInt(0,15)];
-  COM.memSequence=s; COM.memPhase="reveal";
+  battle.memSequence=s; battle.memPhase="reveal";
   /* mostrar secuencia */
   var seqEl=document.getElementById("memSeq");
   var phaseEl=document.getElementById("memPhase");
@@ -366,28 +378,35 @@ function startMemoriaPhase(){
   if(seqEl){ seqEl.classList.remove("mem-fadeout"); void seqEl.offsetWidth; }
   if(memZone){ memZone.classList.remove("mem-fadeout"); void memZone.offsetWidth; }
   /* ocultar después de 2s + tier*0.5s */
-  var delay=2000+COM.tier*500;
-  setTimeout(function(){
-    if(!COM||!COM.alive||COM.memPhase!=="reveal") return;
+  var delay=2000+battle.tier*500;
+  battle.memRevealTimer=setTimeout(function(){
+    if(COM!==battle||!battle.alive||battle.memPhase!=="reveal"||battle.memPhaseSerial!==phaseSerial) return;
+    battle.memRevealTimer=null;
     /* fade-out de la secuencia */
     if(seqEl) seqEl.classList.add("mem-fadeout");
-    setTimeout(function(){
-      if(!COM||!COM.alive||COM.memPhase!=="reveal") return;
-      COM.memPhase="input";
+    battle.memFadeTimer=setTimeout(function(){
+      if(COM!==battle||!battle.alive||battle.memPhase!=="reveal"||battle.memPhaseSerial!==phaseSerial) return;
+      battle.memFadeTimer=null;
+      battle.memPhase="input";
       if(phaseEl) phaseEl.textContent="REPITE LA SECUENCIA";
-      if(seqEl) seqEl.textContent="?" .repeat(len).split("").join(" ");
+      if(seqEl) seqEl.textContent="?".repeat(len).split("").join(" ");
       if(inputZone) inputZone.style.display="block";
       var inp=document.getElementById("memInput");
       if(inp){ inp.value=""; inp.focus(); }
       /* timer de combate */
-      COM.remaining=COM.time;
+      battle.remaining=battle.time;
       clearInterval(combatTimer);
-      combatTimer=setInterval(function(){
-        if(!COM||!COM.alive){ clearInterval(combatTimer); return; }
-        COM.remaining-=100;
-        if(COM.remaining<=0){ COM.remaining=0; failCombat(); }
-        updateCombatBars();
+      var memTimer=setInterval(function(){
+        if(COM!==battle||!battle.alive||battle.memPhase!=="input"||battle.memPhaseSerial!==phaseSerial){
+          clearInterval(memTimer);
+          if(combatTimer===memTimer) combatTimer=null;
+          return;
+        }
+        battle.remaining-=100;
+        if(battle.remaining<=0){ battle.remaining=0; failCombat(); }
+        if(COM===battle && battle.alive) updateCombatBars();
       },100);
+      combatTimer=memTimer;
     },600);
   },delay);
 }
@@ -605,8 +624,16 @@ function winScannerPhase(){
 
 var VAULT_PUZZLE=null;
 
+function clearVaultTimers(vp){
+  if(!vp) return;
+  clearTimeout(vp.revealTimer);
+  clearTimeout(vp.cooldownTimer);
+  vp.revealTimer=null; vp.cooldownTimer=null;
+}
+
 function startVaultPuzzle(n){
   if(combatActive) return;
+  clearVaultTimers(VAULT_PUZZLE);
   combatActive=true;
   if(inImmersion) inImmersion.combatOccurred=true;
   var len=4+Math.min(Math.floor(Math.random()*3),2); /* 4-6 símbolos */
@@ -618,14 +645,15 @@ function startVaultPuzzle(n){
     var k=Math.floor(Math.random()*(j+1));
     var tmp=shuffled[j]; shuffled[j]=shuffled[k]; shuffled[k]=tmp;
   }
-  VAULT_PUZZLE={node:n, symbols:symbols, shuffled:shuffled, phase:"show",
+  var vp=VAULT_PUZZLE={node:n, symbols:symbols, shuffled:shuffled, phase:"show",
     picks:[], locked:false};
   renderVaultPuzzle();
   updateMusic(); /* música tensa del puzzle */
   /* mostrar orden correcto 3 segundos */
-  setTimeout(function(){
-    if(!VAULT_PUZZLE||VAULT_PUZZLE.phase!=="show") return;
-    VAULT_PUZZLE.phase="input";
+  vp.revealTimer=setTimeout(function(){
+    if(VAULT_PUZZLE!==vp || vp.phase!=="show") return;
+    vp.revealTimer=null;
+    vp.phase="input";
     renderVaultPuzzleInput();
   },3000);
 }
@@ -672,6 +700,7 @@ function renderVaultPuzzleInput(){
     symbols[j].addEventListener("click", onVaultSymbolClick);
   }
   ACTIONS.vaultCancel=function(){
+    if(VAULT_PUZZLE!==vp) return;
     combatActive=false;
     closeCombat(); VAULT_PUZZLE=null;
     ACTIONS.vaultCancel=null;
@@ -681,14 +710,20 @@ function renderVaultPuzzleInput(){
   /* timer */
   var remaining=15000;
   clearInterval(combatTimer);
-  combatTimer=setInterval(function(){
-    if(!VAULT_PUZZLE){ clearInterval(combatTimer); return; }
+  var vaultTimer=setInterval(function(){
+    if(VAULT_PUZZLE!==vp || vp.phase!=="input" || vp.locked){
+      clearInterval(vaultTimer);
+      if(combatTimer===vaultTimer) combatTimer=null;
+      return;
+    }
     remaining-=100;
     if(remaining<=0){
-      clearInterval(combatTimer);
+      clearInterval(vaultTimer);
+      if(combatTimer===vaultTimer) combatTimer=null;
       vaultFail();
     }
   },100);
+  combatTimer=vaultTimer;
 }
 
 function onVaultSymbolClick(e){
@@ -718,27 +753,34 @@ function onVaultSymbolClick(e){
     closeCombat();
     var node=vp.node;
     VAULT_PUZZLE=null;
+    ACTIONS.vaultCancel=null;
     onNodeDefeated({node:node});
   }
 }
 
 function vaultFail(){
-  clearInterval(combatTimer);
   var vp=VAULT_PUZZLE;
-  if(vp){ vp.locked=true; vp.picks=[]; }
+  if(!vp || vp.locked) return;
+  clearInterval(combatTimer);
+  vp.locked=true; vp.picks=[];
   var order=document.getElementById("vpOrder");
   if(order) order.classList.add("vault-locked");
   S.player.cpu=Math.max(0,S.player.cpu-10);
   sound.error();
   setCombatLog("fallo · -10 CPU · vault bloqueado 10s.");
+  if(S.player.cpu<=0){
+    combatActive=false; closeCombat(); VAULT_PUZZLE=null;
+    ACTIONS.vaultCancel=null;
+    flatline(); return;
+  }
   /* bloquear 10 segundos */
-  setTimeout(function(){
-    if(!VAULT_PUZZLE) return;
-    VAULT_PUZZLE.locked=false;
-    VAULT_PUZZLE.picks=[];
-    VAULT_PUZZLE.phase="input";
+  vp.cooldownTimer=setTimeout(function(){
+    if(VAULT_PUZZLE!==vp || !vp.locked) return;
+    vp.cooldownTimer=null;
+    vp.locked=false;
+    vp.picks=[];
+    vp.phase="input";
     renderVaultPuzzleInput();
   },10000);
-  if(S.player.cpu<=0){ combatActive=false; closeCombat(); VAULT_PUZZLE=null; flatline(); return; }
 }
 

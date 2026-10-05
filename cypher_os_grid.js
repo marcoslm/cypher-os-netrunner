@@ -140,17 +140,21 @@ function generateGrid(maxDepth, spawnBoss){
 }
 
 function startImmersion(depth){
+  if(S.player.cpu<=0){
+    msg("FLATLINE ▸ CPU a cero. No puedes sumergirte.","rojo");
+    return;
+  }
   if(isLockdown()){
     msg("LOCKDOWN ACTIVO ▸ calor demasiado alto. espera a que baje para conectarte.","rojo");
     return;
   }
   /* la misión final (S.nextDepth===5) es la ÚNICA inmersión con boss en capa 5 */
-  var finalMission = (S.nextDepth===5 && S.history.finalUnlocked && !S.history.finalDone);
+  var finalMission = (S.nextDepth===5 && S.history.finalUnlocked && !S.history.finalDone && !S.history.endlessActive);
   depth = depth || (S.nextDepth || 4);
   if(S.nextDepth) S.nextDepth=null;
-  /* legendario: profundidad +1 y tier pool sube */
+  /* legendario: +1 sin techo en SEALED NETWORK; grids normales máximo capa 5 */
   if(S && S.difficulty==="legendario"){
-    depth=Math.min(depth+1,5);
+    depth=S.history.endlessActive ? depth+1 : Math.min(depth+1,5);
     S._legendaryTierBoost=true;
   } else {
     S._legendaryTierBoost=false;
@@ -166,7 +170,8 @@ function startImmersion(depth){
   }
   inImmersion = {
     grid:g, depth:depth, current:g.entry,
-    dataUsed:0, data:[], maxDepthReached:1, moves:0, combatOccurred:false
+    dataUsed:0, data:[], maxDepthReached:1, moves:0, combatOccurred:false,
+    enemiesDefeated:0
   };
   addLog("DIP ▸ conexión establecida (capa 0).");
   msg(pickFresh("dip", FRASES_DIP),"cyan");
@@ -294,6 +299,23 @@ function tryGridEvent(){
   }
 }
 
+/* Los guardados previos al contador conservan nodos vencidos, pero no
+   rastreadores anteriores: recuperar los primeros sin inventar los segundos. */
+function immersionEnemyCount(inm){
+  if(inm.enemiesDefeated==null){
+    var count=0, nodes=inm.grid && inm.grid.nodes || [];
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i];
+      if(n.done && (n.type==="ice" || n.type==="daemon" || n.type==="nucleo")) count++;
+    }
+    inm.enemiesDefeated=count;
+  }
+  return inm.enemiesDefeated;
+}
+function recordImmersionEnemy(){
+  if(inImmersion) inImmersion.enemiesDefeated=immersionEnemyCount(inImmersion)+1;
+}
+
 function tryScavenger(){
   var base = 6 + S.player.heat*0.18 - S.player.sigilo*5;
   var chance = clamp(base, 2, 40)/100;
@@ -306,6 +328,7 @@ function tryScavenger(){
   startCombat({
     node:{type:"ice",tier:tier,tierName:"T"+tier,name:"RASTREADOR · "+pick(["RASEDOR","RASTRERO","FALCÓN","GUÍA","PERRO"]),scavenger:true},
     onWin:function(){
+      recordImmersionEnemy();
       S.player.stats.ice++;
       if(!S.player.stats.iceByTier) S.player.stats.iceByTier={1:0,2:0,3:0};
       S.player.stats.iceByTier[tier]=(S.player.stats.iceByTier[tier]||0)+1;
@@ -377,6 +400,7 @@ function collectData(n){
 
 function onNodeDefeated(ctx){
   var n = ctx.node;
+  if(n.type==="ice" || n.type==="daemon" || n.type==="nucleo") recordImmersionEnemy();
   n.done = true;
   if(n.type==="ice"){
     S.player.stats.ice++;
@@ -500,8 +524,7 @@ function doSuperficializar(){
   var maxDepth=inm.maxDepthReached;
   var heatBefore=Math.round(S.player.heat);
   var combatOccurred=inm.combatOccurred;
-  var iceBefore=S.player.stats.ice;
-  var daemonsBefore=S.player.stats.daemons;
+  var enemiesDefeated=immersionEnemyCount(inm);
   var sellTotal=0;
   for(var i=0;i<inm.data.length;i++){
     sellTotal += Math.round(inm.data[i].value * (1 + S.player.hack*0.1));
@@ -509,20 +532,25 @@ function doSuperficializar(){
   S.player.credits += sellTotal; S.player.stats.credits += sellTotal;
   if(sellTotal>0) addLog("DATOS VENDIDOS ▸ +"+sellTotal+"₡.");
 
-  var completed=0, failed=0, carreraCompletedThisRun=false;
+  var completed=0, failed=0, carreraCompletedThisRun=false, jobResults=[];
+  /* Evaluar todos contra el calor al llegar, antes de que un fracaso sume +8. */
   for(var j=0;j<S.jobs.length;j++){
-    var job = S.jobs[j];
-    if(job.done) continue;
-    if(jobComplete(job)){
-      completeJob(job); completed++;
-      if(job.type==="carrera") carreraCompletedThisRun=true;
-    }
-    else {
-      job.done = true; job.failed = true; failed++;
-      S.player.stats.jobsFailed=(S.player.stats.jobsFailed||0)+1;
-      S.player.heat = clamp(S.player.heat+8,0,100);
-      addLog("✗ TRABAJO FRACASADO ▸ "+job.title+". calor +8.");
-    }
+    var job=S.jobs[j];
+    if(!job.done) jobResults.push({job:job, complete:jobComplete(job)});
+  }
+  for(var j=0;j<jobResults.length;j++){
+    var result=jobResults[j];
+    if(!result.complete || result.job.done) continue;
+    completeJob(result.job); completed++;
+    if(result.job.type==="carrera") carreraCompletedThisRun=true;
+  }
+  for(var j=0;j<jobResults.length;j++){
+    var result=jobResults[j];
+    if(result.complete || result.job.done) continue;
+    result.job.done=true; result.job.failed=true; failed++;
+    S.player.stats.jobsFailed=(S.player.stats.jobsFailed||0)+1;
+    S.player.heat=clamp(S.player.heat+8,0,100);
+    addLog("✗ TRABAJO FRACASADO ▸ "+result.job.title+". calor +8.");
   }
   if(completed>0) msg(completed+" trabajo(s) completado(s). +reputación.","verde");
   else if(failed>0) msg(failed+" trabajo(s) fracasado(s). El calor sube.","ambar");
@@ -541,15 +569,22 @@ function doSuperficializar(){
     var recentDone=S.jobs.filter(function(j){ return j.done; }).slice(-15);
     S.jobs=activeJobs.concat(recentDone);
   }
-  updateBest(); save(true); updateTopbar();
+  updateBest(); updateTopbar();
   showView("inicio", true);
   checkUnlocks();
   checkMensajes();
   advanceTutorial();
+  /* modo endless: registrar récord antes de mostrar el resumen */
+  if(S.history && S.history.endlessActive){
+    if(!S._endlessSurfaces) S._endlessSurfaces=0;
+    S._endlessSurfaces++;
+    if(!S.best.endlessMaxDepth) S.best.endlessMaxDepth=0;
+    if(inm.maxDepthReached>S.best.endlessMaxDepth) S.best.endlessMaxDepth=inm.maxDepthReached;
+    S.history.endlessActive=false;
+  }
   /* RESUMEN POST-INMERSIÓN */
   var heatAfter=Math.round(S.player.heat);
   var heatDiff=heatAfter-heatBefore;
-  var enemiesDefeated=(S.player.stats.ice-iceBefore)+(S.player.stats.daemons-daemonsBefore);
   var resumeHtml=
     '<h2 class="cyan glow">RESUMEN DE LA INMERSIÓN</h2>'+
     '<div class="box">'+
@@ -586,15 +621,8 @@ function doSuperficializar(){
   if(carreraCompletedThisRun && heatBefore<20){
     S.player.stats.speedrun=true;
   }
-  /* modo endless: tracks */
-  if(S.history && S.history.endlessActive){
-    if(!S._endlessSurfaces) S._endlessSurfaces=0;
-    S._endlessSurfaces++;
-    if(!S.best.endlessMaxDepth) S.best.endlessMaxDepth=0;
-    if(inm && inm.maxDepthReached>S.best.endlessMaxDepth) S.best.endlessMaxDepth=inm.maxDepthReached;
-    S.history.endlessActive=false;
-  }
   checkAchievements();
+  save(true);
 }
 
 
