@@ -141,6 +141,63 @@ function runBoot(onDone){
 var msgEl = null;
 var currentView = "inicio";
 
+/* El overlay visual no basta: impedir foco/clics en la partida que tapa.
+   inert cubre navegadores modernos; captura de teclado/foco sirve de respaldo. */
+function gameInputLayer(){
+  if(confirmOpen()) return document.getElementById("confirm-overlay");
+  if(S && S.player.cpu<=0) return document.getElementById("flatline");
+  if(combatActive) return document.getElementById("combat");
+  return null;
+}
+function layerContains(layer, node){
+  return !!(layer && node && (layer===node || (layer.contains && layer.contains(node))));
+}
+function layerControls(layer){
+  if(!layer) return [];
+  return Array.prototype.filter.call(layer.querySelectorAll('button:not([disabled]),input:not([disabled]),[tabindex="0"]'), function(n){
+    return (!n.closest || !n.closest(".hidden")) && (!n.getClientRects || n.getClientRects().length>0);
+  });
+}
+function focusInputLayer(layer, last){
+  if(!layer) return;
+  var nodes=layerControls(layer), target=nodes.length ? nodes[last ? nodes.length-1 : 0] : layer;
+  if(target===layer) layer.setAttribute("tabindex","-1");
+  if(target.focus) target.focus();
+}
+function syncGameInputLock(){
+  var layer=gameInputLayer(), os=document.getElementById("os");
+  if(os){
+    os.inert=!!layer;
+    if(layer) os.setAttribute("inert",""); else os.removeAttribute("inert");
+  }
+  var combat=document.getElementById("combat"), flat=document.getElementById("flatline");
+  if(combat) combat.inert=!!(layer && layer!==combat);
+  if(flat) flat.inert=!!(layer && layer!==flat);
+  if(layer && (document.activeElement===layer || !layerContains(layer, document.activeElement))) focusInputLayer(layer);
+}
+function livingInteraction(){ return !!(S && S.player.cpu>0 && !combatActive && !confirmOpen()); }
+
+document.addEventListener("keydown", function(e){
+  var layer=gameInputLayer();
+  if(!layer) return;
+  /* Guardar sigue funcionando incluso con la partida bloqueada. */
+  if(e.ctrlKey && !e.altKey && e.key.toLowerCase()==="s") return;
+  if(e.key==="Escape") return; /* lo resuelve el diálogo o el combate activo */
+  if(e.key==="Tab"){
+    var nodes=layerControls(layer), active=document.activeElement;
+    if(!nodes.length || !layerContains(layer,active) ||
+       (!e.shiftKey && active===nodes[nodes.length-1]) || (e.shiftKey && active===nodes[0])){
+      e.preventDefault(); focusInputLayer(layer,!!e.shiftKey);
+    }
+  } else if(e.target && !layerContains(layer,e.target)){
+    e.preventDefault(); e.stopPropagation(); focusInputLayer(layer);
+  }
+}, true);
+document.addEventListener("focusin", function(e){
+  var layer=gameInputLayer();
+  if(layer && !layerContains(layer,e.target)) focusInputLayer(layer);
+}, true);
+
 function msg(text, cls){
   if(!msgEl) return;
   msgEl.textContent = text;
@@ -205,6 +262,7 @@ function confirmModal(o){
   _confirmNoFn=o.onNo||null;
   _confirmPending=true;
   ov.classList.add("show");
+  syncGameInputLock();
 }
 function confirmOpen(){ return _confirmPending; }
 function resolveConfirm(yes){
@@ -214,7 +272,7 @@ function resolveConfirm(yes){
   _confirmYesFn=null; _confirmNoFn=null;
   var ov=document.getElementById("confirm-overlay");
   if(ov){ ov.classList.remove("show"); ov.innerHTML=""; }
-  if(fn) fn();
+  try{ if(fn) fn(); }finally{ syncGameInputLock(); }
 }
 ACTIONS.confirmYes=function(){ resolveConfirm(true); };
 ACTIONS.confirmNo=function(){ resolveConfirm(false); };
@@ -225,7 +283,7 @@ if(_confirmOverlay) _confirmOverlay.addEventListener("click", function(e){
 });
 
 function showView(v, skipLog){
-  if(combatActive) return;
+  if(combatActive || (S && S.player.cpu<=0 && v!=="inicio")) return;
   currentView = v;
   if(v !== "red" && inImmersion) stopGridRender();
   document.querySelectorAll(".navbtn[data-view]").forEach(function(b){
@@ -332,6 +390,11 @@ document.addEventListener("click", function(e){
   var btn = e.target.closest("[data-action]");
   if(!btn) return;
   var a = btn.getAttribute("data-action");
+  if(!S && a!=="startIntro") return;
+  if(S && S.player.cpu<=0 && ["reconnect","newRecord","confirmYes","confirmNo"].indexOf(a)<0) return;
+  if(combatActive && a!=="vaultCancel" && a!=="confirmYes" && a!=="confirmNo") return;
+  if(confirmOpen() && a!=="confirmYes" && a!=="confirmNo") return;
+  if(btn.disabled) return;
   if(ACTIONS[a]){ try{ ACTIONS[a](btn); }catch(err){ console.warn("acción",a,err); } }
   sound.click();
 });
@@ -387,6 +450,7 @@ function stockCount(it){
 }
 
 ACTIONS.buyItem = function(btn){
+  if(!livingInteraction()) return;
   var id=btn.getAttribute("data-id");
   var it=null; for(var i=0;i<TIENDA_DEF.length;i++) if(TIENDA_DEF[i].id===id) it=TIENDA_DEF[i];
   if(!it) return;
@@ -499,6 +563,7 @@ function offerHtml(o,c){
   var action;
   if(taken) action='<span class="verde">✓</span>';
   else if(resolved) action=resolved.failed?'<span class="rojo">✗</span>':'<span class="verde">✓</span>';
+  else if(inImmersion && o.type==="vault") action='<span class="ambar text-xs">ACEPTAR EN LA CALLE</span>';
   else action=' <button class="btn small" data-action="acceptJob" data-id="'+o.id+'" data-contact="'+c.id+'">ACEPTAR</button>';
   return '<div class="offer"><div class="desc">'+o.title+'<div class="task-line text-xs">'+o.desc+'</div>'+
     (o.why?'<div class="offer-why">'+o.why+'</div>':'')+'</div>'+
@@ -506,9 +571,12 @@ function offerHtml(o,c){
 }
 
 ACTIONS.acceptJob = function(btn){
-  if(combatActive) return;
+  if(!livingInteraction()) return;
   var id=btn.getAttribute("data-id"), contact=btn.getAttribute("data-contact");
   var o=jobById(id); if(!o){ renderContactos(); return; }
+  if(inImmersion && o.type==="vault"){
+    msg("acepta el contrato de vault en la calle, antes de generar el siguiente grid.","ambar"); return;
+  }
   var activeCount = S.jobs.filter(function(j){ return !j.done; }).length;
   if(activeCount>=3){ msg("máximo 3 contratos activos. superficializa para limpiar.","ambar"); return; }
   if(S.jobs.some(function(j){ return j.id===id && !j.done; })){ msg(" ya estás en ese trabajo.","ambar"); return; }
@@ -1227,6 +1295,7 @@ CMD.guardar = function(){ save(); msg("partida guardada en el cable, corvo. ✓"
 CMD.unknown = function(cmd){ msg('comando no reconocido: "'+cmd+'" — escribe AYUDA'); };
 
 function executeCommand(raw){
+  if(!livingInteraction()) return;
   var line=raw.trim().toLowerCase();
   if(!line) return;
   /* primer token = comando; el resto de la línea viaja como argumento
@@ -1275,6 +1344,19 @@ if(_cmdEnterEl) _cmdEnterEl.addEventListener("click", function(){
    16. FLATLINE / GAME OVER
    ============================================================ */
 
+/* Desechar solo runtime; no completar enemigos ni heredar un grid anterior. */
+function clearSessionRuntime(){
+  cancelActiveCombat();
+  stopGridRender(); inImmersion=null;
+  clearInterval(loopId); loopId=null;
+  closeOverlay();
+  var tree=document.getElementById("skilltree-overlay");
+  if(tree){ tree.classList.remove("show"); tree.classList.add("hidden"); }
+  ACTIONS.closeSkillTree=null;
+  clearTimeout(_bannerTimer); _bannerTimer=null; _bannerQueue=[];
+  var banner=document.getElementById("banner"); if(banner) banner.classList.remove("show");
+}
+
 function flatline(){
   /* Guardar el último checkpoint ANTES de persistir la muerte. El autosave de
      FLATLINE nunca puede sustituir esta copia (vive dentro de S). */
@@ -1290,11 +1372,7 @@ function flatline(){
     S._reconnectCheckpoint=checkpoint;
   } else delete S._reconnectCheckpoint;
   var p=S.player; p.cpu=0;
-  combatActive=false;
-  clearInterval(combatTimer);
-  clearInterval(loopId);
-  if(COM){ COM.alive=false; closeCombat(); COM=null; }
-  if(inImmersion){ stopGridRender(); inImmersion=null; }
+  clearSessionRuntime();
   sound.flatline();
   startAmbient("flatline");
   stopMusic();
@@ -1321,6 +1399,7 @@ function showFlatline(){
     '<button class="btn" data-action="newRecord">NUEVO REGISTRO</button>'+
     '</div>'+
     '<p class="muted flatline-hint">'+(isHardcore?'HARDCORE: debes empezar una nueva partida.':'RECONEXIÓN: recuperas la última partida, pierdes los datos de esta inmersión, CPU ~50%, calor reducido.')+'</p>';
+  syncGameInputLock();
 }
 
 ACTIONS.reconnect = function(){
@@ -1333,13 +1412,13 @@ ACTIONS.reconnect = function(){
   } else checkpoint=JSON.parse(JSON.stringify(checkpoint));
   delete checkpoint._reconnectCheckpoint;
   var lostImmersion=checkpoint._inImmersion;
-  stopGridRender(); inImmersion=null;
+  clearSessionRuntime();
   S=checkpoint;
   ensureStateIntegrity();
   S._inImmersion=null;
   if(S.history.endlessActive) S.history.endlessActive=false;
   /* Si la inmersión perdida era la misión final, volver a dejarla pendiente. */
-  if(lostImmersion && lostImmersion.grid && Array.isArray(lostImmersion.grid.nodes) &&
+  if(!S.history.finalDone && lostImmersion && lostImmersion.grid && Array.isArray(lostImmersion.grid.nodes) &&
      lostImmersion.grid.nodes.some(function(n){ return n.boss; })) S.nextDepth=5;
   S.player.cpu=Math.round(S.player.maxCpu*0.5);
   S.player.heat=Math.round(clamp(S.player.heat*0.4,0,100));
@@ -1352,11 +1431,12 @@ ACTIONS.reconnect = function(){
   var el=document.getElementById("flatline"); if(el) el.classList.remove("show");
   closeOverlay();
   save(); updateBest(); startClock();
-  showView("inicio");
+  showView("inicio"); syncGameInputLock();
   msg("reconectado. sigues en el cable, corvo. pero más débil.","ambar");
 };
 
 ACTIONS.newRecord = function(){
+  if(!S || combatActive) return;
   /* diálogo del juego, nunca el confirm nativo del navegador (ver confirmModal) */
   confirmModal({
     title: "⚠ NUEVO REGISTRO",
@@ -1366,15 +1446,16 @@ ACTIONS.newRecord = function(){
     no: "CANCELAR",
     danger: true,
     onYes: function(){
-      var el=document.getElementById("flatline"); el.classList.remove("show");
+      if(combatActive) return;
+      var el=document.getElementById("flatline"); if(el) el.classList.remove("show");
       updateBest();
       var prevBest=S.best||{};
+      clearSessionRuntime();
       S=nuevoEstado(); S.best=prevBest;
       ensureStateIntegrity(); generateOffers();
       addLog("NUEVO REGISTRO ▸ progreso reiniciado.");
       save();
-      stopGridRender(); inImmersion=null;
-      startClock(); showView("inicio");
+      startClock(); showView("inicio"); syncGameInputLock();
       msg("nuevo registro iniciado. la calle te ve de nuevo desde cero.","cyan");
       updateTopbar();
     }
@@ -1382,6 +1463,7 @@ ACTIONS.newRecord = function(){
 };
 
 ACTIONS.acceptNucleo = function(){
+  if(!livingInteraction() || S.history.finalDone || S.player.level<5 || S.player.rep.night0X<3) return;
   S.history.finalUnlocked=true; S.nextDepth=5;
   addLog("NIGHT-0X ▸ misión EL NÚCLEO asignada. Profundidad 5.");
   msg("NIGHT-0X: baja a la capa 5 y apaga el ojo de su autor. ¿Listo?","magenta");
@@ -1428,6 +1510,8 @@ function validImportState(o){
     "hack","sigilo","nervios","ramUp","fwUp","linkUp","breakerUp","decoys","virus"];
   for(i=0;i<nums.length;i++) if(!importNumber(p[nums[i]])) return false;
   if(p.maxCpu<=0 || p.level<1) return false;
+  if(p._unlockedSkills!=null && (!Array.isArray(p._unlockedSkills) ||
+     p._unlockedSkills.some(function(id){ return typeof id!=="string"; }))) return false;
   if(p.rep!=null && !importObject(p.rep)) return false;
   if(p.rep){
     var reps=["mamaWire","doctorSudario","night0X","kairos"];
@@ -1438,7 +1522,12 @@ function validImportState(o){
     var stats=["immerse","ice","daemons","data","credits","maxDepth",
       "jobsCompleted","jobsFailed","totalPlayTime","maxHeat"];
     for(i=0;i<stats.length;i++) if(p.stats[stats[i]]!=null && !importNumber(p.stats[stats[i]])) return false;
-    if(p.stats.iceByTier!=null && !importObject(p.stats.iceByTier)) return false;
+    if(p.stats.iceByTier!=null){
+      if(!importObject(p.stats.iceByTier)) return false;
+      for(key in p.stats.iceByTier){
+        if(Object.prototype.hasOwnProperty.call(p.stats.iceByTier,key) && !importNumber(p.stats.iceByTier[key])) return false;
+      }
+    }
   }
   var lists=["jobs","offers","intel","achievements","mensajes","log","_seenTransmissions"];
   for(i=0;i<lists.length;i++){
@@ -1481,6 +1570,12 @@ function validImportState(o){
   if(o.history!=null && !importObject(o.history)) return false;
   if(o.best!=null && !importObject(o.best)) return false;
   if(o._seenPanels!=null && !importObject(o._seenPanels)) return false;
+  if(o._activityCooldowns!=null){
+    if(!importObject(o._activityCooldowns)) return false;
+    for(key in o._activityCooldowns){
+      if(Object.prototype.hasOwnProperty.call(o._activityCooldowns,key) && !importNumber(o._activityCooldowns[key])) return false;
+    }
+  }
   if(o.clock!=null && !importNumber(o.clock)) return false;
   if(o.difficulty!=null && ["normal","hardcore","legendario"].indexOf(o.difficulty)<0) return false;
   if(o._inImmersion!=null){
@@ -1513,6 +1608,10 @@ function validImportState(o){
   return true;
 }
 function importGameState(imported){
+  /* También se comprueba al resolver FileReader: pudo empezar antes del combate. */
+  if(combatActive || confirmOpen()){
+    msg("termina el combate o cierra la confirmación antes de importar.","ambar"); return false;
+  }
   if(!validImportState(imported)){
     msg("archivo inválido: datos de partida incompletos o dañados.","rojo"); sound.error(); return false;
   }
@@ -1523,7 +1622,7 @@ function importGameState(imported){
        estado anterior sin guardar progreso local en el archivo importado. */
     S=imported;
     ensureStateIntegrity();
-    stopGridRender();
+    clearSessionRuntime();
     inImmersion=S.player.cpu<=0 ? null : (S._inImmersion || null);
     if(S.player.cpu<=0){
       clearInterval(loopId);
@@ -1533,7 +1632,7 @@ function importGameState(imported){
       var flat=document.getElementById("flatline"); if(flat) flat.classList.remove("show");
       viewChanged=true; showView(inImmersion ? "red" : "inicio"); startClock();
     }
-    save(true);
+    syncGameInputLock(); save(true);
     msg("partida importada. corvo-7 de vuelta en "+(inImmersion?"el grid":"la calle")+".","verde");
     sound.success();
     return true;
@@ -1552,12 +1651,14 @@ function importGameState(imported){
       }catch(restoreErr){ currentView=previousView; }
       save();
     }
+    syncGameInputLock();
     msg("error al importar: "+err.message,"rojo"); sound.error();
     return false;
   }
 }
 var _btnImport=document.getElementById("btn-import");
 if(_btnImport) _btnImport.addEventListener("click", function(){
+  if(!livingInteraction()) return;
   var f=document.getElementById("import-file");
   if(f) f.click();
 });
@@ -1575,6 +1676,7 @@ if(_importFile) _importFile.addEventListener("change", function(e){
 });
 var _btnReset=document.getElementById("btn-reset");
 if(_btnReset) _btnReset.addEventListener("click", function(){
+  if(!livingInteraction()) return;
   /* diálogo del juego, nunca el confirm nativo del navegador (ver confirmModal) */
   confirmModal({
     title: "⚠ RESET",
@@ -1584,13 +1686,15 @@ if(_btnReset) _btnReset.addEventListener("click", function(){
     no: "CANCELAR",
     danger: true,
     onYes: function(){
+      if(!livingInteraction()) return;
+      updateBest();
       var prevBest=(S&&S.best)||{};
+      clearSessionRuntime();
       S=nuevoEstado(); S.best=prevBest;
       ensureStateIntegrity(); generateOffers();
       addLog("RESET ▸ partida nueva desde cero.");
-      save();
-      stopGridRender(); inImmersion=null;
-      showView("inicio");
+      save(); startClock();
+      showView("inicio"); syncGameInputLock();
       msg("partida nueva. de nuevo en la calle, corvo.","cyan");
       updateTopbar();
     }
@@ -1609,7 +1713,7 @@ if(_hBrillo) _hBrillo.addEventListener("click", function(){
 });
 document.querySelectorAll(".navbtn[data-view]").forEach(function(b){
   b.addEventListener("click", function(){
-    if(combatActive){ msg("hay combate activo. no puedes salir del grid ahora.","ambar"); return; }
+    if(!livingInteraction()) return;
     initAudio(); resumeAudio();
     showView(b.getAttribute("data-view"));
   });
@@ -1674,7 +1778,7 @@ var _canal7Notes=[220,261.63,329.63,293.66,261.63,220,196,174.61];
 function playCanal7(){
   if(!AC || S.mus===false) return;
   try{
-    if(AC.state==="suspended") AC.resume();
+    resumeAudio();
     var t0=AC.currentTime+0.05, i, echo;
     for(echo=0;echo<2;echo++){
       for(i=0;i<_canal7Notes.length;i++){
@@ -1729,7 +1833,7 @@ function afterBoot(){
     S.difficulty=_pendingDifficulty;
   }
   _pendingDifficulty=null;
-  startGlitchLoop();
+  startGlitchLoop(); syncGameInputLock();
   if(S.player.cpu<=0){
     inImmersion=null; /* no reanudar un grid tras FLATLINE */
     save(); updateNotifications(); showView("inicio");
@@ -1835,13 +1939,15 @@ document.addEventListener("keydown", function(e){
     var ck=e.key.toLowerCase();
     if(ck==="k"||ck==="g"||(e.key>="1"&&e.key<="9")) e.preventDefault();
   }
+  if(e.key==="Escape" && confirmOpen()){ resolveConfirm(false); e.preventDefault(); return; }
   if(combatActive) return;
   /* si el foco está en un input/textarea, no ejecutar atajos (excepto Ctrl+K y Escape) */
   var el=document.activeElement;
   var inInput=el && (el.tagName==="INPUT" || el.tagName==="TEXTAREA");
-  /* Ctrl+K → foco en terminal (siempre funciona) */
+  /* Ctrl+K se consume siempre, pero no enfoca controles detrás de overlays. */
   if(e.ctrlKey && e.key.toLowerCase()==="k"){
     e.preventDefault();
+    if(!livingInteraction() || modalOpen()) return;
     var cmd=document.getElementById("cmd"); if(cmd) cmd.focus();
     return;
   }

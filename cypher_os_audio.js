@@ -20,15 +20,34 @@ function initAudio(){
     if(Ctx) AC = new Ctx();
   } catch(e){ AC=null; }
 }
-function resumeAudio(){ if(AC && AC.state==="suspended") AC.resume(); }
+function resumeAudio(onReady){
+  if(!AC) return;
+  try{
+    if(AC.state==="suspended"){
+      var pending=AC.resume();
+      if(pending && typeof pending.then==="function"){
+        pending.then(function(){ if(onReady) onReady(); }, function(){ return false; });
+        return;
+      }
+    }
+    if(onReady) onReady();
+  }catch(e){ /* audio bloqueado o no disponible: el juego sigue */ }
+}
+/* Durante intro/BIOS solo se lee la preferencia: S nace en afterBoot. */
+function fxEnabled(){
+  var state=S || load();
+  return !state || state.snd!==false;
+}
 /* ganancia maestra del canal FX: con música sonando, los beeps no deben
    quedar tapados. Los volúmenes del objeto sound son relativos entre sí. */
 var FX_GAIN=2.5;
 function beep(freq, dur, type, vol){
-  if(S && S.snd===false) return;
+  if(!fxEnabled()) return;
   if(!AC){ try{ initAudio(); }catch(e){ return; } }
   if(!AC) return;
   function _play(){
+    /* El canal puede haberse apagado mientras resume() estaba pendiente. */
+    if(!fxEnabled() || !AC) return;
     try{
       var osc = AC.createOscillator(), g = AC.createGain();
       osc.type = type || "square"; osc.frequency.value = freq;
@@ -40,8 +59,7 @@ function beep(freq, dur, type, vol){
       osc.start(now); osc.stop(now+dur+0.02);
     }catch(e){}
   }
-  if(AC.state==="suspended") AC.resume().then(_play, _play);
-  else _play();
+  resumeAudio(_play);
 }
 var sound = {
   click:function(){ beep(660,0.05,"square",0.10); },
@@ -102,8 +120,9 @@ var sound = {
    4b. AUDIO AMBIENTAL — drones procedural por modo
    ============================================================ */
 
-var AMBIENT={osc1:null,osc2:null,osc3:null,gain:null,filter:null,activeMode:null,
-  noiseSrc:null,noiseGain:null,noiseLfo:null,noiseLfoGain:null,
+var AMBIENT={osc1:null,osc2:null,osc3:null,gain:null,gain3:null,filter:null,activeMode:null,
+  driftLfo:null,driftLfoGain:null,
+  noiseSrc:null,noiseFilter:null,noiseGain:null,noiseLfo:null,noiseLfoGain:null,
   heart:null,heartGain:null,heartLfo:null,heartLfoGain:null};
 
 /* buffer de ruido blanco reutilizable */
@@ -123,31 +142,31 @@ function startAmbient(mode){
   if(!S || S.amb!==true || !AC){ stopAmbient(); return; }
   stopAmbient();
   try{
-    if(AC.state==="suspended") AC.resume();
-    var g=AC.createGain();
-    var f=AC.createBiquadFilter();
+    resumeAudio();
+    /* Registrar al crear permite limpiar también un arranque incompleto. */
+    var g=AMBIENT.gain=AC.createGain();
+    var f=AMBIENT.filter=AC.createBiquadFilter();
     f.type="lowpass"; f.frequency.value=200;
     g.gain.value=0; /* fade-in desde 0 */
     f.connect(g); g.connect(AC.destination);
-    var o1=AC.createOscillator(), o2=AC.createOscillator();
+    var o1=AMBIENT.osc1=AC.createOscillator(), o2=AMBIENT.osc2=AC.createOscillator();
     o1.type="sine"; o2.type="sine";
     if(mode==="street"){
       o1.frequency.value=80; o2.frequency.value=120;
       f.frequency.value=200;
       g.gain.setTargetAtTime(0.006, AC.currentTime, 0.5);
       /* LFO 1: volumen pulsante lento */
-      var lfo=AC.createOscillator();
+      var lfo=AMBIENT.osc3=AC.createOscillator();
       lfo.type="sine"; lfo.frequency.value=0.08;
-      var lfoGain=AC.createGain(); lfoGain.gain.value=0.005;
+      var lfoGain=AMBIENT.gain3=AC.createGain(); lfoGain.gain.value=0.005;
       lfo.connect(lfoGain); lfoGain.connect(g.gain);
       lfo.start();
       /* LFO 2: deriva sutil de frecuencia para que el drone no sea constante */
-      var lfo2=AC.createOscillator();
+      var lfo2=AMBIENT.driftLfo=AC.createOscillator();
       lfo2.type="sine"; lfo2.frequency.value=0.03;
-      var lfo2Gain=AC.createGain(); lfo2Gain.gain.value=12;
+      var lfo2Gain=AMBIENT.driftLfoGain=AC.createGain(); lfo2Gain.gain.value=12;
       lfo2.connect(lfo2Gain); lfo2Gain.connect(o1.frequency);
       lfo2.start();
-      AMBIENT.osc3=lfo; AMBIENT.gain3=lfoGain;
     } else if(mode==="grid"){
       /* más abajo, más grave: el grid respira con la profundidad (LORE §3) */
       var depth=inImmersion?inImmersion.depth:4;
@@ -155,43 +174,38 @@ function startAmbient(mode){
       f.frequency.value=240+depth*30;
       g.gain.setTargetAtTime(0.007, AC.currentTime, 0.3);
       /* tercer oscilador pulsante (tensión) */
-      var o3=AC.createOscillator();
+      var o3=AMBIENT.osc3=AC.createOscillator();
       o3.type="sine"; o3.frequency.value=0.5;
-      var g3=AC.createGain(); g3.gain.value=0.006;
+      var g3=AMBIENT.gain3=AC.createGain(); g3.gain.value=0.006;
       o3.connect(g3); g3.connect(f); o3.start();
-      AMBIENT.osc3=o3; AMBIENT.gain3=g3;
       /* latido del cable: en silencio hasta la capa 3 (lo abre updateAmbientStress) */
-      var gHeart=AC.createOscillator();
+      var gHeart=AMBIENT.heart=AC.createOscillator();
       gHeart.type="sine"; gHeart.frequency.value=58;
-      var ghGain=AC.createGain(); ghGain.gain.value=0;
+      var ghGain=AMBIENT.heartGain=AC.createGain(); ghGain.gain.value=0;
       gHeart.connect(ghGain); ghGain.connect(AC.destination);
       gHeart.start();
-      var ghLfo=AC.createOscillator();
+      var ghLfo=AMBIENT.heartLfo=AC.createOscillator();
       ghLfo.type="sawtooth"; ghLfo.frequency.value=0.8;
-      var ghLfoGain=AC.createGain(); ghLfoGain.gain.value=0.012;
+      var ghLfoGain=AMBIENT.heartLfoGain=AC.createGain(); ghLfoGain.gain.value=0.012;
       ghLfo.connect(ghLfoGain); ghLfoGain.connect(ghGain.gain);
       ghLfo.start();
-      AMBIENT.heart=gHeart; AMBIENT.heartGain=ghGain;
-      AMBIENT.heartLfo=ghLfo; AMBIENT.heartLfoGain=ghLfoGain;
     } else if(mode==="combat"){
       var tier=COM?COM.tier:1;
       o1.frequency.value=400+tier*60; o2.frequency.value=500+tier*40;
       f.frequency.value=500;
       g.gain.setTargetAtTime(0.006, AC.currentTime, 0.2);
       /* latido cardíaco: sinusoide grave modulada por diente de sierra */
-      var heart=AC.createOscillator();
+      var heart=AMBIENT.heart=AC.createOscillator();
       heart.type="sine"; heart.frequency.value=62;
-      var hGain=AC.createGain(); hGain.gain.value=0;
+      var hGain=AMBIENT.heartGain=AC.createGain(); hGain.gain.value=0;
       heart.connect(hGain); hGain.connect(AC.destination);
       heart.start();
-      var hLfo=AC.createOscillator();
+      var hLfo=AMBIENT.heartLfo=AC.createOscillator();
       hLfo.type="sawtooth"; hLfo.frequency.value=1.3;
-      var hLfoGain=AC.createGain(); hLfoGain.gain.value=0.030;
+      var hLfoGain=AMBIENT.heartLfoGain=AC.createGain(); hLfoGain.gain.value=0.030;
       hLfo.connect(hLfoGain); hLfoGain.connect(hGain.gain);
       hLfo.start();
       hGain.gain.setTargetAtTime(0.055, AC.currentTime, 0.5);
-      AMBIENT.heart=heart; AMBIENT.heartGain=hGain;
-      AMBIENT.heartLfo=hLfo; AMBIENT.heartLfoGain=hLfoGain;
     } else if(mode==="flatline"){
       o1.frequency.value=50; o2.frequency.value=55;
       f.frequency.value=100;
@@ -199,51 +213,38 @@ function startAmbient(mode){
     }
     o1.connect(f); o2.connect(f);
     o1.start(); o2.start();
-    AMBIENT.osc1=o1; AMBIENT.osc2=o2; AMBIENT.gain=g; AMBIENT.filter=f;
     AMBIENT.activeMode=mode;
 
     /* ruido blanco de fondo — todos los modos, muy bajo */
     var nb=getNoiseBuffer();
     if(nb){
-      var ns=AC.createBufferSource();
+      var ns=AMBIENT.noiseSrc=AC.createBufferSource();
       ns.buffer=nb; ns.loop=true;
-      var nF=AC.createBiquadFilter();
+      var nF=AMBIENT.noiseFilter=AC.createBiquadFilter();
       nF.type="lowpass"; nF.frequency.value=900;
-      var nG=AC.createGain(); nG.gain.value=0.020;
+      var nG=AMBIENT.noiseGain=AC.createGain(); nG.gain.value=0.020;
       ns.connect(nF); nF.connect(nG); nG.connect(AC.destination);
       ns.start();
       /* LFO de volumen del ruido */
-      var nLfo=AC.createOscillator();
+      var nLfo=AMBIENT.noiseLfo=AC.createOscillator();
       nLfo.type="sine"; nLfo.frequency.value=0.06;
-      var nLfoG=AC.createGain(); nLfoG.gain.value=0.004;
+      var nLfoG=AMBIENT.noiseLfoGain=AC.createGain(); nLfoG.gain.value=0.004;
       nLfo.connect(nLfoG); nLfoG.connect(nG.gain);
       nLfo.start();
-      AMBIENT.noiseSrc=ns; AMBIENT.noiseGain=nG;
-      AMBIENT.noiseLfo=nLfo; AMBIENT.noiseLfoGain=nLfoG;
     }
-  }catch(e){}
+  }catch(e){ stopAmbient(); }
 }
 function stopAmbient(){
-  try{
-    if(AMBIENT.osc1){ AMBIENT.osc1.stop(); AMBIENT.osc1.disconnect(); }
-    if(AMBIENT.osc2){ AMBIENT.osc2.stop(); AMBIENT.osc2.disconnect(); }
-    if(AMBIENT.osc3){ AMBIENT.osc3.stop(); AMBIENT.osc3.disconnect(); }
-    if(AMBIENT.gain) AMBIENT.gain.disconnect();
-    if(AMBIENT.filter) AMBIENT.filter.disconnect();
-    if(AMBIENT.gain3) AMBIENT.gain3.disconnect();
-    if(AMBIENT.noiseSrc){ AMBIENT.noiseSrc.stop(); AMBIENT.noiseSrc.disconnect(); }
-    if(AMBIENT.noiseGain) AMBIENT.noiseGain.disconnect();
-    if(AMBIENT.noiseLfo){ AMBIENT.noiseLfo.stop(); AMBIENT.noiseLfo.disconnect(); }
-    if(AMBIENT.noiseLfoGain) AMBIENT.noiseLfoGain.disconnect();
-    if(AMBIENT.heart){ AMBIENT.heart.stop(); AMBIENT.heart.disconnect(); }
-    if(AMBIENT.heartGain) AMBIENT.heartGain.disconnect();
-    if(AMBIENT.heartLfo){ AMBIENT.heartLfo.stop(); AMBIENT.heartLfo.disconnect(); }
-    if(AMBIENT.heartLfoGain) AMBIENT.heartLfoGain.disconnect();
-  }catch(e){}
-  AMBIENT.osc1=AMBIENT.osc2=AMBIENT.osc3=null;
-  AMBIENT.gain=AMBIENT.filter=AMBIENT.gain3=null;
-  AMBIENT.noiseSrc=AMBIENT.noiseGain=AMBIENT.noiseLfo=AMBIENT.noiseLfoGain=null;
-  AMBIENT.heart=AMBIENT.heartGain=AMBIENT.heartLfo=AMBIENT.heartLfoGain=null;
+  /* Un stop() fallido no impide desconectar ese nodo ni limpiar los demás. */
+  Object.keys(AMBIENT).forEach(function(key){
+    if(key==="activeMode") return;
+    var node=AMBIENT[key];
+    if(node){
+      try{ if(typeof node.stop==="function") node.stop(); }catch(e){ /* ya detenido o sin iniciar */ }
+      try{ node.disconnect(); }catch(e){ /* nodo ya desconectado */ }
+    }
+    AMBIENT[key]=null;
+  });
   AMBIENT.activeMode=null;
 }
 function updateAmbient(){

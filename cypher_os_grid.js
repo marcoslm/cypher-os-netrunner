@@ -212,6 +212,17 @@ function currentLayer(){
   return n ? n.layer : 0;
 }
 
+/* Registrar el pico en la misma acción, antes de eventos o enfriamientos.
+   Intel y logros deben formar parte del siguiente guardado, sin esperar al reloj. */
+function recordHeatPeak(){
+  if(!S || !S.player || !S.player.stats) return;
+  if(S.player.heat>(S.player.stats.maxHeat||0)){
+    S.player.stats.maxHeat=S.player.heat;
+    checkUnlocks();
+    checkAchievements();
+  }
+}
+
 function moveToNode(id){
   if(!inImmersion || combatActive) return;
   var curAdj = inImmersion.grid.adj[inImmersion.current]||[];
@@ -248,8 +259,7 @@ function moveToNode(id){
     if(S.player._unlockedSkills.indexOf("regen3")>=0) regenAmt+=1;
     if(regenAmt>0) S.player.cpu=Math.min(S.player.cpu+regenAmt, S.player.maxCpu);
   }
-  /* tracking de calor máximo para logros/intel (contador de partida) */
-  if(S.player.heat>(S.player.stats.maxHeat||0)) S.player.stats.maxHeat=S.player.heat;
+  recordHeatPeak();
   /* eventos aleatorios del grid */
   tryGridEvent();
   /* resolver el nodo donde estás realmente (un evento puede haberte desplazado) */
@@ -281,6 +291,7 @@ function tryGridEvent(){
       msg(ev.name+" ▸ "+pickFresh("ev-"+ev.id, ev.texts),"magenta");
       addLog("EVENTO ▸ "+ev.name+".");
       ev.effect();
+      recordHeatPeak();
       return;
     }
   }
@@ -523,6 +534,7 @@ function doSuperficializar(){
   var moves=inm.moves;
   var maxDepth=inm.maxDepthReached;
   var heatBefore=Math.round(S.player.heat);
+  recordHeatPeak();
   var combatOccurred=inm.combatOccurred;
   var enemiesDefeated=immersionEnemyCount(inm);
   var sellTotal=0;
@@ -557,10 +569,13 @@ function doSuperficializar(){
   else if(inm.data.length) msg("superficializado. +"+sellTotal+"₡ · calor -12.","verde");
   else msg(pickFresh("surf", FRASES_SURF),"cyan");
 
+  /* Los fracasos pueden alcanzar 100 aunque el calor de llegada fuera menor. */
+  recordHeatPeak();
   S.player.heat = clamp(S.player.heat-12,0,100);
   S.player.cpu = clamp(S.player.cpu+8, 0, S.player.maxCpu);
   S.player.stats.immerse++;
-  S.nextDepth = null;
+  /* startImmersion ya consumió su profundidad: una asignación posterior
+     pertenece a la siguiente inmersión y no debe descartarse aquí. */
 
   stopGridRender(); inImmersion=null;
   // Limitar S.jobs: conservar solo los 15 más recientes para evitar crecimiento indefinido.

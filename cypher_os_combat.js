@@ -14,6 +14,16 @@
 
 var COM=null; var combatTimer=null;
 
+/* Escape funciona también durante la revelación y con foco fuera del input.
+   Captura evita que una misma pulsación llegue a otro handler de huida. */
+function onCombatKey(e){
+  if(e.key!=="Escape" || !combatActive || !COM || !COM.alive) return;
+  if(typeof confirmOpen==="function" && confirmOpen()) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if(!e.repeat) doEscape();
+}
+
 function clearMemoriaTimers(battle){
   if(!battle || battle.mode!=="memoria") return;
   clearTimeout(battle.memRevealTimer);
@@ -37,6 +47,7 @@ function startCombat(ctx){
     length:codeLen(tier), time:phaseTime, remaining:0, code:"", alive:true,
     player:S.player, mode:mode,
     memSequence:"", memPhase:"" };
+  document.addEventListener("keydown", onCombatKey, true);
   /* sonido de alarma de combate */
   sound.startCombat();
   updateAmbient();
@@ -50,6 +61,7 @@ function startCombat(ctx){
   } else {
     renderCombat(); newCode(); combatLoop();
   }
+  if(typeof syncGameInputLock==="function") syncGameInputLock();
 }
 /* Teclado hex virtual compartido: layout estilo calculadora 789 EF / 456 CD / 123 AB + 0 + acciones */
 function buildHexKB(delId,enterId){
@@ -176,7 +188,7 @@ function combatLoop(){
     if(!COM||!COM.alive){ clearInterval(combatTimer); return; }
     COM.remaining-=100;
     if(COM.remaining<=0){ COM.remaining=0; failCombat(); }
-    updateCombatBars();
+    if(COM && COM.alive) updateCombatBars();
   },100);
 }
 function onCodeInput(e){
@@ -194,7 +206,6 @@ function onCodeKey(e){
     if(v===COM.code){ e.preventDefault(); winPhase(); }
     else { e.preventDefault(); failCombat(); }
   }
-  if(e.key==="Escape"){ e.preventDefault(); doEscape(); e.stopPropagation(); }
 }
 function winPhase(){
   if(!COM||!COM.alive) return;
@@ -245,7 +256,11 @@ function applyDamageToPlayer(dmg){
   sound.damage();
   var combatEl = document.getElementById("combat");
   if(combatEl){ combatEl.classList.remove("shake"); void combatEl.offsetWidth; combatEl.classList.add("shake"); }
-  if(S.player.cpu<=0){ S.player.cpu=0; flatline(); return; }
+  if(S.player.cpu<=0){
+    S.player.cpu=0; flatline();
+    if(typeof syncGameInputLock==="function") syncGameInputLock();
+    return;
+  }
   updateCombatBars();
 }
 function setCombatLog(t,cls){ var e=document.getElementById("combatLog"); if(e){ e.textContent=t; e.className="combat-log "+(cls||""); } }
@@ -256,9 +271,12 @@ function doEscape(){
   if(Math.random()*100<chance){
     sound.success(); COM.alive=false; clearInterval(combatTimer); closeCombat();
     combatActive=false; COM=null;
+    if(typeof syncGameInputLock==="function") syncGameInputLock();
     S.player.heat=clamp(S.player.heat+5,0,100);
+    recordHeatPeak();
     addLog("HUIR ▸ saliste del combate. calor +5.");
     msg("HUIR ▸ te diste de baja. Enemigo sigue esperándote. calor +5.","ambar");
+    updateTopbar(); save();
     updateAmbient();
   } else {
     sound.error();
@@ -282,9 +300,11 @@ function winCombat(){
   /* liberar el combate ANTES del callback: el onWin puede resolver el nodo
      (entrar en otro combate, recoger datos…) */
   combatActive=false; COM=null;
+  if(typeof syncGameInputLock==="function") syncGameInputLock();
   if(onWin) onWin({node:node});
   checkAchievements();
   updateAmbient();
+  if(typeof syncGameInputLock==="function") syncGameInputLock();
 }
 function closeCombat(){
   clearInterval(combatTimer); combatTimer=null;
@@ -292,10 +312,21 @@ function closeCombat(){
   clearVaultTimers(VAULT_PUZZLE);
   if(_scannerRAF) cancelAnimationFrame(_scannerRAF);
   _scannerRAF=null;
-  document.removeEventListener("keydown", onScannerKey);
+  document.removeEventListener("keydown", onCombatKey, true);
   var el=document.getElementById("combat");
   if(el){ el.classList.remove("show"); el.innerHTML=""; }
   updateMusic();
+  if(typeof syncGameInputLock==="function") syncGameInputLock();
+}
+
+/* Sustituir una partida invalida el minijuego sin recompensas ni callbacks.
+   Cerrar con sus objetos aún presentes permite limpiar todos sus timers. */
+function cancelActiveCombat(){
+  if(COM) COM.alive=false;
+  closeCombat();
+  COM=null; VAULT_PUZZLE=null; combatActive=false;
+  ACTIONS.vaultCancel=null;
+  if(typeof syncGameInputLock==="function") syncGameInputLock();
 }
 
 
@@ -351,7 +382,6 @@ function renderCombatMemoria(){
     });
     inp.addEventListener("keydown", function(e){
       if(e.key==="Enter"){ e.preventDefault(); onMemHexEnter(); }
-      if(e.key==="Escape"){ e.preventDefault(); doEscape(); e.stopPropagation(); }
     });
   }
 }
@@ -494,8 +524,6 @@ function renderCombatScanner(){
       scanZone.addEventListener("mousedown", onScannerClick);
     }
   }
-  /* ESC para huir */
-  document.addEventListener("keydown", onScannerKey);
 }
 
 var _scannerGaps=[], _scannerPos=0, _scannerDir=1, _scannerSpeed=2, _scannerRAF=null, _scannerLastT=0;
@@ -550,7 +578,7 @@ function startScannerPhase(){
     if(!COM||!COM.alive){ clearInterval(combatTimer); return; }
     COM.remaining-=100;
     if(COM.remaining<=0){ COM.remaining=0; failCombat(); }
-    updateCombatBars();
+    if(COM && COM.alive) updateCombatBars();
   },100);
 }
 
@@ -593,12 +621,6 @@ function onScannerClick(e){
 function onScannerTouch(e){
   if(e) e.preventDefault();
   onScannerClick(null);
-}
-
-function onScannerKey(e){
-  if(e.key==="Escape" && COM && COM.alive && COM.mode==="scanner"){
-    e.preventDefault(); doEscape();
-  }
 }
 
 function winScannerPhase(){
@@ -648,6 +670,7 @@ function startVaultPuzzle(n){
   var vp=VAULT_PUZZLE={node:n, symbols:symbols, shuffled:shuffled, phase:"show",
     picks:[], locked:false};
   renderVaultPuzzle();
+  if(typeof syncGameInputLock==="function") syncGameInputLock();
   updateMusic(); /* música tensa del puzzle */
   /* mostrar orden correcto 3 segundos */
   vp.revealTimer=setTimeout(function(){
@@ -703,6 +726,7 @@ function renderVaultPuzzleInput(){
     if(VAULT_PUZZLE!==vp) return;
     combatActive=false;
     closeCombat(); VAULT_PUZZLE=null;
+    if(typeof syncGameInputLock==="function") syncGameInputLock();
     ACTIONS.vaultCancel=null;
     msg("cancelaste el puzzle del vault.","ambar");
     renderGridHud();
@@ -724,6 +748,7 @@ function renderVaultPuzzleInput(){
     }
   },100);
   combatTimer=vaultTimer;
+  if(typeof syncGameInputLock==="function") syncGameInputLock();
 }
 
 function onVaultSymbolClick(e){
@@ -753,6 +778,7 @@ function onVaultSymbolClick(e){
     closeCombat();
     var node=vp.node;
     VAULT_PUZZLE=null;
+    if(typeof syncGameInputLock==="function") syncGameInputLock();
     ACTIONS.vaultCancel=null;
     onNodeDefeated({node:node});
   }
@@ -771,7 +797,9 @@ function vaultFail(){
   if(S.player.cpu<=0){
     combatActive=false; closeCombat(); VAULT_PUZZLE=null;
     ACTIONS.vaultCancel=null;
-    flatline(); return;
+    flatline();
+    if(typeof syncGameInputLock==="function") syncGameInputLock();
+    return;
   }
   /* bloquear 10 segundos */
   vp.cooldownTimer=setTimeout(function(){
