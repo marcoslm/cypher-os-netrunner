@@ -13,13 +13,13 @@
 "use strict";
 const { loadGame } = require("./harness");
 
-let fails = 0, warns = 0;
+let passes = 0, fails = 0, warns = 0;
 function ok(cond, label){
-  if(cond){ console.log("  ✔ " + label); }
+  if(cond){ passes++; console.log("  ✔ " + label); }
   else { fails++; console.log("  ✖ FALLO: " + label); }
 }
 function warn(cond, label){
-  if(cond){ console.log("  ✔ " + label); }
+  if(cond){ passes++; console.log("  ✔ " + label); }
   else { warns++; console.log("  ⚠ aviso: " + label); }
 }
 
@@ -27,7 +27,8 @@ console.log("CYPHER://OS · suite de humo — " + new Date().toISOString());
 
 /* ---------- NIVEL 3a: carga real del juego ---------- */
 console.log("\nNIVEL 3a · carga del juego con DOM simulado…");
-const { T, sandbox, src } = loadGame();
+const game = loadGame();
+const { T, sandbox, src } = game;
 ok(!!T, "el juego carga sin excepciones y deja internals verificables");
 ok(typeof sandbox.HELP_HTML === "string" && sandbox.HELP_HTML.indexOf("⓪") >= 0,
    "HELP_HTML carga y contiene ⓪ (mundo en 30 segundos)");
@@ -287,12 +288,22 @@ ok(src.html.indexOf('data-view="mensajes"') >= 0 && src.html.indexOf("notif-mens
    "botón MENSAJES y su notif-dot presentes en el HTML");
 ok(sandbox.HELP_HTML.indexOf("⑱") >= 0, "AYUDA documenta la bandeja (⑱)");
 
-/* ---------- regresiones de comportamiento ---------- */
-require("./regressions").run().then(function(regressionFails){
+/* ---------- unidades del arnés + regresiones (mismo proceso, sin pipes) ---------- */
+async function finish(){
+  /* Los bucles legítimos del juego no deben mantener Node vivo. No ejecutar
+     callbacks para vaciarlo: dispose conserva el informe de pendientes. */
+  game.dispose();
+  const harness = await require("./harness.test").run({summary:true});
+  const regressions = await require("./regressions").run({summary:true});
+  const totalFails = fails + harness.fails + regressions.fails;
   console.log("\n================ RESUMEN ================");
-  console.log("fallos: " + (fails + regressionFails) + " · avisos: " + warns);
-  process.exit(fails + regressionFails ? 1 : 0);
-}, function(err){
-  console.error("regresiones interrumpidas:", err);
-  process.exit(1);
+  console.log("humo: " + passes + " correctas · arnés: " + harness.passes + "/" + harness.total +
+    " · regresiones: " + regressions.passes + "/" + regressions.total);
+  console.log("correctas: " + (passes + harness.passes + regressions.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
+  process.exitCode = totalFails ? 1 : 0;
+}
+finish().catch(function(err){
+  console.error("suite interrumpida:", err);
+  try { game.dispose(); } catch(cleanupError){ console.error("cleanup:", cleanupError); }
+  process.exitCode = 1;
 });

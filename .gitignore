@@ -11,6 +11,12 @@ idea/
 *.swo
 
 node_modules/
+/.npm-cache/
+/playwright-report/
+/test-results/
+/blob-report/
+/.browser-profiles/
+/.cache/ms-playwright/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

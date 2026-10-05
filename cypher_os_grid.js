@@ -264,7 +264,11 @@ function moveToNode(id){
   tryGridEvent();
   /* resolver el nodo donde estás realmente (un evento puede haberte desplazado) */
   var target = nodeById(inImmersion.current) || n;
-  if(tryScavenger()) return;
+  if(tryScavenger()){
+    /* El movimiento ya cambió current: incluso bajo combate, el HUD y sus
+       índices deben pertenecer al nodo nuevo, no a la ruta anterior. */
+    renderGridHud(); return;
+  }
   enterNode(target);
   renderGridHud();
 }

@@ -1,97 +1,26 @@
 /* Regresiones de gameplay/persistencia de CYPHER://OS. Sin dependencias. */
 "use strict";
 const assert = require("node:assert/strict");
-const vm = require("node:vm");
-const { createSandbox, readSources, FILES } = require("./harness");
+const { loadGame, audioModel, clickAction } = require("./harness");
 
-function game(options = {}){
-  const sb = createSandbox(), src = readSources(), events = {}, elementEvents = {}, docEvents = {};
-  sb.Math = Object.create(Math);
-  const getElement = sb.document.getElementById;
-  sb.document.getElementById = function(id){
-    const el = getElement(id);
-    if(!elementEvents[id]){
-      elementEvents[id]={};
-      el.addEventListener=(type,fn)=>{ (elementEvents[id][type] || (elementEvents[id][type]=[])).push(fn); };
-      el.removeEventListener=(type,fn)=>{ elementEvents[id][type]=(elementEvents[id][type]||[]).filter(f=>f!==fn); };
-      el.focus=()=>{ sb.document.activeElement=el; };
-      const classes=new Set();
-      el.classList={add:(...names)=>names.forEach(n=>classes.add(n)),remove:(...names)=>names.forEach(n=>classes.delete(n)),
-        contains:n=>classes.has(n),toggle:(n,on)=>{ if(on===undefined) on=!classes.has(n); if(on) classes.add(n); else classes.delete(n); }};
-    }
-    return el;
-  };
-  sb.document.addEventListener=(type,fn,capture)=>{ (docEvents[type] || (docEvents[type]=[])).push({fn,capture:!!capture}); };
-  sb.document.removeEventListener=(type,fn)=>{ docEvents[type]=(docEvents[type]||[]).filter(e=>e.fn!==fn); };
-  let timerId = 0;
-  const timers = new Map();
-  if(options.timers){
-    sb.setTimeout = (fn, ms) => { const id = ++timerId; timers.set(id, { fn, ms }); return id; };
-    sb.clearTimeout = id => timers.delete(id);
-    sb.setInterval = (fn, ms) => { const id = ++timerId; timers.set(id, { fn, ms, interval:true }); return id; };
-    sb.clearInterval = id => timers.delete(id);
-  }
-  if(options.importEvents){
-    const get = sb.document.getElementById;
-    sb.document.getElementById = function(id){
-      const el = get(id);
-      if(id === "import-file") el.addEventListener = (name, handler) => { events[name] = handler; };
-      return el;
-    };
-  }
-  const ctx = vm.createContext(sb);
-  vm.runInContext(src.help, ctx);
-  for(const f of FILES.js) vm.runInContext(src.jsFiles[f], ctx, { filename:f });
-  return {
-    sb, src, events, run: code => vm.runInContext(code, ctx),
-    emitElement: (id,type,event={}) => {
-      const el=sb.document.getElementById(id);
-      for(const fn of elementEvents[id][type] || []) fn.call(el, Object.assign({target:el},event));
-    },
-    emitDocument: (type,event={}) => {
-      let stopped=false, immediate=false, prevented=false;
-      const e=Object.assign({target:sb.document.activeElement||sb.document.body,ctrlKey:false,altKey:false,shiftKey:false,repeat:false,
-        preventDefault(){prevented=true;},stopPropagation(){stopped=true;},stopImmediatePropagation(){immediate=true;stopped=true;}},event);
-      for(const capture of [true,false]){
-        for(const entry of (docEvents[type] || []).filter(x=>x.capture===capture)){
-          entry.fn(e); if(immediate) break;
-        }
-        if(stopped) break;
-      }
-      return prevented;
-    },
-    saved: () => JSON.parse(sb.localStorage.getItem("cypher_os_save_v9")),
-    pending: () => timers.size,
-    ids: ms => Array.from(timers).filter(([, t]) => t.ms === ms).map(([id]) => id),
-    fire: id => { const t = timers.get(id); if(!t) return false; if(!t.interval) timers.delete(id); t.fn(); return true; }
-  };
-}
-
-function clickAction(g, action, attrs={}){
-  const data=Object.assign({"data-action":action},attrs);
-  const button={disabled:false,getAttribute:key=>data[key]||null,closest:selector=>selector==="[data-action]"?button:null};
-  g.emitDocument("click",{target:button});
-}
-
-function audioModel(){
-  const nodes=[];
-  const param=()=>({value:0,setValueAtTime(){},setTargetAtTime(){},exponentialRampToValueAtTime(){}});
-  function node(source=false){
-    const n={source,started:false,stopped:false,disconnected:false,gain:param(),frequency:param(),
-      connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(){this.stopped=true;}};
-    nodes.push(n); return n;
-  }
-  const ac={state:"running",currentTime:0,sampleRate:8,destination:{},
-    resume:()=>Promise.resolve(),createOscillator:()=>node(true),createBufferSource:()=>node(true),
-    createGain:()=>node(),createBiquadFilter:()=>node(),createBuffer:(channels,len)=>({getChannelData:()=>new Float32Array(len)})};
-  return {nodes,ac};
-}
-
-async function run(){
+async function run(options = {}){
   let fails = 0, passes = 0;
+  const games=[];
+  /* Solo política de fixtures/cleanup; DOM, VM y timers viven en harness. */
+  function game(opts = {}){
+    const g=loadGame({timers:"virtual",strictDOM:true,canvas:"stub",seed:2077,...opts});
+    games.push(g); return g;
+  }
   async function check(label, fn){
-    try { await fn(); passes++; console.log("  ✔ " + label); }
-    catch(err){ fails++; console.log("  ✖ " + label + ": " + err.message); }
+    let error;
+    try { await fn(); } catch(err){ error=err; }
+    finally {
+      for(const g of games.splice(0)){
+        try { g.dispose(); } catch(err){ if(!error) error=err; else console.error("cleanup:",err); }
+      }
+    }
+    if(error){ fails++; console.log("  ✖ " + label + ": " + error.message); }
+    else { passes++; console.log("  ✔ " + label); }
   }
   console.log("\nREGRESIONES · estado, grid, combate e interfaz…");
 
@@ -159,24 +88,24 @@ async function run(){
   });
 
   await check("la importación inválida conserva la partida y el bucle sigue vivo", () => {
-    const g = game({importEvents:true});
+    const g = game();
     g.run('S=nuevoEstado();ensureStateIntegrity();');
     const before = g.run("S");
     g.sb.FileReader = function(){ this.readAsText = () => this.onload({target:{result:'{"player":1}'}}); };
     const input = g.sb.document.getElementById("import-file"); input.files=[{name:"invalida.json"}];
-    g.events.change.call(input, {target:input});
+    g.emitElement("import-file", "change", {target:input});
     assert.equal(g.run("S"), before);
     assert.doesNotThrow(() => g.run("gameLoop()"));
   });
 
   await check("importar partida exportada durante inmersión mantiene el grid y los datos", () => {
-    const g = game({importEvents:true});
+    const g = game();
     g.run('S=nuevoEstado();ensureStateIntegrity();startImmersion(4);inImmersion.data=[{value:77}];inImmersion.dataUsed=1;save();');
     const exported = g.saved(); exported.player.credits = 8765;
     g.run('inImmersion=null;S=nuevoEstado();ensureStateIntegrity();');
     g.sb.FileReader = function(){ this.readAsText = () => this.onload({target:{result:JSON.stringify(exported)}}); };
     const input = g.sb.document.getElementById("import-file"); input.files=[{name:"grid.json"}];
-    g.events.change.call(input, {target:input});
+    g.emitElement("import-file", "change", {target:input});
     g.run("clearInterval(loopId);clearTimeout(_glitchId);");
     assert.equal(g.run("S.player.credits"), 8765);
     assert.equal(g.run("inImmersion.dataUsed"), 1);
@@ -240,7 +169,7 @@ async function run(){
 
   await check("EXPORTAR DIARIO respeta también la búsqueda textual", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.log=[{t:"23:48",text:"INTEL ▸ corvo"},{t:"23:49",text:"TIENDA ▸ pulso"}];renderLogEntries("corvo");ACTIONS.exportDiario();');
+    g.run('S=nuevoEstado();ensureStateIntegrity();S.log=[{t:"23:48",text:"INTEL ▸ corvo"},{t:"23:49",text:"TIENDA ▸ pulso"}];renderRegistro();renderLogEntries("corvo");ACTIONS.exportDiario();');
     const text = g.sb.__blobs[0].parts.join("");
     assert.ok(text.includes("INTEL ▸ corvo"));
     assert.ok(!text.includes("TIENDA ▸ pulso"));
@@ -255,18 +184,18 @@ async function run(){
   await check("el árbol permite activar ROMPEMUROS con teclado", () => {
     const g = game();
     g.run('S=nuevoEstado();ensureStateIntegrity();S.player.skillPoints=1;');
-    const tree = g.sb.document.getElementById("skilltree-overlay"), handlers={};
-    const first = {getAttribute: attr => attr==="data-branch"?"0":"0",addEventListener:(name,handler)=>{handlers[name]=handler;}};
-    tree.querySelectorAll=()=>[first];
+    const tree = g.sb.document.getElementById("skilltree-overlay");
     g.run('renderSkillTree();');
+    const first=tree.querySelector('.skill-node[tabindex="0"]');
+    const handlers=Object.fromEntries(g.sb.__events.listeners(first).map(entry => [entry.type,entry.list[0].callback]));
     const native=/<button\b[^>]*class="skill-node/.test(tree.innerHTML);
     const role=/role="button"/.test(tree.innerHTML) && /tabindex="0"/.test(tree.innerHTML);
     assert.ok(native || role,"nodos enfocables y con semántica de botón");
     assert.equal(typeof handlers.click,"function");
-    if(native) handlers.click.call(first);
+    if(native) first.click();
     else {
       assert.equal(typeof handlers.keydown,"function");
-      handlers.keydown.call(first,{key:"Enter",preventDefault(){}});
+      g.emitElement(first,"keydown",{key:"Enter"});
     }
     assert.ok(g.run('S.player._unlockedSkills.indexOf("rompe1")>=0'));
   });
@@ -297,9 +226,9 @@ async function run(){
 
   await check("Tab no sale de la capa bloqueante y el foco se desbloquea al reconectar", () => {
     const g=game({timers:true});
-    const flat=g.sb.document.getElementById("flatline"), first=g.sb.document.getElementById("reconnect-control"), last=g.sb.document.getElementById("record-control");
-    flat.querySelectorAll=()=>[first,last]; flat.contains=n=>[first,last].includes(n);
+    const flat=g.sb.document.getElementById("flatline");
     g.run('S=nuevoEstado();ensureStateIntegrity();save();flatline();');
+    const first=flat.querySelector('[data-action="reconnect"]'), last=flat.querySelector('[data-action="newRecord"]');
     assert.equal(g.sb.document.activeElement,first);
     last.focus();
     assert.equal(g.emitDocument("keydown",{key:"Tab",target:last}),true);
@@ -419,10 +348,8 @@ async function run(){
 
   await check("bloquear fondo del combate no roba el foco del input de claves", () => {
     const g=game({timers:true});
-    const combat=g.sb.document.getElementById("combat"), input=g.sb.document.getElementById("codeInput"), escape=g.sb.document.getElementById("escapeBtn");
-    combat.contains=n=>[input,escape].includes(n);
-    combat.querySelectorAll=()=>[input,escape];
     g.run('S=nuevoEstado();ensureStateIntegrity();startCombat({node:{type:"ice",tier:1,name:"TEST"},onWin:function(){}});');
+    const input=g.sb.document.getElementById("codeInput");
     assert.equal(g.sb.document.activeElement,input);
     assert.equal(g.sb.document.getElementById("os").inert,true);
     g.run('cancelActiveCombat();');
@@ -459,8 +386,129 @@ async function run(){
     assert.ok(audio.nodes.every(n=>n.disconnected));
   });
 
+  await check("QA-01: una emboscada y su huida mantienen HUD y vecinos del nodo actual", () => {
+    const g=game({seed:40003});
+    const click=selector=>{
+      const el=g.sb.document.querySelector(selector);
+      assert.ok(el, "control presente: " + selector); el.click();
+    };
+    click("#intro-start"); g.advance(180);
+    click("#boot"); g.advance(520);
+    g.run('S._tutorialDone=true;S.player.level=6;S.player.sigilo=5;');
+    click('[data-action="dipGrid"]');
+    for(let i=0;i<15;i++)click('.adj-node[data-idx="0"]');
+    assert.equal(g.run('COM.node.scavenger'),true);
+    assert.equal(g.run('inImmersion.current'),"0_0");
+    assert.ok(g.sb.document.getElementById("adjlist").textContent.includes("PUERTO DE CALLE"),"HUD actualizado ya bajo la emboscada");
+    click("#escapeBtn"); click("#escapeBtn"); g.advance(1000);
+    assert.equal(g.run("combatActive"),false);
+    assert.equal(g.run("inImmersion.current"),"0_0");
+    assert.ok(g.sb.document.getElementById("adjlist").textContent.includes("PUERTO DE CALLE"));
+    const neighbor=g.sb.document.querySelector('.adj-node[data-idx="1"]');
+    assert.match(neighbor.textContent,/ICE T1/);
+    assert.equal(g.run('currentNeighbors()[1].name'),"GRIFO");
+    assert.ok(!neighbor.textContent.includes("DATOS"));
+    neighbor.click();
+    assert.equal(g.run("inImmersion.current"),"1_1");
+    assert.equal(g.run('COM.node.name'),"GRIFO");
+  });
+
+  await check("QA-01: ganar el rastreador ante RAM llena no deja el HUD de la ruta anterior", () => {
+    const g=game({seed:5});
+    g.run('S=nuevoEstado();ensureStateIntegrity();S.snd=false;S.mus=false;S.player._gridEventCooldown=3;startImmersion(4);inImmersion.dataUsed=ramCap();inImmersion.data=Array.from({length:ramCap()},function(){return {value:10};});S.player.stats.data=ramCap();renderGridHud();');
+    const target=g.run('currentNeighbors()[2].id');
+    assert.equal(target,"1_2");
+    g.sb.document.querySelector('.adj-node[data-idx="2"]').click();
+    assert.equal(g.run('COM.node.scavenger'),true);
+    const input=g.sb.document.getElementById("codeInput");
+    input.value=g.sb.document.getElementById("codeTarget").textContent.replace(/\s/g,"").toLowerCase();
+    g.emitElement("codeInput","input");
+    assert.equal(g.run("combatActive"),false);
+    assert.equal(g.run("inImmersion.current"),target);
+    assert.ok(g.sb.document.getElementById("adjlist").textContent.includes("NODO DE DATOS"));
+    assert.equal(g.run("inImmersion.dataUsed"),6);
+    assert.equal(g.run("S.player.stats.data"),6);
+    assert.equal(g.run('nodeById(inImmersion.current).done'),false);
+    assert.equal(g.run("S.player.stats.ice"),1);
+  });
+
+  await check("QA-02: todos los contadores y speedrun rechazan tipos dañados sin sustituir estado", () => {
+    const g=game();
+    g.run('S=nuevoEstado();ensureStateIntegrity();S.snd=false;S.mus=false;S.player.credits=1234;save();');
+    const original=g.run("S"), raw=g.sb.localStorage.getItem("cypher_os_save_v9");
+    const defaults=g.run("defaultStats()");
+    const fields=Object.keys(defaults).filter(key=>typeof defaults[key]==="number");
+    for(const key of fields){
+      for(const bad of ["dañado","0",[],{},true,NaN,Infinity]){
+        const candidate=JSON.parse(raw);candidate.player.stats[key]=bad;g.sb.__candidate=candidate;
+        assert.equal(g.run('importGameState(window.__candidate)'),false,key+" tipo inválido");
+        assert.equal(g.run("S"),original);
+        assert.equal(g.sb.localStorage.getItem("cypher_os_save_v9"),raw);
+      }
+    }
+    for(const bad of ["true","false",1,[],{}]){
+      const candidate=JSON.parse(raw);candidate.player.stats.speedrun=bad;g.sb.__candidate=candidate;
+      assert.equal(g.run('importGameState(window.__candidate)'),false,"speedrun debe ser booleano");
+      assert.equal(g.run("S"),original);
+      assert.equal(g.sb.localStorage.getItem("cypher_os_save_v9"),raw);
+    }
+    for(const bad of ["dañado",false,[],{},NaN]){
+      const candidate=JSON.parse(raw);candidate.player.stats.iceByTier[1]=bad;g.sb.__candidate=candidate;
+      assert.equal(g.run('importGameState(window.__candidate)'),false,"tier debe ser numérico");
+      assert.equal(g.run("S"),original);
+    }
+    g.run('showView("tienda");');
+    clickAction(g,"buyItem",{"data-id":"decoy"});
+    assert.equal(g.saved().player.stats.totalCreditsSpent,140);
+    assert.equal(typeof g.saved().player.stats.totalCreditsSpent,"number");
+    assert.equal(g.saved().player.credits,1094);
+  });
+
+  await check("QA-02: legacy ausente/null migra números y booleanos sin heredar estado local", () => {
+    const g=game();
+    g.run('S=nuevoEstado();ensureStateIntegrity();S.snd=false;S.mus=false;S.player.credits=9999;S.best={level:99};');
+    const candidate=g.run('var legacy=nuevoEstado();legacy.snd=false;legacy.mus=false;legacy.player.stats={ice:2,speedrun:null};legacy.best={maxHeat:75,ghostRuns:2,cleanSrf:1,substationsUsed:4,totalSpent:345,speedrun:true};legacy;');
+    g.sb.__candidate=candidate;
+    assert.equal(g.run('importGameState(window.__candidate)'),true);
+    const stats=g.saved().player.stats;
+    assert.equal(stats.maxHeat,75);
+    assert.equal(stats.ghostRuns,2);
+    assert.equal(stats.cleanSrf,1);
+    assert.equal(stats.substationsUsed,4);
+    assert.equal(stats.totalCreditsSpent,345);
+    assert.equal(stats.speedrun,true);
+    assert.equal(stats.combatStreak,0);
+    assert.equal(stats.luckyRun,0);
+    assert.equal(stats.totalDamageReceived,0);
+    assert.equal(g.saved().player.credits,500);
+    assert.equal(g.saved().best.level,undefined);
+  });
+
+  await check("QA-02: best legacy y flags malformados no introducen corrupción al migrar", () => {
+    const g=game();
+    g.run('S=nuevoEstado();ensureStateIntegrity();S.snd=false;S.mus=false;save();');
+    const original=g.run("S"), raw=g.sb.localStorage.getItem("cypher_os_save_v9");
+    const badBest={maxHeat:"dañado",ghostRuns:[],cleanSrf:{},substationsUsed:true,totalSpent:"345",speedrun:"true",finalDone:"false"};
+    for(const [key,bad] of Object.entries(badBest)){
+      const candidate=JSON.parse(raw);candidate.player.stats={};candidate.best={[key]:bad};g.sb.__candidate=candidate;
+      assert.equal(g.run('importGameState(window.__candidate)'),false,"legacy best."+key);
+      assert.equal(g.run("S"),original);
+      assert.equal(g.sb.localStorage.getItem("cypher_os_save_v9"),raw);
+    }
+    for(const key of ["snd","amb","mus"]){
+      const candidate=JSON.parse(raw);candidate[key]="false";g.sb.__candidate=candidate;
+      assert.equal(g.run('importGameState(window.__candidate)'),false,"flag "+key);
+      assert.equal(g.run("S"),original);
+    }
+    for(const key of ["finalUnlocked","finalDone"]){
+      const candidate=JSON.parse(raw);candidate.history[key]="false";g.sb.__candidate=candidate;
+      assert.equal(g.run('importGameState(window.__candidate)'),false,"history."+key);
+      assert.equal(g.run("S"),original);
+    }
+  });
+
   console.log("Regresiones: " + passes + " correctas · " + fails + " fallos");
-  return fails;
+  return options.summary ? {passes,fails,total:passes+fails} : fails;
 }
 
 if(require.main === module){

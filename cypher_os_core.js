@@ -20,7 +20,7 @@ function defaultStats(){
     immerse:0, ice:0, daemons:0, data:0, credits:0, maxDepth:1,
     iceByTier:{1:0,2:0,3:0}, jobsCompleted:0, jobsFailed:0,
     totalCreditsSpent:0, totalDamageDealt:0, totalDamageReceived:0,
-    maxCombatStreak:0, totalPlayTime:0,
+    maxCombatStreak:0, combatStreak:0, luckyRun:0, totalPlayTime:0,
     /* contadores de logros (por partida) */
     maxHeat:0, ghostRuns:0, speedrun:false, cleanSrf:0, substationsUsed:0, msgsAtNight:0, msgsVoidReplies:0
   };

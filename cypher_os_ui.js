@@ -1503,6 +1503,23 @@ if(_btnExport) _btnExport.addEventListener("click", function(){
    guardados antiguos, pero no corrige tipos incompatibles ni un player escalar. */
 function importObject(v){ return !!v && typeof v==="object" && !Array.isArray(v); }
 function importNumber(v){ return typeof v==="number" && isFinite(v); }
+/* Validar los campos conocidos desde su esquema de tipos, no desde una lista
+   parcial de contadores. Los ausentes/null siguen admitiendo migración legacy. */
+function importTypedFields(value, defaults){
+  if(!importObject(value)) return false;
+  for(var key in defaults){
+    if(!Object.prototype.hasOwnProperty.call(defaults,key) || value[key]==null) continue;
+    var expected=defaults[key];
+    if(typeof expected==="number"){
+      if(!importNumber(value[key])) return false;
+    } else if(typeof expected==="boolean"){
+      if(typeof value[key]!=="boolean") return false;
+    } else if(importObject(expected)){
+      if(!importTypedFields(value[key],expected)) return false;
+    }
+  }
+  return true;
+}
 function validImportState(o){
   if(!importObject(o) || !importObject(o.player)) return false;
   var p=o.player, i, key, j;
@@ -1519,9 +1536,7 @@ function validImportState(o){
   }
   if(p.stats!=null && !importObject(p.stats)) return false;
   if(p.stats){
-    var stats=["immerse","ice","daemons","data","credits","maxDepth",
-      "jobsCompleted","jobsFailed","totalPlayTime","maxHeat"];
-    for(i=0;i<stats.length;i++) if(p.stats[stats[i]]!=null && !importNumber(p.stats[stats[i]])) return false;
+    if(!importTypedFields(p.stats,defaultStats())) return false;
     if(p.stats.iceByTier!=null){
       if(!importObject(p.stats.iceByTier)) return false;
       for(key in p.stats.iceByTier){
@@ -1567,8 +1582,16 @@ function validImportState(o){
   if(o._seenTransmissions && o._seenTransmissions.some(function(v){
     return !importNumber(v) || v<0 || Math.floor(v)!==v;
   })) return false;
-  if(o.history!=null && !importObject(o.history)) return false;
-  if(o.best!=null && !importObject(o.best)) return false;
+  if(o.history!=null && !importTypedFields(o.history,{finalUnlocked:false,finalDone:false})) return false;
+  if(o.best!=null){
+    /* También comprobar los antiguos contadores de best: ensureStateIntegrity
+       puede migrarlos a stats, y no debe introducir ahí valores malformados. */
+    var bestTypes={immerse:0,ice:0,daemons:0,credits:0,depth:0,level:0,endlessMaxDepth:0,
+      maxHeat:0,ghostRuns:0,cleanSrf:0,substationsUsed:0,totalSpent:0,
+      finalDone:false,speedrun:false};
+    if(!importTypedFields(o.best,bestTypes)) return false;
+  }
+  if(!importTypedFields(o,{snd:true,amb:false,mus:true})) return false;
   if(o._seenPanels!=null && !importObject(o._seenPanels)) return false;
   if(o._activityCooldowns!=null){
     if(!importObject(o._activityCooldowns)) return false;

@@ -276,8 +276,9 @@ function doEscape(){
     recordHeatPeak();
     addLog("HUIR ▸ saliste del combate. calor +5.");
     msg("HUIR ▸ te diste de baja. Enemigo sigue esperándote. calor +5.","ambar");
-    updateTopbar(); save();
-    updateAmbient();
+    updateTopbar();
+    if(inImmersion && currentView==="red") renderGridHud();
+    save(); updateAmbient();
   } else {
     sound.error();
     var dmg=combatDamage(); setCombatLog("huida fallida · "+dmg+" de daño.","rojo");
