@@ -136,10 +136,74 @@ function generateGrid(maxDepth, spawnBoss){
       break;
     }
   }
-  return { nodes:nodes, adj:adj, byLayer:byLayer, entry:entry.id, maxDepth:maxDepth };
+  var grid={nodes:nodes, adj:adj, byLayer:byLayer, entry:entry.id, maxDepth:maxDepth};
+  ensureGridJobTargets(grid);
+  return grid;
+}
+
+/* Reservar mínimos de contratos después de colocar el vault. Los contratos
+   duplicados comparten objetivos; los datos profundos sirven también a RECOLECTA.
+   Solo se sustituyen nodos nuevos, nunca el puerto, el vault ni el Núcleo. */
+function ensureGridJobTargets(grid){
+  var need={data:0,deep:0,ice:0,daemon:0}, nodes=grid.nodes, reserved=Object.create(null);
+  for(var i=0;i<S.jobs.length;i++){
+    var j=S.jobs[i]; if(j.done) continue;
+    if(j.type==="recoleta") need.data=Math.max(need.data,j.n);
+    if(j.type==="carrera") need.deep=Math.max(need.deep,j.n);
+    if(j.type==="rompehielas") need.ice=Math.max(need.ice,j.n);
+    if(j.type==="daemon") need.daemon=Math.max(need.daemon,j.n);
+  }
+  need.data=Math.max(need.data,need.deep);
+  function usable(n){ return n.layer>0 && n.type!=="vault" && n.type!=="nucleo" && !n.boss && !n.done && !n._done && !n._used; }
+  function reserve(count,matches,allowed,assign){
+    var found=0, k, n;
+    /* Conservar primero los objetivos procedurales que ya sirven. */
+    for(k=0;k<nodes.length && found<count;k++){
+      n=nodes[k];
+      if(usable(n) && !reserved[n.id] && matches(n)){ reserved[n.id]=true; found++; }
+    }
+    for(k=0;k<nodes.length && found<count;k++){
+      n=nodes[k];
+      if(usable(n) && !reserved[n.id] && allowed(n)){
+        n.isEcho=false; n.isVault=false;
+        assign(n); reserved[n.id]=true; found++;
+      }
+    }
+    return found;
+  }
+  function assignData(n){
+    n.type="data"; n.tier=0; n.tierName=""; n.proj=null;
+    n.name="NODO DE DATOS"; n.data=30+n.layer*25+randInt(0,40);
+  }
+  var deep=reserve(need.deep,function(n){ return n.type==="data" && n.layer>=3; },function(n){ return n.layer>=3; },assignData);
+  reserve(Math.max(0,need.data-deep),function(n){ return n.type==="data"; },function(){ return true; },assignData);
+  reserve(need.ice,function(n){ return n.type==="ice" && n.tier>=2; },function(n){ return n.layer>=2; },function(n){
+    n.type="ice"; n.tier=n.layer>=4?3:2;
+    if(S._legendaryTierBoost || S.player.heat>=70) n.tier=Math.min(3,n.tier+1);
+    n.tierName="T"+n.tier;
+    n.name=pick(["SERPIENTE","ESPEJO","CARCELERO","GRIFO","MÁGINA","FALCÓN"]); n.data=0; n.proj=null;
+  });
+  reserve(need.daemon,function(n){ return n.type==="daemon"; },function(n){ return n.layer>=2; },function(n){
+    n.type="daemon"; n.tier=3; n.tierName="T3"; n.name=pick(NOM_DAEMONES); n.data=0; n.proj=null;
+  });
+}
+
+/* JSON no conserva referencias compartidas. Reconectar las capas al catálogo
+   de nodos sin regenerar nada ni cambiar el orden usado por CORRIENTE DE DATOS. */
+function restoreImmersion(inm){
+  if(!inm) return null;
+  var byId=Object.create(null);
+  for(var i=0;i<inm.grid.nodes.length;i++) byId[inm.grid.nodes[i].id]=inm.grid.nodes[i];
+  for(var l=0;l<inm.grid.byLayer.length;l++){
+    inm.grid.byLayer[l]=inm.grid.byLayer[l].map(function(n){ return byId[n.id]; });
+  }
+  return inm;
 }
 
 function startImmersion(depth){
+  if(inImmersion || combatActive){
+    msg("ya estás en una inmersión. El grid actual se conserva.","ambar"); return;
+  }
   if(S.player.cpu<=0){
     msg("FLATLINE ▸ CPU a cero. No puedes sumergirte.","rojo");
     return;
@@ -148,9 +212,20 @@ function startImmersion(depth){
     msg("LOCKDOWN ACTIVO ▸ calor demasiado alto. espera a que baje para conectarte.","rojo");
     return;
   }
+  migrateJobQuotas();
+  /* Cada red nueva empieza sus contratos de cero; una restauración nunca pasa
+     por aquí. Evita arrastrar progreso legacy sin snapshot a otra inmersión. */
+  for(var ji=0;ji<S.jobs.length;ji++){
+    var job=S.jobs[ji];
+    if(!job.done){
+      if(jobProgressValue(job)>0) addLog("CONTRATO ▸ "+job.title+": progreso reiniciado para la nueva inmersión.");
+      job.prog=newProg(job.type);
+    }
+  }
   /* la misión final (S.nextDepth===5) es la ÚNICA inmersión con boss en capa 5 */
   var finalMission = (S.nextDepth===5 && S.history.finalUnlocked && !S.history.finalDone && !S.history.endlessActive);
   depth = depth || (S.nextDepth || 4);
+  if(S.jobs.some(function(j){ return !j.done; })) depth=Math.max(depth,4);
   if(S.nextDepth) S.nextDepth=null;
   /* legendario: +1 sin techo en SEALED NETWORK; grids normales máximo capa 5 */
   if(S && S.difficulty==="legendario"){
@@ -340,9 +415,12 @@ function tryScavenger(){
   var tier = clamp(1 + Math.floor(S.player.heat/50), 1, 3);
   addLog("⚠ RASTREADOR CORPORATIVO · huele tu trazo!");
   msg("¡RASTREADOR CORPORATIVO TE HUELE EL TRAZO! · defiéndete.","rojo");
+  var tracker={type:"ice",tier:tier,tierName:"T"+tier,name:"RASTREADOR · "+pick(["RASEDOR","RASTRERO","FALCÓN","GUÍA","PERRO"]),scavenger:true};
   startCombat({
-    node:{type:"ice",tier:tier,tierName:"T"+tier,name:"RASTREADOR · "+pick(["RASEDOR","RASTRERO","FALCÓN","GUÍA","PERRO"]),scavenger:true},
+    node:tracker,
     onWin:function(){
+      if(tracker.done) return;
+      tracker.done=true;
       recordImmersionEnemy();
       S.player.stats.ice++;
       if(!S.player.stats.iceByTier) S.player.stats.iceByTier={1:0,2:0,3:0};
@@ -400,6 +478,9 @@ function collectData(n){
   if(inImmersion.dataUsed >= ramCap()){
     msg("RAM llena. superficializa para vender antes de recoger más.","ambar"); return;
   }
+  if(n.layer<3 && ramCap()-inImmersion.dataUsed<=pendingJobData(true)){
+    msg("RAM reservada para los datos profundos de CARRERA. Recoge primero sus objetivos en capas ≥3.","ambar"); return;
+  }
   n._done = true; n.done = true;
   var val = n.data;
   /* penalización de calor: datos valen menos con calor alto */
@@ -415,6 +496,7 @@ function collectData(n){
 
 function onNodeDefeated(ctx){
   var n = ctx.node;
+  if(!n || n.done || n._done) return;
   if(n.type==="ice" || n.type==="daemon" || n.type==="nucleo") recordImmersionEnemy();
   n.done = true;
   if(n.type==="ice"){
@@ -1036,7 +1118,7 @@ function renderGridHud(){
   var immersed=!!inImmersion;
   /* si gridwrap ya existe, solo actualizar datos (sin reconstruir canvas) */
   var existingWrap=document.getElementById("gridwrap");
-  if(existingWrap && immersed){
+  if(existingWrap && immersed && existingWrap.querySelector('[data-action="doSuperficie"]')){
     updateGridHud();
     return;
   }

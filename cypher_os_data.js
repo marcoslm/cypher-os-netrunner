@@ -275,11 +275,11 @@ var GRID_EVENTS = [
      "la red te regala un paquete huérfano. nadie reclamará su pérdida."],
    prob:0.10,
    effect:function(){
-     if(inImmersion && inImmersion.dataUsed < ramCap()){
+     if(inImmersion && ramCap()-inImmersion.dataUsed > pendingJobData(false)){
        inImmersion.data.push({value:randInt(20,50)});
        inImmersion.dataUsed++;
        S.player.stats.data++;
-     } else { msg("RAM llena. la señal se disipó.","ambar"); }
+     } else { msg("RAM llena o reservada para tus contratos. la señal se disipó.","ambar"); }
    }},
   {id:"interferencia", name:"INTERFERENCIA",
    texts:[

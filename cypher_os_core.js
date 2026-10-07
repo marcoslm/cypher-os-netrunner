@@ -39,7 +39,7 @@ function nuevoEstado() {
     jobs:[], offers:[], intel:[], achievements:[], mensajes:[],
     history:{finalUnlocked:false, finalDone:false},
     log:[], clock:(23*60+47), nextDepth:null, snd:true, amb:false, mus:true, best:{},
-    difficulty:"normal"
+    difficulty:"normal", _jobQuotaVersion:1
   };
 }
 
@@ -100,14 +100,22 @@ function nextBanner(){
     else el.classList.remove("show");
   },3400);
 }
+var _invalidSaveRecovered=false;
 function load(){
+  var raw=null;
   try {
-    var raw = localStorage.getItem("cypher_os_save_v9");
+    raw = localStorage.getItem("cypher_os_save_v9");
     if(!raw) return null;
     var o = JSON.parse(raw);
-    if(!o || !o.player) return null;
+    if(!o || !o.player || (typeof validImportState==="function" && !validImportState(o))) throw new Error("guardado inválido");
     return o;
-  } catch(e){ return null; }
+  } catch(e){
+    /* No perder el archivo corrupto al iniciar un registro limpio. */
+    if(raw){
+      try{ localStorage.setItem("cypher_os_save_recovery_v9",raw); _invalidSaveRecovered=true; }catch(storageErr){}
+    }
+    return null;
+  }
 }
 
 function updateBest(){
@@ -346,6 +354,105 @@ function checkAchievements(){
 function intelTitle(id){
   for(var i=0;i<INTEL.length;i++) if(INTEL[i].id===id) return INTEL[i].t;
   return id;
+}
+
+/* ---- cuotas de una sola inmersión ----
+   El nivel mejora el pago, no el tamaño finito del grid ni la RAM disponible. */
+function jobQuotaLimit(type){
+  switch(type){
+    case "recoleta": return Math.min(6,ramCap());
+    case "carrera": return Math.min(4,ramCap());
+    case "rompehielas": return 4;
+    case "daemon": return 3;
+    case "vault": return 1;
+    default: return 0;
+  }
+}
+function newProg(type){
+  switch(type){
+    case "recoleta": return {gathered:0};
+    case "carrera": return {deepGathered:0};
+    case "rompehielas": return {iceT2:0};
+    case "vault": return {vaulted:false};
+    case "daemon": return {daemons:0};
+    default: return {};
+  }
+}
+function jobProgressValue(job){
+  var g=job.prog;
+  switch(job.type){
+    case "recoleta": return g.gathered;
+    case "carrera": return g.deepGathered;
+    case "rompehielas": return g.iceT2;
+    case "daemon": return g.daemons;
+    case "vault": return g.vaulted ? 1 : 0;
+    default: return 0;
+  }
+}
+function jobObjectiveDesc(type,n){
+  switch(type){
+    case "recoleta": return "Recoge "+n+" nodos de datos y vuelve sano en una inmersión.";
+    case "carrera": return "Recoge "+n+" datos en capas ≥3 y superficializa con calor <45 en una inmersión.";
+    case "rompehielas": return "Destruye "+n+" ICE T2/T3 en una inmersión. Los daemons no cuentan.";
+    case "daemon": return "Elimina "+n+" daemon(s) en una inmersión.";
+    default: return "";
+  }
+}
+/* Oportunidades restantes, nunca victorias pasadas ni emboscadas aleatorias. */
+function jobTargetCount(type,inm){
+  inm=inm || inImmersion;
+  if(!inm || !inm.grid) return 0;
+  var count=0, nodes=inm.grid.nodes;
+  for(var i=0;i<nodes.length;i++){
+    var n=nodes[i];
+    if(n.done || n._done) continue;
+    if(type==="recoleta" && n.type==="data") count++;
+    if(type==="carrera" && n.type==="data" && n.layer>=3) count++;
+    if(type==="rompehielas" && n.type==="ice" && n.tier>=2) count++;
+    if(type==="daemon" && n.type==="daemon") count++;
+    if(type==="vault" && n.type==="vault") count++;
+  }
+  if(type==="recoleta" || type==="carrera") count=Math.min(count,Math.max(0,ramCap()-inm.dataUsed));
+  return count;
+}
+/* Un mismo dato profundo avanza todos los contratos de datos: usar máximos,
+   no sumar cuotas. Las señales de evento no son nodos de contrato. */
+function pendingJobData(deepOnly){
+  var needed=0;
+  for(var i=0;i<S.jobs.length;i++){
+    var j=S.jobs[i];
+    if(j.done || (j.type!=="carrera" && (deepOnly || j.type!=="recoleta"))) continue;
+    needed=Math.max(needed,Math.max(0,j.n-jobProgressValue(j)));
+  }
+  return needed;
+}
+/* Rectificar una sola vez cuotas de versiones anteriores sin regenerar la red
+   ni borrar victorias. Una asignación sin ningún objetivo posible se retira
+   como fracaso administrativo: sin calor ni recompensa. */
+function migrateJobQuotas(){
+  if(S._jobQuotaVersion===1) return;
+  var i, j, limit, next;
+  for(i=0;i<S.offers.length;i++){
+    j=S.offers[i]; limit=jobQuotaLimit(j.type);
+    if(j.type!=="vault" && limit>0 && j.n>limit){
+      j.n=limit; j.desc=jobObjectiveDesc(j.type,j.n);
+    }
+  }
+  for(i=0;i<S.jobs.length;i++){
+    j=S.jobs[i]; limit=jobQuotaLimit(j.type);
+    if(j.done || j.type==="vault" || !limit) continue;
+    next=Math.min(j.n,limit);
+    if(inImmersion) next=Math.min(next,jobProgressValue(j)+jobTargetCount(j.type,inImmersion));
+    if(next<1){
+      j.done=true; j.failed=true;
+      S.player.stats.jobsFailed++;
+      addLog("CONTRATO RECTIFICADO ▸ "+j.title+": sin objetivos disponibles. Retirado sin calor ni recompensa.");
+    } else if(next!==j.n){
+      j.n=next; j.desc=jobObjectiveDesc(j.type,next);
+      addLog("CONTRATO RECTIFICADO ▸ "+j.title+": objetivo ajustado a "+next+". Progreso conservado.");
+    }
+  }
+  S._jobQuotaVersion=1;
 }
 
 /* ---- resolución de contratos ---- */

@@ -555,6 +555,12 @@ function pickWhy(contact,type){
   var list=(c&&c[t])||null;
   return list?pick(list):"";
 }
+function jobOfferBlocked(o){
+  if(!inImmersion) return "";
+  if(o.type==="vault") return "acepta el contrato de vault en la calle, antes de generar el siguiente grid.";
+  if(o.n>jobTargetCount(o.type,inImmersion)) return "no quedan suficientes objetivos o RAM para este contrato en el grid actual. Acéptalo en la calle para la siguiente inmersión.";
+  return "";
+}
 function offerHtml(o,c){
   var taken=S.jobs.some(function(j){ return j.id===o.id && !j.done; });
   var resolved=null;
@@ -563,7 +569,7 @@ function offerHtml(o,c){
   var action;
   if(taken) action='<span class="verde">✓</span>';
   else if(resolved) action=resolved.failed?'<span class="rojo">✗</span>':'<span class="verde">✓</span>';
-  else if(inImmersion && o.type==="vault") action='<span class="ambar text-xs">ACEPTAR EN LA CALLE</span>';
+  else if(jobOfferBlocked(o)) action='<span class="ambar text-xs">'+(o.type==="vault"?"ACEPTAR EN LA CALLE":"SIN CAPACIDAD EN ESTE GRID")+'</span>';
   else action=' <button class="btn small" data-action="acceptJob" data-id="'+o.id+'" data-contact="'+c.id+'">ACEPTAR</button>';
   return '<div class="offer"><div class="desc">'+o.title+'<div class="task-line text-xs">'+o.desc+'</div>'+
     (o.why?'<div class="offer-why">'+o.why+'</div>':'')+'</div>'+
@@ -574,12 +580,11 @@ ACTIONS.acceptJob = function(btn){
   if(!livingInteraction()) return;
   var id=btn.getAttribute("data-id"), contact=btn.getAttribute("data-contact");
   var o=jobById(id); if(!o){ renderContactos(); return; }
-  if(inImmersion && o.type==="vault"){
-    msg("acepta el contrato de vault en la calle, antes de generar el siguiente grid.","ambar"); return;
-  }
+  var blocked=jobOfferBlocked(o);
+  if(blocked){ msg(blocked,"ambar"); return; }
   var activeCount = S.jobs.filter(function(j){ return !j.done; }).length;
   if(activeCount>=3){ msg("máximo 3 contratos activos. superficializa para limpiar.","ambar"); return; }
-  if(S.jobs.some(function(j){ return j.id===id && !j.done; })){ msg(" ya estás en ese trabajo.","ambar"); return; }
+  if(S.jobs.some(function(j){ return j.id===id; })){ msg("ese contrato ya fue aceptado o resuelto.","ambar"); return; }
   if(o.type==="vault" && S.jobs.some(function(j){ return j.type==="vault" && !j.done; })){
     msg("solo puedes llevar UN contrato de vault activo a la vez.","ambar"); return;
   }
@@ -603,16 +608,6 @@ ACTIONS.refreshOffers = function(){
 };
 
 function jobById(id){ for(var i=0;i<S.offers.length;i++) if(S.offers[i].id===id) return S.offers[i]; return null; }
-function newProg(type){
-  switch(type){
-    case "recoleta": return {gathered:0};
-    case "carrera": return {deepGathered:0};
-    case "rompehielas": return {iceT2:0};
-    case "vault": return {vaulted:false};
-    case "daemon": return {daemons:0};
-    default: return {};
-  }
-}
 function generateOffers(){
   S.offers=[];
   CONTACTOS_DEF.forEach(function(c){
@@ -628,16 +623,16 @@ function generateOffers(){
 function buildOffer(contact,type){
   var lvl=S.player.level, base=60+lvl*35;
   if(type==="datos"||type==="recoleta"){
-    var n=2+Math.floor(lvl/2)+randInt(0,2);
-    return mkOffer(contact,"RECOLECTA EN EL GRID","Recoge "+n+" nodos de datos y vuelve sano.","recoleta",n,Math.round(base*1.0),12,"low");
+    var n=Math.min(jobQuotaLimit("recoleta"),2+Math.floor(lvl/2)+randInt(0,2));
+    return mkOffer(contact,"RECOLECTA EN EL GRID",jobObjectiveDesc("recoleta",n),"recoleta",n,Math.round(base*1.0),12,"low");
   }
   if(type==="carrera"){
-    var nn=3+Math.floor(lvl/2);
-    return mkOffer(contact,"CARRERA DE TRAZADO","Recoge "+nn+" datos en capas ≥3 y superficializa con calor bajo.","carrera",nn,Math.round(base*1.4),20,"med");
+    var nn=Math.min(jobQuotaLimit("carrera"),3+Math.floor(lvl/2));
+    return mkOffer(contact,"CARRERA DE TRAZADO",jobObjectiveDesc("carrera",nn),"carrera",nn,Math.round(base*1.4),20,"med");
   }
   if(type==="rompehielas"){
-    var nr=2+Math.floor(lvl/3);
-    return mkOffer(contact,"ROMPEHIELOS","Destruye "+nr+" ICE de tier 2 o superior.","rompehielas",nr,Math.round(base*1.6),22,(lvl>=3?"high":"med"));
+    var nr=Math.min(jobQuotaLimit("rompehielas"),2+Math.floor(lvl/3));
+    return mkOffer(contact,"ROMPEHIELOS",jobObjectiveDesc("rompehielas",nr),"rompehielas",nr,Math.round(base*1.6),22,(lvl>=3?"high":"med"));
   }
   if(type==="vault"){
     var td=Math.min(4,2+Math.floor(lvl/2));
@@ -647,12 +642,12 @@ function buildOffer(contact,type){
     return mkOffer(contact,"EL VAULT DE "+corp,"Llega a la capa "+td+" y recupera el proyecto "+proj+".","vault",1,Math.round(base*2.2),30,"high",{project:proj,targetDepth:td});
   }
   if(type==="daemon"){
-    var nd=1+Math.floor(lvl/3);
-    return mkOffer(contact,"CAZA DE DEMONIOS","Elimina "+nd+" daemon(s) en las profundidades.","daemon",nd,Math.round(base*1.9),26,(lvl>=4?"ext":"high"));
+    var nd=Math.min(jobQuotaLimit("daemon"),1+Math.floor(lvl/3));
+    return mkOffer(contact,"CAZA DE DEMONIOS",jobObjectiveDesc("daemon",nd),"daemon",nd,Math.round(base*1.9),26,(lvl>=4?"ext":"high"));
   }
   if(type==="ice"){
-    var ni=3+Math.floor(lvl/2);
-    return mkOffer(contact,"PURGA DE ICE","Destruye "+ni+" ICE de tier 2 o superior.","rompehielas",ni,Math.round(base*1.2),16,"low");
+    var ni=Math.min(jobQuotaLimit("rompehielas"),3+Math.floor(lvl/2));
+    return mkOffer(contact,"PURGA DE ICE",jobObjectiveDesc("rompehielas",ni),"rompehielas",ni,Math.round(base*1.2),16,"low");
   }
   return null;
 }
@@ -698,7 +693,7 @@ function progText(j){
   switch(j.type){
     case "recoleta": return "recogidos: "+j.prog.gathered+"/"+j.n;
     case "carrera": return "datos en cap≥3: "+j.prog.deepGathered+"/"+j.n+" · (calor <45 al volver)";
-    case "rompehielas": return "ICE t2+ destruidos: "+j.prog.iceT2+"/"+j.n;
+    case "rompehielas": return "ICE T2/T3 destruidos: "+j.prog.iceT2+"/"+j.n+" · los daemons no cuentan";
     case "vault": return j.prog.vaulted?"proyecto recuperado ✓":"llega a la capa "+j.targetDepth+" y recupera "+j.project;
     case "daemon": return "daemons: "+j.prog.daemons+"/"+j.n;
     default: return "";
@@ -1503,6 +1498,90 @@ if(_btnExport) _btnExport.addEventListener("click", function(){
    guardados antiguos, pero no corrige tipos incompatibles ni un player escalar. */
 function importObject(v){ return !!v && typeof v==="object" && !Array.isArray(v); }
 function importNumber(v){ return typeof v==="number" && isFinite(v); }
+function importNatural(v){ return importNumber(v) && v>=0 && Math.floor(v)===v; }
+function validImportJob(j,active){
+  var types=["recoleta","carrera","rompehielas","vault","daemon"];
+  if(!importObject(j) || typeof j.id!=="string" || !j.id || typeof j.title!=="string" ||
+     typeof j.desc!=="string" || types.indexOf(j.type)<0 || typeof j.contact!=="string" ||
+     !importNatural(j.n) || j.n<1 || !importNumber(j.reward) || j.reward<0 ||
+     !importNumber(j.xp) || j.xp<0) return false;
+  if(j.type==="vault" && (!importNatural(j.targetDepth) || j.targetDepth<2 || j.targetDepth>4 || typeof j.project!=="string")) return false;
+  if(!active) return true;
+  if(!importObject(j.prog) || typeof j.done!=="boolean" || (j.failed!=null && typeof j.failed!=="boolean")) return false;
+  switch(j.type){
+    case "recoleta": return importNatural(j.prog.gathered);
+    case "carrera": return importNatural(j.prog.deepGathered);
+    case "rompehielas": return importNatural(j.prog.iceT2);
+    case "daemon": return importNatural(j.prog.daemons);
+    case "vault": return typeof j.prog.vaulted==="boolean";
+    default: return false;
+  }
+}
+/* El catálogo nodes es canónico; byLayer conserva pertenencia y orden, no una
+   segunda copia mutable de recompensas. Rechazar incoherencias antes de importar. */
+function validImportImmersion(inm,ram){
+  if(!importObject(inm) || !importObject(inm.grid)) return false;
+  var g=inm.grid, byId=Object.create(null), layered=Object.create(null), i, l, n, key;
+  if(!Array.isArray(g.nodes) || !g.nodes.length || !importObject(g.adj) || !Array.isArray(g.byLayer) ||
+     !importNatural(g.maxDepth) || g.maxDepth<1 || g.byLayer.length!==g.maxDepth+1 ||
+     !importNatural(inm.depth) || inm.depth!==g.maxDepth ||
+     typeof g.entry!=="string" || typeof inm.current!=="string" ||
+     !importNatural(inm.dataUsed) || !Array.isArray(inm.data) || inm.dataUsed!==inm.data.length || inm.dataUsed>ram ||
+     !importNatural(inm.moves) || !importNatural(inm.maxDepthReached) || inm.maxDepthReached>inm.depth ||
+     (inm.combatOccurred!=null && typeof inm.combatOccurred!=="boolean") ||
+     (inm.enemiesDefeated!=null && !importNatural(inm.enemiesDefeated))) return false;
+  var flags=["done","_done","_used","_revealed","boss","isEcho","isVault"];
+  for(i=0;i<g.nodes.length;i++){
+    n=g.nodes[i];
+    if(!importObject(n) || typeof n.id!=="string" || !n.id || byId[n.id] ||
+       !importNumber(n.x) || !importNumber(n.y) || !importNatural(n.layer) || n.layer>g.maxDepth ||
+       typeof n.type!=="string" || !Object.prototype.hasOwnProperty.call(SIM,n.type) ||
+       (n.data!=null && (!importNumber(n.data) || n.data<0)) ||
+       (n.tier!=null && (!importNatural(n.tier) || n.tier>4)) ||
+       (n._hiddenMoves!=null && !importNatural(n._hiddenMoves))) return false;
+    if(n.type==="data" && !importNumber(n.data)) return false;
+    if(n.type==="ice" && [1,2,3].indexOf(n.tier)<0) return false;
+    if((n.type==="daemon" || n.type==="vault") && n.tier!==3) return false;
+    if(n.type==="nucleo" && n.tier!==4) return false;
+    for(var f=0;f<flags.length;f++) if(n[flags[f]]!=null && typeof n[flags[f]]!=="boolean") return false;
+    if((n.name!=null && typeof n.name!=="string") || (n.tierName!=null && typeof n.tierName!=="string") ||
+       (n.proj!=null && typeof n.proj!=="string")) return false;
+    byId[n.id]=n;
+  }
+  if(!byId[g.entry] || !byId[inm.current] || inm.maxDepthReached<byId[inm.current].layer) return false;
+  for(l=0;l<g.byLayer.length;l++){
+    if(!Array.isArray(g.byLayer[l]) || !g.byLayer[l].length) return false;
+    for(i=0;i<g.byLayer[l].length;i++){
+      n=g.byLayer[l][i];
+      if(!importObject(n) || typeof n.id!=="string" || !byId[n.id] || layered[n.id] || byId[n.id].layer!==l || n.layer!==l) return false;
+      layered[n.id]=true;
+    }
+  }
+  for(i=0;i<g.nodes.length;i++){
+    n=g.nodes[i];
+    if(!layered[n.id] || !Array.isArray(g.adj[n.id])) return false;
+  }
+  for(key in g.adj){
+    if(!Object.prototype.hasOwnProperty.call(g.adj,key)) continue;
+    if(!byId[key] || !Array.isArray(g.adj[key])) return false;
+    var seen=Object.create(null), links=g.adj[key];
+    for(i=0;i<links.length;i++){
+      var id=links[i];
+      if(typeof id!=="string" || !byId[id] || id===key || seen[id] || g.adj[id].indexOf(key)<0) return false;
+      seen[id]=true;
+    }
+  }
+  var reached=Object.create(null), queue=[g.entry]; reached[g.entry]=true;
+  for(var q=0;q<queue.length;q++){
+    var neighbors=g.adj[queue[q]];
+    for(i=0;i<neighbors.length;i++) if(!reached[neighbors[i]]){ reached[neighbors[i]]=true; queue.push(neighbors[i]); }
+  }
+  if(queue.length!==g.nodes.length) return false;
+  for(i=0;i<inm.data.length;i++){
+    n=inm.data[i]; if(!importObject(n) || !importNumber(n.value) || n.value<0) return false;
+  }
+  return true;
+}
 /* Validar los campos conocidos desde su esquema de tipos, no desde una lista
    parcial de contadores. Los ausentes/null siguen admitiendo migración legacy. */
 function importTypedFields(value, defaults){
@@ -1549,20 +1628,22 @@ function validImportState(o){
     key=lists[i]; if(o[key]!=null && !Array.isArray(o[key])) return false;
   }
   if(o.jobs){
+    var activeJobs=0, activeVaults=0, ids=Object.create(null);
     for(i=0;i<o.jobs.length;i++){
       j=o.jobs[i];
-      if(!importObject(j) || typeof j.id!=="string" || typeof j.title!=="string" ||
-         typeof j.desc!=="string" || typeof j.type!=="string" ||
-         typeof j.contact!=="string" || !importObject(j.prog) || typeof j.done!=="boolean") return false;
+      if(!validImportJob(j,true) || ids[j.id]) return false;
+      ids[j.id]=true;
+      if(!j.done){
+        activeJobs++;
+        if(j.type==="vault") activeVaults++;
+        var caps={recoleta:6,carrera:4,rompehielas:4,daemon:3,vault:1};
+        if(o._jobQuotaVersion===1 && j.n>caps[j.type]) return false;
+      }
     }
+    if(activeJobs>3 || activeVaults>1) return false;
   }
   if(o.offers){
-    for(i=0;i<o.offers.length;i++){
-      j=o.offers[i];
-      if(!importObject(j) || typeof j.id!=="string" || typeof j.title!=="string" ||
-         typeof j.desc!=="string" || typeof j.contact!=="string" ||
-         typeof j.type!=="string" || !importNumber(j.reward)) return false;
-    }
+    for(i=0;i<o.offers.length;i++) if(!validImportJob(o.offers[i],false)) return false;
   }
   if(o.log){
     for(i=0;i<o.log.length;i++){
@@ -1601,29 +1682,9 @@ function validImportState(o){
   }
   if(o.clock!=null && !importNumber(o.clock)) return false;
   if(o.difficulty!=null && ["normal","hardcore","legendario"].indexOf(o.difficulty)<0) return false;
-  if(o._inImmersion!=null){
-    var inm=o._inImmersion;
-    if(!importObject(inm) || !importObject(inm.grid) || !Array.isArray(inm.grid.nodes) ||
-       !importObject(inm.grid.adj) || !Array.isArray(inm.grid.byLayer) ||
-       typeof inm.grid.entry!=="string" || !importNumber(inm.grid.maxDepth) ||
-       typeof inm.current!=="string" || !importNumber(inm.depth) ||
-       !importNumber(inm.dataUsed) || !Array.isArray(inm.data) ||
-       !importNumber(inm.maxDepthReached) || !importNumber(inm.moves)) return false;
-    if(!inm.grid.nodes.some(function(n){ return n && n.id===inm.current; })) return false;
-    for(key in inm.grid.adj){
-      if(Object.prototype.hasOwnProperty.call(inm.grid.adj,key) &&
-         (!Array.isArray(inm.grid.adj[key]) || inm.grid.adj[key].some(function(v){ return typeof v!=="string"; }))) return false;
-    }
-    for(i=0;i<inm.grid.byLayer.length;i++) if(!Array.isArray(inm.grid.byLayer[i])) return false;
-    for(i=0;i<inm.grid.nodes.length;i++){
-      j=inm.grid.nodes[i];
-      if(!importObject(j) || typeof j.id!=="string" || !importNumber(j.x) ||
-         !importNumber(j.y) || !importNumber(j.layer) || typeof j.type!=="string") return false;
-    }
-    for(i=0;i<inm.data.length;i++){
-      j=inm.data[i]; if(!importObject(j) || !importNumber(j.value)) return false;
-    }
-  }
+  if(o._jobQuotaVersion!=null && (!importNatural(o._jobQuotaVersion) || o._jobQuotaVersion>1)) return false;
+  if(!importNatural(p.ramUp)) return false;
+  if(o._inImmersion!=null && !validImportImmersion(o._inImmersion,6+p.ramUp*4)) return false;
   if(o._reconnectCheckpoint!=null){
     if(!importObject(o._reconnectCheckpoint) || o._reconnectCheckpoint._reconnectCheckpoint!=null ||
        !validImportState(o._reconnectCheckpoint)) return false;
@@ -1643,10 +1704,11 @@ function importGameState(imported){
   try{
     /* Migración sobre el candidato aislado: ante cualquier excepción, volver al
        estado anterior sin guardar progreso local en el archivo importado. */
-    S=imported;
+    S=JSON.parse(JSON.stringify(imported));
     ensureStateIntegrity();
     clearSessionRuntime();
-    inImmersion=S.player.cpu<=0 ? null : (S._inImmersion || null);
+    inImmersion=S.player.cpu<=0 ? null : restoreImmersion(S._inImmersion || null);
+    if(S.player.cpu>0) migrateJobQuotas();
     if(S.player.cpu<=0){
       clearInterval(loopId);
       viewChanged=true; showView("inicio");
@@ -1846,7 +1908,10 @@ function afterBoot(){
   }
   ensureStateIntegrity();
   if(saved) addLog("partida restaurada desde el cable.");
-  else { generateOffers(); addLog("registro nuevo · corvo-7 en la calle."); }
+  else {
+    generateOffers(); addLog("registro nuevo · corvo-7 en la calle.");
+    if(_invalidSaveRecovered) addLog("GUARDADO ▸ archivo dañado rechazado. Copia original conservada en el resguardo local cypher_os_save_recovery_v9.");
+  }
   /* la dificultad elegida en el intro solo afecta a partidas VIVAS: cambiar
      el radio no puede resucitar un guardado HARDCORE tras una recarga. */
   if(_pendingDifficulty && S.player.cpu>0){
@@ -1865,9 +1930,10 @@ function afterBoot(){
     return;
   }
   if(S._inImmersion && S._inImmersion.grid && S._inImmersion.grid.nodes){
-    inImmersion = S._inImmersion;
+    inImmersion = restoreImmersion(S._inImmersion);
     addLog("DIP ▸ inmersión restaurada (capa "+inImmersion.depth+").");
   }
+  migrateJobQuotas();
   save(); updateBest();
   startClock();
   checkUnlocks();

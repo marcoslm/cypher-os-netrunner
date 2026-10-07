@@ -32,7 +32,7 @@ function clearMemoriaTimers(battle){
 }
 
 function startCombat(ctx){
-  if(combatActive) return;
+  if(combatActive || !ctx || !ctx.node || ctx.node.done || ctx.node._done) return;
   combatActive=true; resumeAudio();
   if(inImmersion) inImmersion.combatOccurred=true;
   var n=ctx.node, tier=n.tier||1, def=COMBAT_TYPES[tier]||COMBAT_TYPES[1];
@@ -655,7 +655,7 @@ function clearVaultTimers(vp){
 }
 
 function startVaultPuzzle(n){
-  if(combatActive) return;
+  if(combatActive || !n || n.done || n._done) return;
   clearVaultTimers(VAULT_PUZZLE);
   combatActive=true;
   if(inImmersion) inImmersion.combatOccurred=true;

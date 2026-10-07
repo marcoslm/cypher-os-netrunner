@@ -111,12 +111,13 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend">'+
 '<div class="legend-row"><span class="lg-key">◆ RECOLECTA</span><span class="lg-desc">Coge N nodos de datos (◆) y vuelve sano.</span></div>'+
 '<div class="legend-row"><span class="lg-key">◆ CARRERA</span><span class="lg-desc">Coge N datos en <b>capas ≥3</b> y superficializa con <b>calor &lt;45</b>.</span></div>'+
-'<div class="legend-row"><span class="lg-key">▣ PURGA / ROMPEHIELOS</span><span class="lg-desc">Destruye N defensas ICE de <b>tier 2 o superior</b>.</span></div>'+
+'<div class="legend-row"><span class="lg-key">▣ PURGA / ROMPEHIELOS</span><span class="lg-desc">Destruye N ICE <b>T2/T3</b>. Los daemons no cuentan; los rastreadores T2/T3 sí.</span></div>'+
 '<div class="legend-row"><span class="lg-key">Ω CAZA DE DEMONIOS</span><span class="lg-desc">Destruye N daemons (Ω).</span></div>'+
 '<div class="legend-row"><span class="lg-key">⬢ VAULT</span><span class="lg-desc">Llega a la capa marcada y recupera el VAULT (⬢). El VAULT solo aparece en el grid si aceptas ese contrato, y solo puedes llevar <b>uno a la vez</b>.</span></div>'+
 '</div>'+
 '<p class="help-p">El progreso de cada trabajo lo ves en TRABAJOS (barra "X/N"). Los trabajos se resuelven todos a la vez cuando superficializas: los cumplidos se <b>pagan</b> y sube la reputación (mejora los pagos futuros); los no cumplidos quedan como <b>FRACASADO</b>.</p>'+
-'<p class="help-p">Puedes tener hasta <b>3 trabajos activos</b>. Refresca las ofertas en CONTACTOS para nuevos contratos. KAIROS se desbloquea con nivel 4 y reputación con NIGHT-0X ≥ 2.</p>'+
+'<p class="help-p">Puedes tener hasta <b>3 trabajos activos</b>. Acepta antes del DIP: esa red contendrá suficientes objetivos para todos. Las cuotas máximas por inmersión son <b>6 datos, 4 datos profundos, 4 ICE o 3 daemons</b>, respetando la RAM. Dentro del grid solo puedes aceptar trabajos si aún quedan objetivos y RAM; VAULT siempre se acepta en la calle.</p>'+
+'<p class="help-p">La RAM necesaria para los contratos queda reservada: los fragmentos de SEÑAL no ocupan esos slots y debes recoger primero los datos profundos de CARRERA si los superficiales los agotarían. Refresca las ofertas en CONTACTOS para nuevos contratos. KAIROS se desbloquea con nivel 4 y reputación con NIGHT-0X ≥ 2.</p>'+
 '</div>'+
 
 /* ⑧ CALOR / RAM / CPU */

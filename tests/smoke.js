@@ -295,11 +295,12 @@ async function finish(){
   game.dispose();
   const harness = await require("./harness.test").run({summary:true});
   const regressions = await require("./regressions").run({summary:true});
-  const totalFails = fails + harness.fails + regressions.fails;
+  const jobs = await require("./jobs-persistence").run({summary:true});
+  const totalFails = fails + harness.fails + regressions.fails + jobs.fails;
   console.log("\n================ RESUMEN ================");
   console.log("humo: " + passes + " correctas · arnés: " + harness.passes + "/" + harness.total +
-    " · regresiones: " + regressions.passes + "/" + regressions.total);
-  console.log("correctas: " + (passes + harness.passes + regressions.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
+    " · regresiones: " + regressions.passes + "/" + regressions.total + " · trabajos/persistencia: " + jobs.passes + "/" + jobs.total);
+  console.log("correctas: " + (passes + harness.passes + regressions.passes + jobs.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
   process.exitCode = totalFails ? 1 : 0;
 }
 finish().catch(function(err){
