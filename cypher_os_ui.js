@@ -1717,6 +1717,7 @@ function importGameState(imported){
       var flat=document.getElementById("flatline"); if(flat) flat.classList.remove("show");
       viewChanged=true; showView(inImmersion ? "red" : "inicio"); startClock();
     }
+    checkAchievements();
     syncGameInputLock(); save(true);
     msg("partida importada. corvo-7 de vuelta en "+(inImmersion?"el grid":"la calle")+".","verde");
     sound.success();
@@ -1934,6 +1935,7 @@ function afterBoot(){
     addLog("DIP ▸ inmersión restaurada (capa "+inImmersion.depth+").");
   }
   migrateJobQuotas();
+  checkAchievements();
   save(); updateBest();
   startClock();
   checkUnlocks();

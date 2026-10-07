@@ -397,6 +397,7 @@ var ACHIEVEMENTS = [
   {id:"skillMaster", name:"MAESTRO DE SKILLS", icon:"🎯", desc:"Tener HACK+SIGILO+NERVIOS >= 10.", check:function(){ return (S.player.hack+S.player.sigilo+S.player.nervios)>=10; }},
   {id:"lucky", name:"SUERTUDO", icon:"🍀", desc:"Recoger 5 datos en una sola inmersión sin combate.", check:function(){ return (S.player.stats.luckyRun||0)>=5; }},
   {id:"wealthy", name:"IMPERIO", icon:"🏦", desc:"Acumular 20000₡ en total.", check:function(){ return S.player.stats.credits>=20000; }},
+  {id:"allFixers", name:"TODOS LOS FIXERS RESPONDEN", icon:"🤝", desc:"Alcanza reputación 5/5 con todos los contactos: Mama Wire, Doctor Sudario, Night-0X y Kairos.", check:function(){ return CONTACTOS_DEF.every(function(c){ return (S.player.rep[c.id]||0)>=5; }); }},
   /* logros del buzón (mensajería · CONTRACTS §19) */
   {id:"mailCartografo", name:"CARTÓGRAFO DEL BUZÓN", icon:"📮", desc:"Leer todas las cartas recibidas de un mismo remitente (3 o más).", check:function(){ return buzonRemitenteCompleto(); }},
   {id:"mailMadrugada", name:"CORREO DE LAS 4", icon:"🌙", desc:"Abrir una carta en plena madrugada (22:00–03:00).", check:function(){ return (S.player.stats.msgsAtNight||0)>=1; }},

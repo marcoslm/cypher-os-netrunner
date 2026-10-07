@@ -24,6 +24,41 @@ async function run(options = {}){
   }
   console.log("\nREGRESIONES · estado, grid, combate e interfaz…");
 
+  await check("el logro de fixers exige los cuatro indicadores llenos, incluido Kairos", () => {
+    const g = game();
+    g.run('S=nuevoEstado();ensureStateIntegrity();');
+    for(const id of g.run('CONTACTOS_DEF.map(function(c){return c.id;})')){
+      g.run('S.player.rep={mamaWire:5,doctorSudario:5,night0X:5,kairos:5};');
+      g.run('S.player.rep['+JSON.stringify(id)+']=4;checkAchievements();');
+      assert.equal(g.run('S.achievements.indexOf("allFixers")'), -1);
+    }
+    g.run('S=nuevoEstado();ensureStateIntegrity();checkAchievements();');
+    assert.equal(g.run('S.achievements.indexOf("allFixers")'), -1);
+  });
+
+  await check("el último trabajo llena la reputación, celebra una sola vez y guarda el logro", () => {
+    const g = game();
+    g.run('S=nuevoEstado();ensureStateIntegrity();S.player.rep={mamaWire:5,doctorSudario:5,night0X:5,kairos:4};S.jobs=[{id:"ultimo",type:"recoleta",n:1,prog:{gathered:1},reward:100,xp:10,contact:"kairos",title:"Último favor",done:false,failed:false}];inImmersion={data:[],moves:1,maxDepthReached:1,combatOccurred:false};doSuperficializar();checkAchievements();completeJob(S.jobs[0]);');
+    assert.equal(g.saved().player.rep.kairos, 5);
+    assert.ok(g.saved().achievements.includes('allFixers'));
+    assert.equal(g.run('S.achievements.filter(function(id){return id==="allFixers";}).length'), 1);
+    assert.equal(g.run('S.log.filter(function(l){return l.text.indexOf("★ LOGRO ▸ 🤝 TODOS LOS FIXERS RESPONDEN")===0;}).length'), 1);
+    g.run('S=nuevoEstado();ensureStateIntegrity();checkAchievements();');
+    assert.equal(g.run('S.achievements.indexOf("allFixers")'), -1);
+  });
+
+  await check("guardados e importaciones previos reconocen la reputación completa sin repetir el logro", () => {
+    const g = game();
+    g.run('S=nuevoEstado();ensureStateIntegrity();S.player.rep={mamaWire:5,doctorSudario:5,night0X:5,kairos:5};save();afterBoot();');
+    assert.ok(g.saved().achievements.includes('allFixers'));
+    g.run('afterBoot();');
+    assert.equal(g.run('S.log.filter(function(l){return l.text.indexOf("★ LOGRO ▸ 🤝 TODOS LOS FIXERS RESPONDEN")===0;}).length'), 1);
+    const legacy = g.saved();
+    legacy.achievements = [];
+    assert.equal(g.sb.importGameState(legacy), true);
+    assert.ok(g.saved().achievements.includes('allFixers'));
+  });
+
   await check("una CARRERA válida cobra independientemente del orden de otros fracasos", () => {
     for(const reverse of [false, true]){
       const g = game();

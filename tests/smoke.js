@@ -234,8 +234,8 @@ ok(T.emisorLine({ emisor:"valido", from:"X" }).indexOf("sin respuesta") >= 0 &&
    T.emisorLine({ emisor:"no-valido", from:"X" }).indexOf("ruta desechable") >= 0,
    "el pie de la carta explica la no-respuesta según el emisor");
 /* logros del buzón (Fase 2) */
-ok(Array.isArray(T.ACHIEVEMENTS) && T.ACHIEVEMENTS.length === 22,
-   "ACHIEVEMENTS con 22 hazañas (actual: " + T.ACHIEVEMENTS.length + ")");
+ok(Array.isArray(T.ACHIEVEMENTS) && T.ACHIEVEMENTS.length === 23,
+   "ACHIEVEMENTS con 23 hazañas (actual: " + T.ACHIEVEMENTS.length + ")");
 ok(new Set(T.ACHIEVEMENTS.map(a => a.id)).size === T.ACHIEVEMENTS.length, "ids de logros únicos");
 ok(T.ACHIEVEMENTS.every(a => a.id && a.name && a.icon && a.desc && typeof a.check === "function"),
    "logros con id/name/icon/desc/check");
@@ -253,7 +253,7 @@ T.ACTIONS.openMsg({ getAttribute(k){ return k === "data-id" ? "m_sd_fracaso" : n
 ok((S3.player.stats.msgsAtNight || 0) === nightBefore + 1 &&
    T.ACHIEVEMENTS.find(a => a.id === "mailMadrugada").check(),
    "CORREO DE LAS 4: abrir de madrugada cuenta en stats y cumple el logro");
-ok(sandbox.HELP_HTML.indexOf("22 hazañas") >= 0, "AYUDA cuadra el recuento de hazañas (22)");
+ok(sandbox.HELP_HTML.indexOf("23 hazañas") >= 0, "AYUDA cuadra el recuento de hazañas (23)");
 /* Fase 3: respuestas binarias, informes sueltos y cruces INTEL↔bandeja */
 const withReply = T.MENSAJES_DEF.filter(m => m.reply);
 const docsSueltos = T.MENSAJES_DEF.filter(m => m.doc);
