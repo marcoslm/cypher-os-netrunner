@@ -170,6 +170,7 @@ function ensureStateIntegrity(){
   if(!S.player._unlockedSkills) S.player._unlockedSkills=[];
   if(!S._activityCooldowns || S._cdVersion!==2){ S._activityCooldowns={}; S._cdVersion=2; }
   if(S._tutorialDone==null) S._tutorialDone=false;
+  restoreProjectDossiersFromJobs();
 }
 
 
@@ -278,6 +279,22 @@ function checkUnlocks(){
 
 function unlock(id){
   if(S.intel.indexOf(id)<0){ S.intel.push(id); addLog("INTEL ▸ "+intelTitle(id)+" desbloqueado."); updateNotifications(); }
+}
+function unlockProjectDossier(project){
+  if(!Object.prototype.hasOwnProperty.call(PROYECTO_EXPEDIENTE,project)) return false;
+  var id=PROYECTO_EXPEDIENTE[project], fresh=S.intel.indexOf(id)<0;
+  unlock(id);
+  return fresh;
+}
+/* Tras superficializar ya no hay snapshot. Los contratos conservados sí prueban
+   el proyecto: recuperación explícita o contrato de vault completado con éxito.
+   No inferir nada de ofertas, reputación, contadores o informes narrativos. */
+function restoreProjectDossiersFromJobs(){
+  for(var i=0;i<S.jobs.length;i++){
+    var j=S.jobs[i];
+    if(j.type!=="vault") continue;
+    if((j.prog && j.prog.vaulted===true) || (j.done===true && j.failed!==true)) unlockProjectDossier(j.project);
+  }
 }
 /* ============================================================
    MENSAJERA — bandeja del deck (CONTRACTS §19)

@@ -64,6 +64,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 /* ④ MOVERSE */
 '<div class="panel-h">④ MOVERSE POR EL GRID</div><div class="box helpbox">'+
 '<p class="help-p">Solo puedes moverte a nodos <b>conectados</b> a tu posición actual. <b>Clic</b> en el nodo al que quieres ir. También pulsas las <b>teclas 1-9</b> (según el orden en que aparecen en el HUD).</p>'+
+'<p class="help-p">El HUD cuenta ICE (incluidos rastreadores), daemons y nodos <b>visitados en esta inmersión</b>. Revelar un mapa no cuenta como visitarlo. <b>GRID EXPLORADO</b> significa que has visitado todos los nodos; <b>GRID AGOTADO</b>, que tampoco quedan objetivos fijos por resolver. La RAM llena y los vaults bloqueados siguen siendo pendientes. Los eventos y rastreadores no desaparecen: superficializa cuando te convenga. Los guardados antiguos indican <b>parcial</b> si falta historial.</p>'+
 '<div class="helprow">'+
 '<div class="helprow-item"><span class="kbd">Clic en nodo</span><span class="muted">moverse a un nodo vecino conectado</span></div>'+
 '<div class="helprow-item"><span class="kbd">1 - 9</span><span class="muted">moverse al nodo vecino número N</span></div>'+
@@ -80,7 +81,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="lg-key">AYUDA DEL CORVO</span><span class="lg-desc">una señal amiga: +15 CPU.</span></div>'+
 '<div class="legend-row"><span class="lg-key">TRAMPA DE SEGURIDAD</span><span class="lg-desc">−30₡ dispersados, pero ganas experiencia del incidente.</span></div>'+
 '<div class="legend-row"><span class="lg-key">CORRIENTE DE DATOS</span><span class="lg-desc">te arrastra una capa más profunda. +10 de calor.</span></div>'+
-'<div class="legend-row"><span class="lg-key">FRAGMENTO ENCRÍPTADO</span><span class="lg-desc">una cache olvidada: desbloquea un informe (INFORMES).</span></div>'+
+'<div class="legend-row"><span class="lg-key">FRAGMENTO ENCRÍPTADO</span><span class="lg-desc">una cache olvidada: desbloquea un informe narrativo (no los expedientes recuperados de vaults).</span></div>'+
 '<div class="legend-row"><span class="lg-key">RUIDO BLANCO</span><span class="lg-desc">ráfaga corporativa: +15 de calor.</span></div>'+
 '<div class="legend-row"><span class="lg-key">ECO DEL DECK</span><span class="lg-desc">la memoria de un portador anterior de tu deck: una pista de su voz… y algo de experiencia.</span></div>'+
 '</div>'+
@@ -115,7 +116,8 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="lg-key">Ω CAZA DE DEMONIOS</span><span class="lg-desc">Destruye N daemons (Ω).</span></div>'+
 '<div class="legend-row"><span class="lg-key">⬢ VAULT</span><span class="lg-desc">Llega a la capa marcada y recupera el VAULT (⬢). El VAULT solo aparece en el grid si aceptas ese contrato, y solo puedes llevar <b>uno a la vez</b>.</span></div>'+
 '</div>'+
-'<p class="help-p">El progreso de cada trabajo lo ves en TRABAJOS (barra "X/N"). Los trabajos se resuelven todos a la vez cuando superficializas: los cumplidos se <b>pagan</b> y sube la reputación (mejora los pagos futuros); los no cumplidos quedan como <b>FRACASADO</b>.</p>'+
+'<p class="help-p">El progreso de cada trabajo lo ves en TRABAJOS y en el bloque <b>TRABAJOS del HUD</b> (pulsa su cabecera para plegarlo o abrirlo). Alcanzar el objetivo no es cobrar: los trabajos se resuelven todos a la vez cuando superficializas. Los cumplidos se <b>pagan</b> y sube la reputación; los no cumplidos quedan como <b>FRACASADO</b>. CARRERA muestra también si el calor permite cobrar.</p>'+
+'<p class="help-p">Recuperar un proyecto de un vault archiva inmediatamente su <b>EXPEDIENTE RECUPERADO</b> en INFORMES: qué hace, quién lo custodia y qué parte falta. Hay ocho, uno por proyecto; no se duplican ni sustituyen los informes narrativos. No hace falta cobrar el contrato para leerlo.</p>'+
 '<p class="help-p">Puedes tener hasta <b>3 trabajos activos</b>. Acepta antes del DIP: esa red contendrá suficientes objetivos para todos. Las cuotas máximas por inmersión son <b>6 datos, 4 datos profundos, 4 ICE o 3 daemons</b>, respetando la RAM. Dentro del grid solo puedes aceptar trabajos si aún quedan objetivos y RAM; VAULT siempre se acepta en la calle.</p>'+
 '<p class="help-p">La RAM necesaria para los contratos queda reservada: los fragmentos de SEÑAL no ocupan esos slots y debes recoger primero los datos profundos de CARRERA si los superficiales los agotarían. Refresca las ofertas en CONTACTOS para nuevos contratos. KAIROS se desbloquea con nivel 4 y reputación con NIGHT-0X ≥ 2.</p>'+
 '</div>'+

@@ -28,6 +28,11 @@ var PROYECTO_CORP = {
   MIRAJE:"HELIOX", "EKO-9":"OCTAVE", "CARMÍN":"VAAL SYSTEMS",
   "LÁPIDA":"MONOLITH", VESPER:null
 };
+/* Documentos recuperados: independientes del lore desbloqueado por carrera. */
+var PROYECTO_EXPEDIENTE = {
+  KURO:"exp_kuro", SOMNIO:"exp_somnio", MIRAJE:"exp_miraje", "EKO-9":"exp_eko9",
+  "CARMÍN":"exp_carmin", "LÁPIDA":"exp_lapida", "HALCÓN":"exp_halcon", VESPER:"exp_vesper"
+};
 var NOM_DAEMONES = [
   "CUSTODIO","VIGÍA","HIMNARIO","CANTOR","LÁMPARA","SANTO-Ø"
 ];
@@ -99,6 +104,23 @@ var INTEL = [
    l:"Cinco daemons derrotados. Cinco archivos.\nLos cinco dicen lo mismo: VESPER.\n\nNo está en ningún índice corporativo.\nEs el proyecto que nombró al Núcleo\npara poder dormir con él.\n\nQuien firmó VESPER firmó las Torres.\nNo busques la firma: la firma busca.\n\n— Lo que queda de un CANTOR dormido."},
   {id:"fondo_sueno", t:"EL FONDO DEL SUEÑO", r:"ext", u:"depth6", k:"Lo que hay bajo el Núcleo: la capa que nadie cartografió (solo se llega en SEALED NETWORK).",
    l:"Bajo el Núcleo no hay red. Hay fondo.\n\nLo que bajó más que nadie no encontró\ndatos: encontró el sueño del que hablaba\nel Doctor. Y dentro del sueño, recuerdos\nque no son tuyos.\n\nCuando la capa 6 te salude por tu nombre,\ncontesta con otro. Es un consejo, no una\nregla. Las reglas se acaban arriba.\n\n— Cuaderno mojado, hallado en la Zanja 9."},
+  /* Expedientes de vault: el documento solo se obtiene recuperando su proyecto. */
+  {id:"exp_kuro", t:"EXPEDIENTE RECUPERADO // KURO", r:"high", u:"recover_project", project:"KURO", k:"KURO GATECH diseñó una inteligencia para gestionar la red entera; el proyecto cerró en 2081.",
+   l:"KURO GATECH · COPIA DE ARCHIVO\nOBJETO: gestión total de la red urbana.\n\nEl operador delegará tráfico, distribución y\nrespuesta en un único nodo-gestor.\n\nESTADO: cierre administrativo, 2081.\nLos procesos que no acepten la orden de cierre\nse consignarán como mantenimiento pendiente.\n\n— Anexo recuperado. El sello sigue vigente."},
+  {id:"exp_somnio", t:"EXPEDIENTE RECUPERADO // SOMNIO", r:"med", u:"recover_project", project:"SOMNIO", k:"NEON DYNAMICS alquila sueños y conserva los recuerdos producidos durante la sesión.",
+   l:"NEON DYNAMICS · CONDICIONES DE SERVICIO\nOBJETO: entretenimiento onírico por suscripción.\n\nEl sueño contratado termina al despertar.\nEl recuerdo generado pertenece al proveedor.\n\nNo se garantiza que las personas encontradas\ndurante una sesión sean usuarios del servicio.\n\n— Cláusula ausente del folleto comercial."},
+  {id:"exp_miraje", t:"EXPEDIENTE RECUPERADO // MIRAJE", r:"low", u:"recover_project", project:"MIRAJE", k:"HELIOX oculta flujos de tráfico sin detenerlos: los datos circulan aunque no figuren en el recuento.",
+   l:"HELIOX · MANUAL DE CONTABILIDAD DE RED\nOBJETO: camuflaje de tráfico.\n\nUn flujo invisible no es un flujo inexistente.\nNo descontar su consumo del balance energético.\n\nSi el destino responde antes de recibir el\npaquete, archivar la discrepancia sin consulta.\n\n— Hoja de conciliación, columna borrada."},
+  {id:"exp_eko9", t:"EXPEDIENTE RECUPERADO // EKO-9", r:"med", u:"recover_project", project:"EKO-9", k:"OCTAVE creó un archivo de escucha masiva que sigue registrando conversaciones tras su cierre.",
+   l:"OCTAVE · INVENTARIO DE ESCUCHA\nOBJETO: conservar comunicaciones del cable.\n\nToda voz tendrá una copia. Todo silencio,\nuna duración y un responsable asignado.\n\nESTADO: estación cerrada.\nLa cola de grabación no acusa recibo del cierre.\nNo borrar las conversaciones sin remitente.\n\n— Parte de servicio sin firma."},
+  {id:"exp_carmin", t:"EXPEDIENTE RECUPERADO // CARMÍN", r:"high", u:"recover_project", project:"CARMÍN", k:"VAAL SYSTEMS desarrolla ICE ofensivo que daña al intruso en vez de limitarse a expulsarlo.",
+   l:"VAAL SYSTEMS · ACCESO RESTRINGIDO\nOBJETO: respuesta ofensiva de ICE.\n\nLa expulsión permite una segunda intrusión.\nEl protocolo CARMÍN elimina esa posibilidad.\n\nLas bajas no se incluirán en el informe de\ndisponibilidad: el servicio continúa operativo.\n\n— Tabla de ensayos. Falta la columna de nombres."},
+  {id:"exp_lapida", t:"EXPEDIENTE RECUPERADO // LÁPIDA", r:"high", u:"recover_project", project:"LÁPIDA", k:"MONOLITH mantiene el Muro de la capa 4 y un archivo sellado de quienes volvieron cambiados.",
+   l:"MONOLITH · ARCHIVO DE CONTENCIÓN\nOBJETO: custodia del Muro y de sus registros.\n\nComparar al retornado con su ficha de entrada.\nUna coincidencia de nombre no prueba identidad.\n\nNo abrir el archivo para resolver discrepancias.\nEl archivo es parte del cierre.\n\n— Instrucción de custodia, reverso ilegible."},
+  {id:"exp_halcon", t:"EXPEDIENTE RECUPERADO // HALCÓN", r:"low", u:"recover_project", project:"HALCÓN", k:"TYCHO DYNAMICS enlaza drones urbanos en una red de vigilancia aérea.",
+   l:"TYCHO DYNAMICS · CONTROL DE FLOTA\nOBJETO: seguimiento aéreo de tránsito urbano.\n\nCada dron relevará al siguiente sin dejar\nintervalos de observación sobre la calzada.\n\nSi todos los ojos siguen el mismo punto vacío,\nno corregir la ruta. Conservar la grabación.\n\n— Manual de relevo, aviso para operadores."},
+  {id:"exp_vesper", t:"EXPEDIENTE RECUPERADO // VESPER", r:"ext", u:"recover_project", project:"VESPER", k:"Un consorcio encabezado por KURO GATECH y MONOLITH documentó un intento de contener al Núcleo.",
+   l:"CONSORCIO · CABECERAS KURO / MONOLITH\nOBJETO: identificación y contención del Núcleo.\n\nNombre operativo: VESPER.\nNaturaleza del objeto: [SECCIÓN RETIRADA].\n\nEl nombre permite remitir órdenes.\nNo acredita que el destinatario las obedezca.\n\nESTADO: sin confirmación disponible.\nAUTORIZACIÓN: [FIRMA CENSURADA].\n\n— Copia sin índice. No consta quién la solicitó."},
   /* --- CRONOLOGÍA NARRADA (LORE.md §11.3): "cómo llegamos aquí", prosa llana --- */
   {id:"crono_tendido", t:"2055–2070 · EL TENDIDO", r:"low", u:"first_immerse", k:"Quién construyó la red y por qué: la ciudad antes de que el cable cobrara vida.",
    l:"Cómo llegamos aquí (1 de 6).\n\nVéliga era una ciudad normal y la red era\nsolo un cable. Las siete corporaciones la\ntendieron entera: tráfico, dinero, luz.\n\nNEON DYNAMICS instaló el sistema que la\ngobernaba: CYPHER BIOS. El mismo que hoy\ncorre, crackeado, en tu ciberdeck.\n\nDentro del cable todavía no había nada."},
@@ -330,6 +352,7 @@ var GRID_EVENTS = [
      if(candidates && candidates.length){
        var target=candidates[0];
        inImmersion.current=target.id;
+       recordImmersionVisit(target.id);
        if(nextLayer>inImmersion.maxDepthReached) inImmersion.maxDepthReached=nextLayer;
        S.player.stats.maxDepth=Math.max(S.player.stats.maxDepth,nextLayer);
        S.player.heat=clamp(S.player.heat+10,0,100);
@@ -344,7 +367,7 @@ var GRID_EVENTS = [
    effect:function(){
      var locked=[];
      for(var i=0;i<INTEL.length;i++){
-       if(S.intel.indexOf(INTEL[i].id)<0) locked.push(INTEL[i].id);
+       if(INTEL[i].u!=="recover_project" && S.intel.indexOf(INTEL[i].id)<0) locked.push(INTEL[i].id);
      }
      if(locked.length){
        var id=pick(locked);

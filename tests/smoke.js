@@ -95,13 +95,15 @@ ok(src.css.indexOf("#confirm-overlay") >= 0, "el CSS define #confirm-overlay");
 /* ---------- NIVEL 2: integridad de INTEL ---------- */
 console.log("\nNIVEL 2 · integridad de INTEL…");
 const ids = T.INTEL.map(e => e.id);
-ok(T.INTEL.length === 35, "INTEL tiene 35 entradas (actual: " + T.INTEL.length + ")");
+ok(T.INTEL.length === 43, "INTEL tiene 43 entradas (35 narrativas + 8 expedientes; actual: " + T.INTEL.length + ")");
 ok(new Set(ids).size === ids.length, "ids de INTEL únicos");
 ok(T.INTEL.every(e => e.id && e.t && e.r && e.u && e.k && e.l), "todas las entradas tienen id/t/r/u/k/l");
 ok(T.INTEL.every(e => T.RISK_TXT[e.r]), "etiquetas de riesgo válidas");
 ok(T.INTEL.every(e => T.intelHint(e.id) !== "desconocido"), "todas las entradas tienen pista (invariante AU18)");
 const unlockCalls = Array.from(src.js.matchAll(/unlock\("([a-z0-9_]+)"\)/g)).map(m => m[1]);
-ok(T.INTEL.every(e => unlockCalls.indexOf(e.id) >= 0), "cada informe tiene al menos un unlock()");
+const dossierMap = game.run('PROYECTO_EXPEDIENTE');
+ok(T.INTEL.every(e => e.u === 'recover_project' ? dossierMap[e.project] === e.id : unlockCalls.indexOf(e.id) >= 0),
+   "cada informe tiene un unlock literal o una ruta de recuperación por proyecto");
 
 /* desbloqueo determinista: estado máximo abre todo lo que gestiona checkUnlocks */
 const S2 = T.nuevoEstado(); T.setS(S2); T.ensureStateIntegrity();
@@ -113,7 +115,7 @@ S2.history.finalDone = true;
 T.checkUnlocks();
 const un = new Set(S2.intel);
 const external = ["fixers", "invierno", "kuro", "kuro_abandonado"]; /* se abren en acciones */
-const missingUnlocks = T.INTEL.filter(e => external.indexOf(e.id) < 0 && !un.has(e.id)).map(e => e.id);
+const missingUnlocks = T.INTEL.filter(e => e.u !== 'recover_project' && external.indexOf(e.id) < 0 && !un.has(e.id)).map(e => e.id);
 ok(missingUnlocks.length === 0, "con estado máximo, checkUnlocks abre todos los informes" +
    (missingUnlocks.length ? " → faltan: " + missingUnlocks.join(", ") : ""));
 
@@ -296,11 +298,12 @@ async function finish(){
   const harness = await require("./harness.test").run({summary:true});
   const regressions = await require("./regressions").run({summary:true});
   const jobs = await require("./jobs-persistence").run({summary:true});
-  const totalFails = fails + harness.fails + regressions.fails + jobs.fails;
+  const gridIntel = await require("./grid-intel-hud").run({summary:true});
+  const totalFails = fails + harness.fails + regressions.fails + jobs.fails + gridIntel.fails;
   console.log("\n================ RESUMEN ================");
   console.log("humo: " + passes + " correctas · arnés: " + harness.passes + "/" + harness.total +
-    " · regresiones: " + regressions.passes + "/" + regressions.total + " · trabajos/persistencia: " + jobs.passes + "/" + jobs.total);
-  console.log("correctas: " + (passes + harness.passes + regressions.passes + jobs.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
+    " · regresiones: " + regressions.passes + "/" + regressions.total + " · trabajos/persistencia: " + jobs.passes + "/" + jobs.total + " · expedientes/HUD: " + gridIntel.passes + "/" + gridIntel.total);
+  console.log("correctas: " + (passes + harness.passes + regressions.passes + jobs.passes + gridIntel.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
   process.exitCode = totalFails ? 1 : 0;
 }
 finish().catch(function(err){

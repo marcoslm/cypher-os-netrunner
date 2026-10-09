@@ -197,7 +197,77 @@ function restoreImmersion(inm){
   for(var l=0;l<inm.grid.byLayer.length;l++){
     inm.grid.byLayer[l]=inm.grid.byLayer[l].map(function(n){ return byId[n.id]; });
   }
+  ensureImmersionTracking(inm);
+  /* Complementa los contratos conservados con evidencia directa del snapshot. */
+  for(var v=0;v<inm.grid.nodes.length;v++){
+    var recovered=inm.grid.nodes[v];
+    if(recovered.type==="vault" && (recovered.done || recovered._done)) unlockProjectDossier(recovered.proj);
+  }
   return inm;
+}
+
+/* El historial legacy no contiene visitas ni el tipo de las emboscadas.
+   Se recupera únicamente evidencia del grafo; nunca se inventa lo perdido. */
+function ensureImmersionTracking(inm){
+  var nodes=inm.grid.nodes, i, n;
+  if(!inm.visited){
+    inm.visited=[inm.grid.entry];
+    for(i=0;i<nodes.length;i++){
+      n=nodes[i];
+      if((n.id===inm.current || n.done || n._done || n._used) && inm.visited.indexOf(n.id)<0) inm.visited.push(n.id);
+    }
+    inm.visitsPartial=true;
+  }
+  if(!inm.enemyCounts){
+    inm.enemyCounts={ice:0,daemons:0,trackers:0,nucleo:0};
+    for(i=0;i<nodes.length;i++){
+      n=nodes[i];
+      if(n.done || n._done){
+        if(n.type==="ice") inm.enemyCounts.ice++;
+        if(n.type==="daemon") inm.enemyCounts.daemons++;
+        if(n.type==="nucleo") inm.enemyCounts.nucleo++;
+      }
+    }
+    inm.enemyCountsPartial=true;
+    var proven=inm.enemyCounts.ice+inm.enemyCounts.daemons+inm.enemyCounts.nucleo;
+    if(inm.enemiesDefeated!=null && inm.enemiesDefeated<proven) inm.enemiesDefeated=proven;
+  }
+  if(inm.enemiesDefeated==null) inm.enemiesDefeated=inm.enemyCounts.ice+inm.enemyCounts.daemons+inm.enemyCounts.nucleo;
+  if(inm.visitsPartial==null) inm.visitsPartial=false;
+  if(inm.enemyCountsPartial==null) inm.enemyCountsPartial=false;
+  if(inm.exploredNotified==null) inm.exploredNotified=false;
+  if(inm.exhaustedNotified==null) inm.exhaustedNotified=false;
+}
+function recordImmersionVisit(id){
+  if(!inImmersion) return;
+  ensureImmersionTracking(inImmersion);
+  if(nodeById(id) && inImmersion.visited.indexOf(id)<0) inImmersion.visited.push(id);
+  if(inImmersion.visited.length===inImmersion.grid.nodes.length) inImmersion.visitsPartial=false;
+}
+function gridCompletion(inm){
+  var pending=0, nodes=inm.grid.nodes;
+  for(var i=0;i<nodes.length;i++){
+    var n=nodes[i];
+    if(n.type==="substation") { if(!n._used) pending++; }
+    else if(["data","ice","daemon","vault","signal","nucleo"].indexOf(n.type)>=0 && !n.done && !n._done) pending++;
+  }
+  var explored=inm.visited.length===nodes.length;
+  return {visited:inm.visited.length,total:nodes.length,pending:pending,explored:explored,exhausted:explored && pending===0};
+}
+function announceGridCompletion(inm,status){
+  if(combatActive || modalOpen()) return;
+  var changed=false;
+  if(status.explored && !inm.exploredNotified){
+    inm.exploredNotified=true; changed=true;
+    addLog("GRID EXPLORADO ▸ todos los nodos visitados. Objetivos fijos pendientes: "+status.pending+".");
+    if(!status.exhausted) msg("GRID EXPLORADO ▸ quedan "+status.pending+" objetivos fijos pendientes.","cyan");
+  }
+  if(status.exhausted && !inm.exhaustedNotified){
+    inm.exhaustedNotified=true; changed=true;
+    addLog("GRID AGOTADO ▸ sin objetivos fijos pendientes. Eventos y rastreadores siguen activos.");
+    msg("GRID AGOTADO ▸ superficializa. Los rastreadores aún pueden encontrarte.","verde");
+  }
+  if(changed) save();
 }
 
 function startImmersion(depth){
@@ -246,7 +316,8 @@ function startImmersion(depth){
   inImmersion = {
     grid:g, depth:depth, current:g.entry,
     dataUsed:0, data:[], maxDepthReached:1, moves:0, combatOccurred:false,
-    enemiesDefeated:0
+    enemiesDefeated:0, enemyCounts:{ice:0,daemons:0,trackers:0,nucleo:0}, enemyCountsPartial:false,
+    visited:[g.entry], visitsPartial:false, exploredNotified:false, exhaustedNotified:false
   };
   addLog("DIP ▸ conexión establecida (capa 0).");
   msg(pickFresh("dip", FRASES_DIP),"cyan");
@@ -314,6 +385,7 @@ function moveToNode(id){
   S.player.heat = clamp(S.player.heat + heatGain, 0, 100);
   inImmersion.moves++;
   inImmersion.current = id;
+  recordImmersionVisit(id);
   if(n.layer > inImmersion.maxDepthReached) inImmersion.maxDepthReached = n.layer;
   S.player.stats.maxDepth = Math.max(S.player.stats.maxDepth, n.layer);
   /* decrementar ocultamiento de nodos */
@@ -342,10 +414,10 @@ function moveToNode(id){
   if(tryScavenger()){
     /* El movimiento ya cambió current: incluso bajo combate, el HUD y sus
        índices deben pertenecer al nodo nuevo, no a la ruta anterior. */
-    renderGridHud(); return;
+    renderGridHud(); save(); return;
   }
   enterNode(target);
-  renderGridHud();
+  renderGridHud(); save();
 }
 
 /* elección de evento ponderada por la probabilidad declarada en GRID_EVENTS */
@@ -402,8 +474,14 @@ function immersionEnemyCount(inm){
   }
   return inm.enemiesDefeated;
 }
-function recordImmersionEnemy(){
-  if(inImmersion) inImmersion.enemiesDefeated=immersionEnemyCount(inImmersion)+1;
+function recordImmersionEnemy(n){
+  if(!inImmersion || !n) return;
+  ensureImmersionTracking(inImmersion);
+  inImmersion.enemiesDefeated=immersionEnemyCount(inImmersion)+1;
+  var counts=inImmersion.enemyCounts;
+  if(n.type==="ice") { counts.ice++; if(n.scavenger) counts.trackers++; }
+  if(n.type==="daemon") counts.daemons++;
+  if(n.type==="nucleo") counts.nucleo++;
 }
 
 function tryScavenger(){
@@ -420,8 +498,8 @@ function tryScavenger(){
     node:tracker,
     onWin:function(){
       if(tracker.done) return;
+      recordImmersionEnemy(tracker);
       tracker.done=true;
-      recordImmersionEnemy();
       S.player.stats.ice++;
       if(!S.player.stats.iceByTier) S.player.stats.iceByTier={1:0,2:0,3:0};
       S.player.stats.iceByTier[tier]=(S.player.stats.iceByTier[tier]||0)+1;
@@ -497,7 +575,7 @@ function collectData(n){
 function onNodeDefeated(ctx){
   var n = ctx.node;
   if(!n || n.done || n._done) return;
-  if(n.type==="ice" || n.type==="daemon" || n.type==="nucleo") recordImmersionEnemy();
+  if(n.type==="ice" || n.type==="daemon" || n.type==="nucleo") recordImmersionEnemy(n);
   n.done = true;
   if(n.type==="ice"){
     S.player.stats.ice++;
@@ -517,7 +595,8 @@ function onNodeDefeated(ctx){
   } else if(n.type==="vault"){
     gainXp(90); jobProgressAll("vault");
     unlock("kuro"); unlock("kuro_abandonado");
-    msg("VAULT "+n.proj+" recuperado. Proyecto corporativo en tus manos. Se paga al superficializar.","magenta");
+    var dossierNew=unlockProjectDossier(n.proj);
+    msg("VAULT "+n.proj+" recuperado. "+(dossierNew?"Expediente disponible en INFORMES. ":"")+"Se paga al superficializar.","magenta");
   } else if(n.type==="nucleo"){ defeatNucleo(); }
   updateTopbar(); save(); renderGridHud();
 }
@@ -1136,6 +1215,10 @@ function renderGridHud(){
           '<div id="gridhud"></div>'+
           '<div id="grid-actions">'+btn+'</div>'+
         '</div>'+
+        '<div id="grid-status" role="status"></div>'+
+        '<details id="grid-jobs"'+(window.innerWidth>900 && window.innerHeight>600?' open':'')+'>'+
+          '<summary id="grid-jobs-summary">TRABAJOS</summary><div id="grid-job-items"></div>'+
+        '</details>'+
         '<div id="adjlist"></div>'+
       '</div>'+
     '</div>';
@@ -1157,8 +1240,27 @@ function renderGridHud(){
   }
   if(immersed) updateGridHud();
 }
+function gridJobHudHtml(j){
+  var value=jobProgressValue(j), target=j.type==="vault"?1:j.n;
+  var pct=clamp(Math.round(value/target*100),0,100), ready=jobComplete(j);
+  var label=j.type==="vault" ? (value?"proyecto recuperado":"pendiente: "+escapeHtml(j.project)) : Math.min(value,target)+"/"+target;
+  if(j.type==="rompehielas") label+=" ICE T2/T3";
+  if(j.type==="daemon") label+=" daemons";
+  if(j.type==="recoleta") label+=" datos";
+  if(j.type==="carrera") label+=" datos capa ≥3 · calor "+(Math.floor(S.player.heat*10)/10).toFixed(1)+" · exige <45";
+  var note=ready?"objetivo alcanzado · cobra al superficializar":
+    (j.type==="carrera" && value>=target?"baja el calor para cobrar":"en curso");
+  return '<div class="grid-job '+(ready?'job-ready':'')+'">'+
+    '<span class="grid-job-title" title="'+escapeHtml(j.title)+'">'+escapeHtml(j.title)+'</span>'+
+    '<span class="grid-job-progress">'+label+'</span>'+
+    '<div class="hud-bar '+(ready?'hud-bar-green':'hud-bar-amber')+'" role="progressbar" aria-label="'+escapeHtml(j.title)+'" aria-valuemin="0" aria-valuemax="'+target+'" aria-valuenow="'+Math.min(value,target)+'"><i style="width:'+pct+'%"></i></div>'+
+    '<span class="grid-job-note '+(ready?'verde':'ambar')+'">'+note+'</span></div>';
+}
 function updateGridHud(){
-  var inm=inImmersion; if(!inm) return;
+  var inm=inImmersion; if(!inm || currentView!=="red") return;
+  ensureImmersionTracking(inm);
+  var status=gridCompletion(inm), counts=inm.enemyCounts;
+  announceGridCompletion(inm,status);
   var hud=document.getElementById("gridhud");
   if(hud){
     /* barra de calor visual */
@@ -1174,12 +1276,30 @@ function updateGridHud(){
     hud.innerHTML =
       '<div>PROFUNDIDAD <b>'+inm.maxDepthReached+'/'+inm.depth+'</b></div>'+
       '<div>MOVIMIENTOS <b>'+inm.moves+'</b></div>'+
-      '<div>DATOS '+ramSlots+'</div>'+
-      '<div>CALOR <b style="color:'+(heat>70?'#ff5d6a':'#ffc44d')+'">'+heat+'/100</b> '+heatBar+'</div>';
+      '<div>DATOS <b>'+used+'/'+cap+'</b> '+ramSlots+'</div>'+
+      '<div>CALOR <b class="'+(heat>70?'rojo':'ambar')+'">'+heat+'/100</b> '+heatBar+'</div>'+
+      '<div>ICE <b>'+counts.ice+'</b> · DAEMONS <b>'+counts.daemons+'</b>'+
+        (counts.trackers?' · RASTREADORES <b>'+counts.trackers+'</b>':'')+
+        (counts.nucleo?' · NÚCLEO <b>'+counts.nucleo+'</b>':'')+
+        (inm.enemyCountsPartial?' <span class="hud-partial" title="El guardado antiguo no conserva todas las emboscadas">(parcial)</span>':'')+'</div>'+
+      '<div>EXPLORADOS <b>'+status.visited+'/'+status.total+'</b>'+
+        (inm.visitsPartial?' <span class="hud-partial" title="Visitas demostrables del guardado antiguo">(parcial)</span>':'')+'</div>';
     /* clase heat-critical cuando calor > 80 */
     if(heat>80) hud.classList.add("heat-critical");
     else hud.classList.remove("heat-critical");
   }
+  var statusEl=document.getElementById("grid-status");
+  if(statusEl){
+    statusEl.className=status.exhausted?"verde":(status.explored?"cyan":"muted");
+    var statusText=status.exhausted?"GRID AGOTADO · superficializa · rastreadores aún activos":
+      (status.explored?"GRID EXPLORADO · "+status.pending+" objetivos fijos pendientes":
+      "Objetivos fijos pendientes: "+status.pending);
+    if(statusEl.textContent!==statusText) statusEl.textContent=statusText;
+  }
+  var jobs=S.jobs.filter(function(j){ return !j.done; });
+  var jobItems=document.getElementById("grid-job-items"), jobSummary=document.getElementById("grid-jobs-summary");
+  if(jobItems) jobItems.innerHTML=jobs.length?jobs.map(gridJobHudHtml).join(""):'<div class="muted">Sin contratos activos.</div>';
+  if(jobSummary) jobSummary.textContent=jobs.length?"TRABAJOS "+jobs.filter(jobComplete).length+"/"+jobs.length+" listos para cobrar · al superficializar":"TRABAJOS · sin contratos activos";
   var adj=document.getElementById("adjlist");
   if(adj){
     var list=currentNeighbors();
@@ -1198,7 +1318,8 @@ function updateGridHud(){
       html+='<span class="adj-node" data-idx="'+i+'">'+s+' <span class="kbd">'+(i+1)+'</span> '+label+'</span>';
     });
     if(!list.length) html+='<span>(sin salidas directas)</span>';
-    adj.innerHTML=html;
+    /* El reloj refresca calor/trabajos, no debe reemplazar un vecino bajo el dedo. */
+    if(adj._hudHTML!==html){ adj.innerHTML=html; adj._hudHTML=html; }
   }
 }
 

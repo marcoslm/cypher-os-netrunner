@@ -360,8 +360,12 @@ test('importación: picker real rechaza JSON/tipos dañados y recupera un grid v
   await expect(page.locator('#h-ram')).toHaveText('1/6');
   const imported = await game.snapshot();
   expect(imported.view).toBe('red');
-  expect(imported.immersion).toEqual(incoming._inImmersion);
-  expect(imported.saved._inImmersion).toEqual(incoming._inImmersion);
+  // This fixture predates tracking: migrate only demonstrated visits, never regenerate its grid.
+  const restored = { ...incoming._inImmersion, visited: ['0_0', '1_0'], visitsPartial: true,
+    enemyCounts: { ice: 0, daemons: 0, trackers: 0, nucleo: 0 }, enemyCountsPartial: true,
+    exploredNotified: false, exhaustedNotified: false };
+  expect(imported.immersion).toEqual(restored);
+  expect(imported.saved._inImmersion).toEqual(restored);
   expect(imported.saved.best).toEqual({ level: 2 });
   expect(imported.saved.player._unlockedSkills).toEqual([]);
 });

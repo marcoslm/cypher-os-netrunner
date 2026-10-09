@@ -346,6 +346,7 @@ function updateTopbar(){
     var hLvl = document.getElementById("h-lvl");
     if(hLvl) hLvl.textContent = "⚠ LOCKDOWN";
   }
+  if(inImmersion && currentView==="red" && document.getElementById("gridhud")) updateGridHud();
 }
 
 function scroller(html){
@@ -773,6 +774,9 @@ function intelHint(id){
     data50:"cargar 50 datos en total", ice10:"destruir 10 ICE",
     immerse5:"5 inmersiones", daemon5:"derrotar 5 daemons",
     depth6:"alcanzar la capa 6 (SEALED NETWORK)" };
+  if(u==="recover_project"){
+    for(var j=0;j<INTEL.length;j++) if(INTEL[j].id===id) return "recuperar el proyecto "+INTEL[j].project+" de un vault";
+  }
   return map[u]||"desconocido";
 }
 
@@ -1549,6 +1553,27 @@ function validImportImmersion(inm,ram){
     byId[n.id]=n;
   }
   if(!byId[g.entry] || !byId[inm.current] || inm.maxDepthReached<byId[inm.current].layer) return false;
+  var trackingFlags=["visitsPartial","enemyCountsPartial","exploredNotified","exhaustedNotified"];
+  for(i=0;i<trackingFlags.length;i++) if(inm[trackingFlags[i]]!=null && typeof inm[trackingFlags[i]]!=="boolean") return false;
+  if(inm.visited!=null){
+    if(!Array.isArray(inm.visited) || !inm.visited.length) return false;
+    var visits=Object.create(null);
+    for(i=0;i<inm.visited.length;i++){
+      var visit=inm.visited[i];
+      if(typeof visit!=="string" || !byId[visit] || visits[visit]) return false;
+      visits[visit]=true;
+    }
+    if(!visits[g.entry]) return false;
+  }
+  if(inm.enemyCounts!=null){
+    if(!importObject(inm.enemyCounts)) return false;
+    var countKeys=["ice","daemons","trackers","nucleo"], counts=inm.enemyCounts;
+    for(i=0;i<countKeys.length;i++) if(!importNatural(counts[countKeys[i]])) return false;
+    if(counts.trackers>counts.ice) return false;
+    var sum=counts.ice+counts.daemons+counts.nucleo;
+    if(!importNatural(sum)) return false;
+    if(inm.enemiesDefeated!=null && (sum>inm.enemiesDefeated || (inm.enemyCountsPartial!==true && sum!==inm.enemiesDefeated))) return false;
+  }
   for(l=0;l<g.byLayer.length;l++){
     if(!Array.isArray(g.byLayer[l]) || !g.byLayer[l].length) return false;
     for(i=0;i<g.byLayer[l].length;i++){
