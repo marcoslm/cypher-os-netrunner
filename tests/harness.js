@@ -361,6 +361,11 @@ function createDOM(events, options = {}){
   }
   function createElement(tag){
     const el=nodeMethods(events.attach({nodeType:1,tagName:String(tag).toUpperCase(),nodeName:String(tag).toUpperCase(),style:{},_attrs:Object.create(null),_html:null,value:"",checked:false,clientWidth:0,clientHeight:0,scrollTop:0,src:"",href:"",download:""}));
+    Object.defineProperties(el.style,{
+      setProperty:{value:function(name,value){this[String(name)]=String(value);}},
+      getPropertyValue:{value:function(name){return this[String(name)] || "";}},
+      removeProperty:{value:function(name){const old=this[String(name)] || "";delete this[String(name)];return old;}}
+    });
     el.setAttribute=(name,value) => {
       name=String(name).toLowerCase(); el._attrs[name]=String(value);
       if(name==="id") elements[String(value)]=el;

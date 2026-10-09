@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>CYPHER://OS  ·  v9.2.7</title>
-<link rel="stylesheet" href="cypher_os.css?v=28">
+<link rel="stylesheet" href="cypher_os.css?v=29">
 </head>
 <body>
 
@@ -31,16 +31,12 @@
     </div>
     <div class="spacer"></div>
     <div class="seg clk" id="h-clock">23:47</div>
-    <div class="seg muted" id="h-snd">FX: ON</div>
-    <div class="seg muted" id="h-amb">AMB: OFF</div>
-    <div class="seg muted" id="h-mus">MUS: ON</div>
-    <div class="seg lum-ctl">
-      <button class="btn small" data-action="lumDown" title="bajar brillo">−</button>
-      <span class="muted lum-val" id="h-brillo-wrap" title="brillo de pantalla · clic = 100%"><span class="lum-k">LUM </span><span id="h-brillo">100%</span></span>
-      <button class="btn small" data-action="lumUp" title="subir brillo">+</button>
-    </div>
-    <div class="seg fs-ctl">
-      <button class="btn small fs-btn" id="h-fs" data-action="toggleFs" title="pantalla completa · alternar">FULL: OFF</button>
+    <div class="quick-controls" role="group" aria-label="Controles del deck">
+      <button type="button" class="quick-btn is-on" id="h-snd" data-action="toggleSound" title="FX: activados" aria-label="FX: activados" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 10h4l5-4v12l-5-4H4zM17 9v6M20 7v10"/></svg><span class="quick-state" aria-hidden="true"></span></button>
+      <button type="button" class="quick-btn" id="h-amb" data-action="toggleAmbient" title="Ambiente: desactivado" aria-label="Ambiente: desactivado" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h2l2-6 4 12 4-12 2 6h4"/></svg><span class="quick-state" aria-hidden="true"></span></button>
+      <button type="button" class="quick-btn is-on" id="h-mus" data-action="toggleMusic" title="Música: activada" aria-label="Música: activada" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 17V5l11-2v12M9 8l11-2"/><circle cx="6" cy="17" r="3"/><circle cx="17" cy="15" r="3"/></svg><span class="quick-state" aria-hidden="true"></span></button>
+      <button type="button" class="quick-btn" id="h-fs" data-action="toggleFs" title="Pantalla completa: desactivada" aria-label="Pantalla completa: desactivada" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg><span class="quick-state" aria-hidden="true"></span></button>
+      <button type="button" class="quick-btn" id="h-controls" data-action="openControls" aria-haspopup="dialog" aria-controls="controls-overlay" aria-expanded="false" title="Abrir panel de control" aria-label="Abrir panel de control"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6"/></svg><span class="quick-state" aria-hidden="true"></span></button>
     </div>
   </div>
 
@@ -106,12 +102,49 @@
       <label class="diff-opt ambar"><input type="radio" name="diff" value="hardcore"> HARDCORE</label>
       <label id="legendary-opt" class="diff-opt magenta"><input type="radio" name="diff" value="legendario"> LEGENDARIO</label>
     </div>
+    <button type="button" class="btn intro-controls" data-action="openControls"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6"/></svg> PANEL DE CONTROL</button>
     <div class="intro-hint">pulsa ▶ COMENZAR para conectar con el cable · corvo-7</div>
   </div>
 </div>
 
 <!-- Flatline / game over -->
 <div id="flatline"></div>
+
+<!-- Preferencias locales; capa independiente para bloquear también la intro. -->
+<div id="controls-overlay" role="dialog" aria-modal="true" aria-labelledby="controls-title" aria-describedby="controls-desc">
+  <section class="modal control-panel">
+    <header class="control-header"><div><span class="control-kicker">DECK://CONFIG</span><h2 id="controls-title">PANEL DE CONTROL</h2></div><button type="button" class="btn control-close" data-action="closeControls" aria-label="Cerrar panel de control">×</button></header>
+    <p id="controls-desc">Ajustes de este dispositivo. Se aplican al instante y no cambian tu partida.</p>
+    <div class="control-columns">
+    <fieldset><legend>AUDIO</legend>
+      <div class="control-channel">
+        <div class="control-heading"><label for="control-fxVolume">FX / INTERFAZ</label><button type="button" class="control-toggle" data-action="toggleDeckPref" data-pref="snd" aria-pressed="true">ON</button></div>
+        <p id="hint-fxVolume" class="control-hint">Botones, terminal y avisos. Silenciar conserva el volumen.</p>
+        <div class="slider-row"><input type="range" id="control-fxVolume" data-control="fxVolume" min="0" max="100" step="1" aria-describedby="hint-fxVolume"><output for="control-fxVolume" id="value-fxVolume">100%</output></div>
+      </div>
+      <div class="control-channel">
+        <div class="control-heading"><label for="control-ambVolume">AMBIENTE</label><button type="button" class="control-toggle" data-action="toggleDeckPref" data-pref="amb" aria-pressed="false">OFF</button></div>
+        <p id="hint-ambVolume" class="control-hint">Tonos y ruido blanco del cable.</p>
+        <div class="slider-row"><input type="range" id="control-ambVolume" data-control="ambVolume" min="0" max="100" step="1" aria-describedby="hint-ambVolume"><output for="control-ambVolume" id="value-ambVolume">100%</output></div>
+      </div>
+      <div class="control-channel">
+        <div class="control-heading"><label for="control-musVolume">MÚSICA</label><button type="button" class="control-toggle" data-action="toggleDeckPref" data-pref="mus" aria-pressed="true">ON</button></div>
+        <p id="hint-musVolume" class="control-hint">Pistas locales opcionales y canal 7.</p>
+        <div class="slider-row"><input type="range" id="control-musVolume" data-control="musVolume" min="0" max="100" step="1" aria-describedby="hint-musVolume"><output for="control-musVolume" id="value-musVolume">100%</output></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>PANTALLA</legend>
+      <div class="control-channel"><div class="control-heading"><label for="control-brillo">BRILLO DE LA UI</label><span class="control-hint">100% = fábrica</span></div><div class="slider-row"><input type="range" id="control-brillo" data-control="brillo" min="50" max="150" step="10"><output for="control-brillo" id="h-brillo">100%</output></div></div>
+      <div class="control-effect"><div><span id="label-crt">TEXTURA CRT</span><p class="control-hint">Scanlines y viñeta.</p></div><button type="button" class="control-toggle" data-action="toggleDeckPref" data-pref="crt" aria-labelledby="label-crt" aria-pressed="true">ON</button></div>
+      <div class="control-effect"><div><span id="label-glow">RESPLANDOR</span><p class="control-hint">Fósforo, halos y brillo de los nodos.</p></div><button type="button" class="control-toggle" data-action="toggleDeckPref" data-pref="glow" aria-labelledby="label-glow" aria-pressed="true">ON</button></div>
+      <div class="control-effect"><div><span id="label-animations">ANIMACIONES DECORATIVAS</span><p class="control-hint">Flicker, glitches, partículas y transiciones.</p></div><button type="button" class="control-toggle" data-action="toggleDeckPref" data-pref="animations" aria-labelledby="label-animations" aria-pressed="true">ON</button></div>
+      <div class="control-effect"><div><span id="label-reducedMotion">MOVIMIENTO REDUCIDO</span><p class="control-hint">Sin parpadeos ni escritura animada; conserva las señales de juego.</p></div><button type="button" class="control-toggle" data-action="toggleDeckPref" data-pref="reducedMotion" aria-labelledby="label-reducedMotion" aria-pressed="false">OFF</button></div>
+      <p id="controls-motion" class="control-hint"></p>
+    </fieldset>
+    </div>
+    <footer class="control-footer"><p class="control-hint">El reloj y el enfriamiento continúan. No disponible durante combates o puzzles.</p><div class="actions"><button type="button" class="btn ambar" data-action="resetControls">RESTABLECER AJUSTES</button><button type="button" class="btn" data-action="closeControls">CERRAR</button></div></footer>
+  </section>
+</div>
 
 <!-- Confirmación del juego. NUNCA alert/confirm nativos: en pantalla completa
      los diálogos del navegador quedan ocultos detrás del juego y bloquean la
@@ -136,12 +169,12 @@
 <!-- Overlay de árbol de habilidades -->
 <div id="skilltree-overlay" class="hidden"></div>
 
-<script src="cypher_os_help.js?v=27"></script>
+<script src="cypher_os_help.js?v=28"></script>
 <script src="cypher_os_data.js?v=1"></script>
-<script src="cypher_os_core.js?v=1"></script>
-<script src="cypher_os_audio.js?v=1"></script>
-<script src="cypher_os_grid.js?v=1"></script>
+<script src="cypher_os_core.js?v=2"></script>
+<script src="cypher_os_audio.js?v=2"></script>
+<script src="cypher_os_grid.js?v=2"></script>
 <script src="cypher_os_combat.js?v=1"></script>
-<script src="cypher_os_ui.js?v=2"></script>
+<script src="cypher_os_ui.js?v=3"></script>
 </body>
 </html>

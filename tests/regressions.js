@@ -393,20 +393,21 @@ async function run(options = {}){
   await check("FX OFF guardado silencia COMENZAR y BIOS antes de cargar S", () => {
     const g=game({timers:true}), audio=audioModel();
     g.sb.AudioContext=function(){return audio.ac;};
-    g.run('var bootSave=nuevoEstado();bootSave.snd=false;localStorage.setItem("cypher_os_save_v9",JSON.stringify(bootSave));');
+    g.run('var bootSave=nuevoEstado();bootSave.snd=false;localStorage.setItem("cypher_os_save_v9",JSON.stringify(bootSave));_deckPrefs=loadDeckPrefs();');
     g.emitElement("intro-start","click");
     g.run('sound.bootLine();sound.bootEnd();');
     assert.equal(g.run("S"),null);
     assert.equal(audio.nodes.length,0);
     g.sb.localStorage.removeItem("cypher_os_save_v9");
-    g.run('sound.bootLine();');
+    g.sb.localStorage.removeItem("cypher_os_controls_v1");
+    g.run('_deckPrefs=loadDeckPrefs();sound.bootLine();');
     assert.ok(audio.nodes.some(n=>n.started),"arranque nuevo conserva FX por defecto");
   });
 
   await check("AMB apagado detiene y desconecta todos sus nodos tras cambios de modo", () => {
     const g=game({timers:true}), audio=audioModel();
     g.sb.AudioContext=function(){return audio.ac;};
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.snd=false;S.mus=false;initAudio();');
+    g.run('S=nuevoEstado();ensureStateIntegrity();setDeckPref("snd",false);setDeckPref("mus",false);initAudio();');
     for(let i=0;i<5;i++){
       g.emitElement("h-amb","click");
       assert.equal(g.run("S.amb"),true);

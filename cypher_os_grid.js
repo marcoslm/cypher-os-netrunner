@@ -19,6 +19,7 @@ var particleGrid=[], PARTICLE_CELL_W=8, PARTICLE_CELL_H=14, PARTICLE_COLS=0, PAR
 
 function randHexPair(){ return HEX[randInt(0,15)]+HEX[randInt(0,15)]; }
 function spawnParticle(init){
+  if(!decorativeMotion()) return;
   var col=randInt(0,PARTICLE_COLS-1);
   /* buscar una fila libre en esta columna desde abajo */
   var row=-1;
@@ -902,14 +903,17 @@ function loopGrid(){
 /* ---- FX del grid: ondas, chispas y estelas (Prioridad 3, sin timers:
    viven en el mismo rAF del grid y se purgan al detener el render) ---- */
 function spawnRipple(x,y,col){
+  if(!decorativeMotion()) return;
   if(gridFx.length>48) gridFx.shift();
   gridFx.push({kind:"ripple", x:x, y:y, col:col, t0:performance.now()/1000});
 }
 function spawnBeam(x1,y1,x2,y2,col){
+  if(!decorativeMotion()) return;
   if(gridFx.length>48) gridFx.shift();
   gridFx.push({kind:"beam", x1:x1, y1:y1, x2:x2, y2:y2, col:col, t0:performance.now()/1000, dur:0.4});
 }
 function spawnBurst(x,y,col){
+  if(!decorativeMotion()) return;
   var ps=[],i;
   for(i=0;i<12;i++){
     var a=(Math.PI*2/12)*i+rand(-0.25,0.25), sp=rand(70,170);
@@ -918,8 +922,12 @@ function spawnBurst(x,y,col){
   if(gridFx.length>48) gridFx.shift();
   gridFx.push({kind:"burst", col:col, parts:ps, t0:performance.now()/1000});
 }
+function clearGridDecoration(){
+  particles=[]; gridFx=[]; _fxLast=0;
+  for(var r=0;r<particleGrid.length;r++) for(var c=0;c<particleGrid[r].length;c++) particleGrid[r][c]=0;
+}
 function drawGridFx(){
-  if(!ctx2d) return;
+  if(!ctx2d || !decorativeMotion()) return;
   var now=performance.now()/1000;
   var dt=_fxLast?clamp(now-_fxLast,0.001,0.05):0.016;
   _fxLast=now;
@@ -931,7 +939,7 @@ function drawGridFx(){
       ctx2d.save();
       ctx2d.strokeStyle=f.col; ctx2d.globalAlpha=(1-p)*0.9;
       ctx2d.lineWidth=2.5*(1-p)+0.5;
-      ctx2d.shadowColor=f.col; ctx2d.shadowBlur=12*(1-p);
+      ctx2d.shadowColor=f.col; ctx2d.shadowBlur=_deckPrefs.glow?12*(1-p):0;
       ctx2d.beginPath(); ctx2d.arc(f.x, f.y, 8+p*40, 0, Math.PI*2); ctx2d.stroke();
       ctx2d.restore();
     } else if(f.kind==="beam"){
@@ -947,7 +955,7 @@ function drawGridFx(){
       var tx=f.x1+(f.x2-f.x1)*e2, ty=f.y1+(f.y2-f.y1)*e2;
       ctx2d.save();
       ctx2d.strokeStyle=f.col; ctx2d.globalAlpha=0.45;
-      ctx2d.lineWidth=3; ctx2d.shadowColor=f.col; ctx2d.shadowBlur=10;
+      ctx2d.lineWidth=3; ctx2d.shadowColor=f.col; ctx2d.shadowBlur=_deckPrefs.glow?10:0;
       ctx2d.beginPath(); ctx2d.moveTo(tx,ty); ctx2d.lineTo(hx,hy); ctx2d.stroke();
       ctx2d.globalAlpha=1;
       ctx2d.fillStyle=f.col;
@@ -957,7 +965,7 @@ function drawGridFx(){
       if(age>0.65){ gridFx.splice(i,1); continue; }
       ctx2d.save();
       ctx2d.strokeStyle=f.col; ctx2d.lineWidth=2;
-      ctx2d.shadowColor=f.col; ctx2d.shadowBlur=6;
+      ctx2d.shadowColor=f.col; ctx2d.shadowBlur=_deckPrefs.glow?6:0;
       for(var j=0;j<f.parts.length;j++){
         var sp=f.parts[j]; sp.t+=dt;
         if(sp.t>=sp.life) continue;
@@ -981,7 +989,8 @@ function drawGrid(){
   ctx2d.clearRect(0,0,960,540);
   ctx2d.fillStyle="#020907"; ctx2d.fillRect(0,0,960,540);
   ctx2d.font="12px monospace";
-  for(var i=particles.length-1;i>=0;i--){
+  if(decorativeMotion() && !particles.length) for(var seed=0;seed<80;seed++) spawnParticle(true);
+  for(var i=particles.length-1;decorativeMotion() && i>=0;i--){
     var pt=particles[i]; pt.y-=pt.spd; pt.life--;
     if(pt.y<-PARTICLE_CELL_H||pt.life<=0){
       /* liberar celda y reciclar */
@@ -1008,7 +1017,7 @@ function drawGrid(){
     ctx2d.fillText("CAPA "+l, x, 25);
   }
   ctx2d.textAlign="start";
-  var t=performance.now()/1000;
+  var t=decorativeMotion()?performance.now()/1000:0;
   var hoverId=gridHoverNode?gridHoverNode.id:null;
   for(var k=0;k<g.nodes.length;k++){
     var n=g.nodes[k], nbrs=g.adj[n.id]||[];
@@ -1019,7 +1028,7 @@ function drawGrid(){
       /* aristas del nodo bajo el cursor: resaltadas con glow */
       ctx2d.strokeStyle=hot?"rgba(255,255,255,0.8)":bothKnown?"rgba(77,255,166,0.28)":"rgba(31,92,70,0.15)";
       ctx2d.lineWidth=hot?2:1.4;
-      if(hot){ ctx2d.shadowColor="rgba(255,255,255,0.7)"; ctx2d.shadowBlur=6; }
+      if(hot){ ctx2d.shadowColor="rgba(255,255,255,0.7)"; ctx2d.shadowBlur=_deckPrefs.glow?6:0; }
       ctx2d.beginPath(); ctx2d.moveTo(n.x,n.y); ctx2d.lineTo(nb.x,nb.y); ctx2d.stroke();
       ctx2d.shadowBlur=0;
       /* flujo de datos: pulsos que recorren las aristas conocidas */
@@ -1043,7 +1052,7 @@ function drawGrid(){
     var cr=(cur.boss)?19:(cur.type==="vault"?17:14);
     var pulse=cr+6+Math.sin(t*4)*3;
     ctx2d.strokeStyle="#ff4dc4"; ctx2d.lineWidth=3;
-    ctx2d.shadowColor="#ff4dc4"; ctx2d.shadowBlur=14;
+    ctx2d.shadowColor="#ff4dc4"; ctx2d.shadowBlur=_deckPrefs.glow?14:0;
     ctx2d.beginPath(); ctx2d.arc(cur.x,cur.y,pulse,0,Math.PI*2); ctx2d.stroke();
     /* satélite que gira sobre el anillo: marca la posición actual SIN
        tapar el glifo del nodo (el punto central lo cubría) */
@@ -1098,7 +1107,7 @@ function drawNode(n,t){
   var hov=gridHoverNode && gridHoverNode.id===n.id;
   var r=(n.boss)?19:(n.type==="vault"?17:14);
   if(hov) r+=2;
-  ctx2d.shadowColor=col; ctx2d.shadowBlur=(n.id===inImmersion.current)?16:(hov?14:8);
+  ctx2d.shadowColor=col; ctx2d.shadowBlur=_deckPrefs.glow?((n.id===inImmersion.current)?16:(hov?14:8)):0;
   ctx2d.fillStyle=col; ctx2d.beginPath(); ctx2d.arc(n.x,n.y,r,0,Math.PI*2); ctx2d.fill();
   ctx2d.shadowBlur=0;
   ctx2d.fillStyle="#030a08"; ctx2d.font=(n.boss?"bold 19px":"17px")+" monospace";

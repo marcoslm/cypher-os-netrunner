@@ -164,6 +164,7 @@ function ensureStateIntegrity(){
   if(S.snd==null) S.snd=true;   /* canal FX/UI: por defecto ON */
   if(S.amb==null) S.amb=false;  /* canal de fondo: por defecto OFF */
   if(S.mus==null) S.mus=true;   /* canal de música: por defecto ON */
+  if(typeof syncDeckState==="function") syncDeckState(); /* ajustes locales, no del importado */
   if(!S._seenPanels) S._seenPanels={};
   if(!S.achievements) S.achievements=[];
   if(!S._seenTransmissions) S._seenTransmissions=[];

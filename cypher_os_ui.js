@@ -57,16 +57,15 @@ function clearTutorialHighlights(){
 
 function toggleSound(){
   /* canal FX/UI (botones, avisos, logros…) */
-  S.snd=!S.snd;
-  msg("sonidos fx/ui "+(S.snd?"activados":"desactivados")+".");
-  updateTopbar(); save();
+  setDeckPref("snd",!_deckPrefs.snd);
+  msg("sonidos fx/ui "+(_deckPrefs.snd?"activados":"desactivados")+".");
+  updateTopbar(); if(S) save();
 }
 function toggleAmbient(){
   /* canal de fondo: tonos y ruido blanco constantes */
-  S.amb=!S.amb;
-  msg("sonido de fondo "+(S.amb?"activado":"desactivado")+".");
-  if(!S.amb) stopAmbient(); else updateAmbient();
-  updateTopbar(); save();
+  setDeckPref("amb",!_deckPrefs.amb);
+  msg("sonido de fondo "+(_deckPrefs.amb?"activado":"desactivado")+".");
+  updateTopbar(); if(S) save();
 }
 
 
@@ -142,12 +141,94 @@ var msgEl = null;
 var currentView = "inicio";
 var MSG_TYPE_DELAY=45, MSG_TYPE_MAX_DURATION=6000;
 var _msgTypeTimer=null, _msgTypeJob=null;
-var _msgMotion=window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+var _msgMotion=_displayMotion;
+
+/* Panel de control: DOM estable para no perder el foco al mover sliders. */
+var _controlReturnFocus=null;
+function controlPanelOpen(){
+  var el=document.getElementById("controls-overlay");
+  return !!(el && el.classList.contains("show"));
+}
+function syncControlPanel(){
+  var channels=[{key:"snd",id:"h-snd",name:"FX"},{key:"amb",id:"h-amb",name:"Ambiente"},{key:"mus",id:"h-mus",name:"Música"}];
+  channels.forEach(function(ch){
+    var b=document.getElementById(ch.id), on=_deckPrefs[ch.key];
+    if(!b) return;
+    b.classList.toggle("is-on",on); b.setAttribute("aria-pressed",String(on));
+    var label=ch.name+": "+(ch.key==="mus"?(on?"activada":"desactivada"):(on?"activado":"desactivado"));
+    b.setAttribute("title",label); b.setAttribute("aria-label",label);
+  });
+  var overlay=document.getElementById("controls-overlay");
+  if(!overlay) return;
+  overlay.querySelectorAll("[data-pref]").forEach(function(b){
+    var key=b.getAttribute("data-pref"), on=_deckPrefs[key];
+    b.textContent=on?"ON":"OFF"; b.classList.toggle("is-on",on);
+    b.setAttribute("aria-pressed",String(on));
+    if(key==="snd" || key==="amb" || key==="mus") b.setAttribute("aria-label",(key==="snd"?"FX":key==="amb"?"Ambiente":"Música")+": "+(on?"activado":"desactivado"));
+  });
+  overlay.querySelectorAll("[data-control]").forEach(function(input){
+    var key=input.getAttribute("data-control"), value=key==="brillo"?Math.round(_brillo*100):_deckPrefs[key];
+    if(String(input.value)!==String(value)) input.value=String(value);
+    input.setAttribute("aria-valuetext",value+" por ciento");
+    input.style.setProperty("--level",((value-Number(input.getAttribute("min")))/(Number(input.getAttribute("max"))-Number(input.getAttribute("min")))*100)+"%");
+    var out=document.getElementById(key==="brillo"?"h-brillo":"value-"+key);
+    if(out) out.textContent=value+"%";
+  });
+  var note=document.getElementById("controls-motion");
+  if(note) note.textContent=_displayMotion && _displayMotion.matches ? "Movimiento reducido del sistema activo: tiene prioridad sobre las animaciones." : reducedMotion()?"Movimiento reducido activo: las animaciones decorativas quedan suspendidas.":"Los avisos, el Grid y los minijuegos conservan toda su información.";
+}
+function openControlPanel(){
+  if(combatActive || confirmOpen() || (S && S.player.cpu<=0) || (!S && _bootStarted)) return;
+  if(controlPanelOpen() || modalOpen()) return;
+  var el=document.getElementById("controls-overlay"); if(!el) return;
+  _controlReturnFocus=document.activeElement;
+  syncControlPanel(); el.classList.add("show");
+  var b=document.getElementById("h-controls"); if(b) b.setAttribute("aria-expanded","true");
+  syncGameInputLock();
+}
+function closeControlPanel(restoreFocus){
+  var el=document.getElementById("controls-overlay");
+  if(!el || !controlPanelOpen()) return;
+  el.classList.remove("show");
+  var b=document.getElementById("h-controls"); if(b) b.setAttribute("aria-expanded","false");
+  var target=_controlReturnFocus; _controlReturnFocus=null;
+  syncGameInputLock();
+  if(restoreFocus!==false && target && document.documentElement.contains(target) && !gameInputLayer()) target.focus();
+}
+ACTIONS.openControls=openControlPanel;
+ACTIONS.closeControls=function(){ closeControlPanel(); };
+ACTIONS.toggleDeckPref=function(b){
+  if(!controlPanelOpen()) return;
+  var key=b.getAttribute("data-pref");
+  if(typeof _deckPrefs[key]!=="boolean") return;
+  setDeckPref(key,!_deckPrefs[key]);
+  if(S && (key==="snd" || key==="amb" || key==="mus")) save();
+};
+ACTIONS.resetControls=function(){
+  if(!controlPanelOpen()) return;
+  function focusReset(){
+    var el=document.querySelector('#controls-overlay [data-action="resetControls"]');
+    syncGameInputLock(); if(el) el.focus();
+  }
+  confirmModal({title:"RESTABLECER AJUSTES",body:"¿Restablecer audio, brillo y efectos visuales a los valores de fábrica? Tu partida y el modo de pantalla completa no cambiarán.",yes:"RESTABLECER",no:"CANCELAR",onYes:function(){ resetDeckPrefs(); if(S) save(); focusReset(); },onNo:focusReset});
+};
+var _controlsOverlay=document.getElementById("controls-overlay");
+if(_controlsOverlay){
+  _controlsOverlay.addEventListener("click",function(e){ if(e.target===_controlsOverlay && !confirmOpen()) closeControlPanel(); });
+  _controlsOverlay.addEventListener("input",function(e){
+    if(!controlPanelOpen() || confirmOpen()) return;
+    var key=e.target.getAttribute("data-control"), value=Number(e.target.value);
+    if(!key || !isFinite(value)) return;
+    if(key==="brillo") setBrillo(value/100); else setDeckPref(key,value);
+  });
+}
 
 /* El overlay visual no basta: impedir foco/clics en la partida que tapa.
    inert cubre navegadores modernos; captura de teclado/foco sirve de respaldo. */
 function gameInputLayer(){
   if(confirmOpen()) return document.getElementById("confirm-overlay");
+  if(controlPanelOpen() && (combatActive || (S && S.player.cpu<=0))) closeControlPanel(false);
+  if(controlPanelOpen()) return document.getElementById("controls-overlay");
   if(S && S.player.cpu<=0) return document.getElementById("flatline");
   if(combatActive) return document.getElementById("combat");
   return null;
@@ -173,12 +254,18 @@ function syncGameInputLock(){
     os.inert=!!layer;
     if(layer) os.setAttribute("inert",""); else os.removeAttribute("inert");
   }
+  ["intro","boot","controls-overlay"].forEach(function(id){
+    var el=document.getElementById(id); if(!el) return;
+    var locked=!!(layer && layer!==el);
+    el.inert=locked;
+    if(locked) el.setAttribute("inert",""); else el.removeAttribute("inert");
+  });
   var combat=document.getElementById("combat"), flat=document.getElementById("flatline");
   if(combat) combat.inert=!!(layer && layer!==combat);
   if(flat) flat.inert=!!(layer && layer!==flat);
   if(layer && (document.activeElement===layer || !layerContains(layer, document.activeElement))) focusInputLayer(layer);
 }
-function livingInteraction(){ return !!(S && S.player.cpu>0 && !combatActive && !confirmOpen()); }
+function livingInteraction(){ return !!(S && S.player.cpu>0 && !combatActive && !confirmOpen() && !controlPanelOpen()); }
 
 document.addEventListener("keydown", function(e){
   var layer=gameInputLayer();
@@ -240,7 +327,7 @@ function msg(text, cls){
   msgEl.setAttribute("role","status"); msgEl.setAttribute("aria-live","polite"); msgEl.setAttribute("aria-atomic","true");
   msgEl.setAttribute("aria-label",text); msgEl.setAttribute("title",text);
   body.scrollLeft=0;
-  var reduced=!!(_msgMotion && _msgMotion.matches);
+  var reduced=!decorativeMotion();
   var bar=document.getElementById("msgbar");
   if(bar){
     bar.classList.remove("msg-flash");
@@ -256,7 +343,7 @@ function msg(text, cls){
     if(_msgTypeJob!==job) return;
     _msgTypeTimer=null;
     if(msgEl!==job.el || document.getElementById("msg-text")!==job.body){ stopMessageTyping(); return; }
-    if(document.hidden || (_msgMotion && _msgMotion.matches)){ finishMessageTyping(); return; }
+    if(document.hidden || !decorativeMotion()){ finishMessageTyping(); return; }
     var next=Math.min(job.chars.length,Math.max(job.index+1,Math.floor((Date.now()-job.start)/job.delay)));
     job.index=next; job.body.textContent=job.chars.slice(0,next).join("");
     /* Si no cabe, el cursor sigue al extremo que se está escribiendo. */
@@ -293,7 +380,7 @@ function closeOverlay(){
 }
 /* ¿hay algún modal/overlay abierto? (bloquea atajos de teclado) */
 function modalOpen(){
-  if(confirmOpen()) return true;
+  if(confirmOpen() || controlPanelOpen()) return true;
   var ov=document.getElementById("overlay");
   if(ov && ov.classList.contains("show")) return true;
   var st=document.getElementById("skilltree-overlay");
@@ -392,9 +479,7 @@ function updateTopbar(){
   }
   if(xpLabel) xpLabel.textContent = "XP "+p.xp+"/"+xpParaNivel();
   var clk = document.getElementById("h-clock"); if(clk) clk.textContent = timeStr(S.clock);
-  var snd = document.getElementById("h-snd"); if(snd) snd.textContent = "FX: " + (S.snd?"ON":"OFF");
-  var amb = document.getElementById("h-amb"); if(amb) amb.textContent = "AMB: " + (S.amb===true?"ON":"OFF");
-  var mus = document.getElementById("h-mus"); if(mus) mus.textContent = "MUS: " + (S.mus!==false?"ON":"OFF");
+  syncControlPanel();
   /* pulso visual de topbar cuando el calor supera 70 */
   var topbar = document.getElementById("topbar");
   if(topbar){
@@ -454,7 +539,9 @@ document.addEventListener("click", function(e){
   var btn = e.target.closest("[data-action]");
   if(!btn) return;
   var a = btn.getAttribute("data-action");
-  if(!S && a!=="startIntro") return;
+  var controlAction=["openControls","closeControls","toggleDeckPref","resetControls","confirmYes","confirmNo"].indexOf(a)>=0;
+  if(!S && a!=="startIntro" && !controlAction) return;
+  if(controlPanelOpen() && !controlAction) return;
   if(S && S.player.cpu<=0 && ["reconnect","newRecord","confirmYes","confirmNo"].indexOf(a)<0) return;
   if(combatActive && a!=="vaultCancel" && a!=="confirmYes" && a!=="confirmNo") return;
   if(confirmOpen() && a!=="confirmYes" && a!=="confirmNo") return;
@@ -1321,6 +1408,7 @@ CMD.quien = function(arg){
   msg(line,"cyan");
 };
 CMD.diario = function(){ _logCat="lore"; showView("registro"); msg("REGISTRO ▸ filtrado por lore: tu historia, sin el ruido del sistema.","cyan"); };
+CMD.ajustes = CMD.config = openControlPanel;
 CMD.sonido = CMD.snd = CMD.sound = toggleSound;
 CMD.ambiente = CMD.amb = CMD.ambience = toggleAmbient;
 CMD.musica = CMD.music = CMD.mus = toggleMusic;
@@ -1412,7 +1500,7 @@ function clearSessionRuntime(){
   cancelActiveCombat();
   stopGridRender(); inImmersion=null;
   clearInterval(loopId); loopId=null;
-  closeOverlay();
+  closeOverlay(); closeControlPanel(false);
   var tree=document.getElementById("skilltree-overlay");
   if(tree){ tree.classList.remove("show"); tree.classList.add("hidden"); }
   ACTIONS.closeSkillTree=null;
@@ -1875,17 +1963,9 @@ if(_btnReset) _btnReset.addEventListener("click", function(){
     }
   });
 });
-var _hSnd=document.getElementById("h-snd");
-if(_hSnd) _hSnd.addEventListener("click", toggleSound);
-var _hAmb=document.getElementById("h-amb");
-if(_hAmb) _hAmb.addEventListener("click", toggleAmbient);
-var _hMus=document.getElementById("h-mus");
-if(_hMus) _hMus.addEventListener("click", toggleMusic);
-/* clic en el valor LUM = volver a la calibración de fábrica */
-var _hBrillo=document.getElementById("h-brillo-wrap");
-if(_hBrillo) _hBrillo.addEventListener("click", function(){
-  setBrillo(1); msg("brillo de pantalla a la calibración de fábrica (100%).","cyan");
-});
+ACTIONS.toggleSound=toggleSound;
+ACTIONS.toggleAmbient=toggleAmbient;
+ACTIONS.toggleMusic=toggleMusic;
 document.querySelectorAll(".navbtn[data-view]").forEach(function(b){
   b.addEventListener("click", function(){
     if(!livingInteraction()) return;
@@ -1897,7 +1977,7 @@ document.querySelectorAll(".navbtn[data-view]").forEach(function(b){
 /* ---- efecto cyberpunk al clicar cualquier botón ---- */
 document.addEventListener("pointerdown", function(e){
   var btn = e.target.closest("button");
-  if(!btn || btn.disabled) return;
+  if(!btn || btn.disabled || !decorativeMotion()) return;
   /* elegir variante según el tipo de botón */
   var cls;
   if(btn.classList.contains("magenta")) cls="cyber-click-magenta";
@@ -1951,7 +2031,7 @@ function startClock(){ clearInterval(loopId); loopId=setInterval(gameLoop,1000);
 var _canal7Cd=20;
 var _canal7Notes=[220,261.63,329.63,293.66,261.63,220,196,174.61];
 function playCanal7(){
-  if(!AC || S.mus===false) return;
+  if(!AC || !musicEnabled()) return;
   try{
     resumeAudio();
     var t0=AC.currentTime+0.05, i, echo;
@@ -1964,22 +2044,25 @@ function playCanal7(){
         g.gain.setValueAtTime(0.0001,tt);
         g.gain.exponentialRampToValueAtTime(echo?0.010:0.022,tt+0.03);
         g.gain.exponentialRampToValueAtTime(0.0001,tt+0.36);
-        o.connect(g); g.connect(AC.destination);
+        routeTone(o,g,"mus");
         o.start(tt); o.stop(tt+0.4);
       }
     }
   }catch(e){}
 }
 
-/* glitch visual aleatorio: 1 cada 30-60s, solo si el canal FX está ON */
-var _glitchId=null;
+/* Glitches exclusivamente visuales: no dependen del mute de audio. */
+var _glitchId=null, _glitchEndId=null;
 function startGlitchLoop(){
-  clearTimeout(_glitchId);
+  clearTimeout(_glitchId); clearTimeout(_glitchEndId);
+  _glitchId=null; _glitchEndId=null;
+  document.body.classList.remove("glitch-random");
+  if(!S || !decorativeMotion()) return;
   function scheduleGlitch(){
     _glitchId=setTimeout(function(){
-      if(!S || !S.snd){ scheduleGlitch(); return; }
+      if(!S || !decorativeMotion()) return;
       document.body.classList.add("glitch-random");
-      setTimeout(function(){ document.body.classList.remove("glitch-random"); },200);
+      _glitchEndId=setTimeout(function(){ document.body.classList.remove("glitch-random"); _glitchEndId=null; },200);
       scheduleGlitch();
     }, randInt(30000,60000));
   }
@@ -2064,7 +2147,7 @@ function initDifficultySelect(){
 var _bootStarted=false;
 var _pendingDifficulty=null;
 function beginIntro(){
-  if(_bootStarted) return;
+  if(_bootStarted || controlPanelOpen() || confirmOpen()) return;
   _bootStarted=true;
   /* si la última sesión quedó en pantalla completa, volver a entrar AHORA:
      el clic de ▶ COMENZAR es el gesto de usuario que exige el navegador
@@ -2121,6 +2204,10 @@ document.addEventListener("keydown", function(e){
     if(ck==="k"||ck==="g"||(e.key>="1"&&e.key<="9")) e.preventDefault();
   }
   if(e.key==="Escape" && confirmOpen()){ resolveConfirm(false); e.preventDefault(); return; }
+  if(controlPanelOpen()){
+    if(e.key==="Escape"){ closeControlPanel(); e.preventDefault(); }
+    return;
+  }
   if(combatActive) return;
   /* si el foco está en un input/textarea, no ejecutar atajos (excepto Ctrl+K y Escape) */
   var el=document.activeElement;
@@ -2173,7 +2260,7 @@ _initIntroHandlers();
 updateLegendaryOption();
 initDifficultySelect();
 /* el brillo guardado se aplica desde el primer instante (intro incluida) */
-applyBrillo();
+applyBrillo(); applyDisplayPrefs(); syncControlPanel();
 /* pantalla completa: indicador inicial; si el navegador no la admite, se
    oculta el botón FULL (nunca controles decorativos) */
 if(!fsSupported()){

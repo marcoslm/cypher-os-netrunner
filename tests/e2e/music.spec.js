@@ -45,7 +45,7 @@ test('música: calor alto salta pendientes, reproduce El muro y persiste MUS', a
   await page.locator('#h-mus').click();
   expect(await page.evaluate(() => ({ mus: S.mus, paused: MUSIC.el.paused, scene: MUSIC.scene }))).toEqual({ mus: false, paused: true, scene: null });
   await game.reload();
-  await expect(page.locator('#h-mus')).toContainText('OFF');
+  await expect(page.locator('#h-mus')).toHaveAttribute('aria-pressed', 'false');
   expect((await game.snapshot()).saved.mus).toBe(false);
 });
 

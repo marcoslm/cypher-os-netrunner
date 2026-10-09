@@ -149,6 +149,9 @@ const test = base.extend({
           S.player.stats = { ...defaults.player.stats, ...player.stats };
           S.player.stats.iceByTier = { ...defaults.player.stats.iceByTier, ...player.stats?.iceByTier };
           S.history = { ...defaults.history, ...state.history };
+          // Device preferences are arranged independently from the save file.
+          for (const key of ['snd', 'amb', 'mus']) _deckPrefs[key] = S[key];
+          saveDeckPrefs();
           ensureStateIntegrity();
           if (!Object.prototype.hasOwnProperty.call(state, 'offers')) generateOffers();
           inImmersion = options.immersion || null;

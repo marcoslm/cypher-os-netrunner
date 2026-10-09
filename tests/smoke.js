@@ -183,7 +183,7 @@ const cmdKeys = Object.keys(T.CMD);
 const helpWords = ["red","net","dip","superficie","contactos","contact","trabajos","jobs","tienda","shop",
   "stats","estado","intel","informes","log","registro","salir","back","nucleo","sonido","snd","musica",
   "music","mus","ambiente","amb","brillo","lum","brightness","pantalla","full","fs","expediente","quien","diario",
-  "glosario","mundo","guardar","clear","cls","whoami","tiempo","ayuda","help","?","mensajes","buzon","mail","responder"];
+  "ajustes","config","glosario","mundo","guardar","clear","cls","whoami","tiempo","ayuda","help","?","mensajes","buzon","mail","responder"];
 const cmdsMissing = helpWords.filter(w => cmdKeys.indexOf(w) < 0);
 ok(cmdsMissing.length === 0, "todos los comandos documentados en AYUDA existen en CMD" +
    (cmdsMissing.length ? " → faltan: " + cmdsMissing.join(", ") : ""));
@@ -197,7 +197,7 @@ const defined = new Set(Array.from(src.js.matchAll(/ACTIONS\.([a-zA-Z]+)\s*=/g))
 const missingActs = Array.from(acts).filter(a => !defined.has(a));
 ok(missingActs.length === 0, "todo data-action tiene handler en ACTIONS" +
    (missingActs.length ? " → faltan: " + missingActs.join(", ") : ""));
-["intel-k","offer-why","type-cursor","log-filters","log-chip","caretBlink","fs-btn"].forEach(c =>
+["intel-k","offer-why","type-cursor","log-filters","log-chip","caretBlink","quick-btn"].forEach(c =>
   ok(src.css.indexOf(c) >= 0, "CSS define " + c));
 
 /* ---------- NIVEL 2: mensajería (bandeja del deck) ---------- */
@@ -301,11 +301,12 @@ async function finish(){
   const gridIntel = await require("./grid-intel-hud").run({summary:true});
   const messages = await require("./message-typewriter").run({summary:true});
   const music = await require("./music").run({summary:true});
-  const totalFails = fails + harness.fails + regressions.fails + jobs.fails + gridIntel.fails + messages.fails + music.fails;
+  const controls = await require("./controls").run({summary:true});
+  const totalFails = fails + harness.fails + regressions.fails + jobs.fails + gridIntel.fails + messages.fails + music.fails + controls.fails;
   console.log("\n================ RESUMEN ================");
   console.log("humo: " + passes + " correctas · arnés: " + harness.passes + "/" + harness.total +
-    " · regresiones: " + regressions.passes + "/" + regressions.total + " · trabajos/persistencia: " + jobs.passes + "/" + jobs.total + " · expedientes/HUD: " + gridIntel.passes + "/" + gridIntel.total + " · avisos: " + messages.passes + "/" + messages.total + " · música: " + music.passes + "/" + music.total);
-  console.log("correctas: " + (passes + harness.passes + regressions.passes + jobs.passes + gridIntel.passes + messages.passes + music.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
+    " · regresiones: " + regressions.passes + "/" + regressions.total + " · trabajos/persistencia: " + jobs.passes + "/" + jobs.total + " · expedientes/HUD: " + gridIntel.passes + "/" + gridIntel.total + " · avisos: " + messages.passes + "/" + messages.total + " · música: " + music.passes + "/" + music.total + " · controles: " + controls.passes + "/" + controls.total);
+  console.log("correctas: " + (passes + harness.passes + regressions.passes + jobs.passes + gridIntel.passes + messages.passes + music.passes + controls.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
   process.exitCode = totalFails ? 1 : 0;
 }
 finish().catch(function(err){

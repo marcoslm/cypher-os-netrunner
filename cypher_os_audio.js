@@ -1,7 +1,8 @@
 /* ============================================================
    CYPHER://OS  ·  cypher_os_audio.js — AUDIO Y PREFERENCIAS DE DISPLAY
    Audio WebAudio sin archivos (FX + ambiente) y música opcional por
-   escenas (music/*.mp3). Brillo (LUM) y pantalla completa (FULL).
+   escenas (music/*.mp3). Preferencias locales, volumen por canal,
+   efectos visuales, brillo (LUM) y pantalla completa (FULL).
    Orden de carga de los .js (scripts clásicos sin módulos, ámbito global
    compartido; ver AGENTS.md §4):
      1/6 data → 2/6 core → 3/6 audio → 4/6 grid → 5/6 combat → 6/6 ui
@@ -12,7 +13,120 @@
    4. AUDIO (WebAudio) — sin archivos, generado en tiempo real
    ============================================================ */
 
-var AC = null;
+/* Preferencias del dispositivo. S conserva solo espejos de audio para los
+   registros antiguos; importar/reiniciar nunca sustituye esta configuración. */
+var DECK_PREFS_KEY="cypher_os_controls_v1";
+function defaultDeckPrefs(){
+  return {snd:true,amb:false,mus:true,fxVolume:100,ambVolume:100,musVolume:100,
+    crt:true,glow:true,animations:true,reducedMotion:false};
+}
+function loadDeckPrefs(){
+  var prefs=defaultDeckPrefs(), raw, data, legacy, key;
+  try{
+    raw=localStorage.getItem(DECK_PREFS_KEY);
+    if(raw!==null){
+      data=JSON.parse(raw);
+      if(!data || typeof data!=="object" || Array.isArray(data)) return prefs;
+      for(key in prefs){
+        if(typeof prefs[key]==="boolean"){
+          if(typeof data[key]==="boolean") prefs[key]=data[key];
+        } else if(typeof data[key]==="number" && isFinite(data[key])){
+          prefs[key]=clamp(Math.round(data[key]),0,100);
+        }
+      }
+    } else {
+      /* Migrar únicamente el registro LOCAL, nunca un archivo importado. */
+      legacy=JSON.parse(localStorage.getItem("cypher_os_save_v9") || "null");
+      if(legacy && typeof legacy==="object"){
+        ["snd","amb","mus"].forEach(function(k){ if(typeof legacy[k]==="boolean") prefs[k]=legacy[k]; });
+        try{ localStorage.setItem(DECK_PREFS_KEY,JSON.stringify(prefs)); }catch(writeError){}
+      }
+    }
+  }catch(e){ /* storage bloqueado o datos dañados: valores de fábrica */ }
+  return prefs;
+}
+var _deckPrefs=loadDeckPrefs();
+var _displayMotion=window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+function saveDeckPrefs(){
+  try{ localStorage.setItem(DECK_PREFS_KEY,JSON.stringify(_deckPrefs)); }catch(e){ /* mantener ajustes en memoria */ }
+}
+function syncDeckState(){
+  if(S){ S.snd=_deckPrefs.snd; S.amb=_deckPrefs.amb; S.mus=_deckPrefs.mus; }
+}
+function reducedMotion(){ return _deckPrefs.reducedMotion || !!(_displayMotion && _displayMotion.matches); }
+function decorativeMotion(){ return _deckPrefs.animations && !reducedMotion(); }
+function applyDisplayPrefs(){
+  var el=document.documentElement;
+  if(el){
+    el.classList.toggle("crt-off",!_deckPrefs.crt);
+    el.classList.toggle("glow-off",!_deckPrefs.glow);
+    el.classList.toggle("motion-off",!decorativeMotion());
+  }
+  if(!decorativeMotion()){
+    document.body.classList.remove("glitch-random");
+    if(typeof finishMessageTyping==="function") finishMessageTyping();
+    if(typeof clearGridDecoration==="function") clearGridDecoration();
+  }
+  if(typeof startGlitchLoop==="function" && S) startGlitchLoop();
+  if(typeof syncControlPanel==="function") syncControlPanel();
+}
+function onDisplayMotionChange(){ applyDisplayPrefs(); }
+if(_displayMotion){
+  if(_displayMotion.addEventListener) _displayMotion.addEventListener("change",onDisplayMotionChange);
+  else if(_displayMotion.addListener) _displayMotion.addListener(onDisplayMotionChange);
+}
+var AC = null, FX_BUS=null, MUS_BUS=null;
+function channelBus(kind){
+  if(!AC) return null;
+  var bus=kind==="fx"?FX_BUS:MUS_BUS;
+  if(!bus){
+    bus=AC.createGain(); bus.connect(AC.destination);
+    if(kind==="fx") FX_BUS=bus; else MUS_BUS=bus;
+  }
+  bus.gain.value=(kind==="fx"?fxEnabled():musicEnabled()) ? _deckPrefs[kind==="fx"?"fxVolume":"musVolume"]/100 : 0;
+  return bus;
+}
+function routeTone(osc,g,kind){
+  osc.connect(g); g.connect(channelBus(kind));
+  osc.onended=function(){
+    try{ osc.disconnect(); }catch(e){}
+    try{ g.disconnect(); }catch(e){}
+  };
+}
+function applyChannelVolumes(){
+  if(FX_BUS) FX_BUS.gain.value=fxEnabled()?_deckPrefs.fxVolume/100:0;
+  if(MUS_BUS) MUS_BUS.gain.value=musicEnabled()?_deckPrefs.musVolume/100:0;
+  if(AMBIENT.master) AMBIENT.master.gain.value=_deckPrefs.ambVolume/100;
+  var rec=MUSIC.scene && MUSIC.playing[MUSIC.scene];
+  if(MUSIC.el) MUSIC.el.volume=rec && rec.t ? rec.t.v*_deckPrefs.musVolume/100 : 0;
+}
+function setDeckPref(key,value){
+  var defaults=defaultDeckPrefs();
+  if(!Object.prototype.hasOwnProperty.call(defaults,key)) return;
+  if(typeof defaults[key]==="boolean"){
+    if(typeof value!=="boolean") return;
+  } else {
+    if(typeof value!=="number" || !isFinite(value)) return;
+    value=clamp(Math.round(value),0,100);
+  }
+  _deckPrefs[key]=value; saveDeckPrefs(); syncDeckState();
+  applyChannelVolumes();
+  if(key==="amb"){
+    if(!value) stopAmbient();
+    else if(S){ initAudio(); updateAmbient(); }
+  }
+  if(key==="mus"){
+    if(!value) stopMusic(); else if(S) updateMusic();
+  }
+  if(key==="crt" || key==="glow" || key==="animations" || key==="reducedMotion") applyDisplayPrefs();
+  if(typeof syncControlPanel==="function") syncControlPanel();
+}
+function resetDeckPrefs(){
+  _deckPrefs=defaultDeckPrefs(); saveDeckPrefs(); syncDeckState();
+  setBrillo(1); applyChannelVolumes(); applyDisplayPrefs();
+  if(S){ updateAmbient(); updateTopbar(); }
+}
+
 function initAudio(){
   if(AC) return;
   try {
@@ -35,8 +149,7 @@ function resumeAudio(onReady){
 }
 /* Durante intro/BIOS solo se lee la preferencia: S nace en afterBoot. */
 function fxEnabled(){
-  var state=S || load();
-  return !state || state.snd!==false;
+  return S ? S.snd!==false : _deckPrefs.snd;
 }
 /* ganancia maestra del canal FX: con música sonando, los beeps no deben
    quedar tapados. Los volúmenes del objeto sound son relativos entre sí. */
@@ -52,7 +165,7 @@ function beep(freq, dur, type, vol){
       var osc = AC.createOscillator(), g = AC.createGain();
       osc.type = type || "square"; osc.frequency.value = freq;
       var v = (vol != null ? vol : 0.06) * FX_GAIN;
-      osc.connect(g); g.connect(AC.destination);
+      routeTone(osc,g,"fx");
       var now = AC.currentTime;
       g.gain.setValueAtTime(v, now);
       g.gain.exponentialRampToValueAtTime(0.0001, now+dur);
@@ -120,7 +233,7 @@ var sound = {
    4b. AUDIO AMBIENTAL — drones procedural por modo
    ============================================================ */
 
-var AMBIENT={osc1:null,osc2:null,osc3:null,gain:null,gain3:null,filter:null,activeMode:null,
+var AMBIENT={master:null,osc1:null,osc2:null,osc3:null,gain:null,gain3:null,filter:null,activeMode:null,
   driftLfo:null,driftLfoGain:null,
   noiseSrc:null,noiseFilter:null,noiseGain:null,noiseLfo:null,noiseLfoGain:null,
   heart:null,heartGain:null,heartLfo:null,heartLfoGain:null};
@@ -144,11 +257,13 @@ function startAmbient(mode){
   try{
     resumeAudio();
     /* Registrar al crear permite limpiar también un arranque incompleto. */
+    var master=AMBIENT.master=AC.createGain();
+    master.gain.value=_deckPrefs.ambVolume/100; master.connect(AC.destination);
     var g=AMBIENT.gain=AC.createGain();
     var f=AMBIENT.filter=AC.createBiquadFilter();
     f.type="lowpass"; f.frequency.value=200;
     g.gain.value=0; /* fade-in desde 0 */
-    f.connect(g); g.connect(AC.destination);
+    f.connect(g); g.connect(master);
     var o1=AMBIENT.osc1=AC.createOscillator(), o2=AMBIENT.osc2=AC.createOscillator();
     o1.type="sine"; o2.type="sine";
     if(mode==="street"){
@@ -182,7 +297,7 @@ function startAmbient(mode){
       var gHeart=AMBIENT.heart=AC.createOscillator();
       gHeart.type="sine"; gHeart.frequency.value=58;
       var ghGain=AMBIENT.heartGain=AC.createGain(); ghGain.gain.value=0;
-      gHeart.connect(ghGain); ghGain.connect(AC.destination);
+      gHeart.connect(ghGain); ghGain.connect(master);
       gHeart.start();
       var ghLfo=AMBIENT.heartLfo=AC.createOscillator();
       ghLfo.type="sawtooth"; ghLfo.frequency.value=0.8;
@@ -198,7 +313,7 @@ function startAmbient(mode){
       var heart=AMBIENT.heart=AC.createOscillator();
       heart.type="sine"; heart.frequency.value=62;
       var hGain=AMBIENT.heartGain=AC.createGain(); hGain.gain.value=0;
-      heart.connect(hGain); hGain.connect(AC.destination);
+      heart.connect(hGain); hGain.connect(master);
       heart.start();
       var hLfo=AMBIENT.heartLfo=AC.createOscillator();
       hLfo.type="sawtooth"; hLfo.frequency.value=1.3;
@@ -223,7 +338,7 @@ function startAmbient(mode){
       var nF=AMBIENT.noiseFilter=AC.createBiquadFilter();
       nF.type="lowpass"; nF.frequency.value=900;
       var nG=AMBIENT.noiseGain=AC.createGain(); nG.gain.value=0.020;
-      ns.connect(nF); nF.connect(nG); nG.connect(AC.destination);
+      ns.connect(nF); nF.connect(nG); nG.connect(master);
       ns.start();
       /* LFO de volumen del ruido */
       var nLfo=AMBIENT.noiseLfo=AC.createOscillator();
@@ -387,7 +502,7 @@ function playMusicScene(scene, rotate){
     } else {
       try{ if(wantPos>=0 && wantPos<el.duration-1) el.currentTime=wantPos; }catch(e){}
     }
-    el.volume=rec.t.v;
+    el.volume=rec.t.v*_deckPrefs.musVolume/100;
     var pr=el.play();
     /* autoplay bloqueado: reintentar; un rechazo de otra pista ya no actúa */
     if(pr && pr.catch) pr.catch(function(err){
@@ -417,14 +532,13 @@ function stopMusic(){
     try{ MUSIC.playing[MUSIC.scene].pos=MUSIC.el.currentTime; }catch(e){}
   }
   if(MUSIC.el){ try{ MUSIC.el.pause(); }catch(e){} }
+  if(MUS_BUS) MUS_BUS.gain.value=0;
   MUSIC.scene=null;
 }
 function toggleMusic(){
-  S.mus=!S.mus;
-  msg("música "+(S.mus?"activada":"desactivada")+".");
-  if(!S.mus) stopMusic();
-  else { MUSIC.scene=null; updateMusic(); }
-  updateTopbar(); save();
+  setDeckPref("mus",!_deckPrefs.mus);
+  msg("música "+(_deckPrefs.mus?"activada":"desactivada")+".");
+  updateTopbar(); if(S) save();
 }
 
 
@@ -463,6 +577,7 @@ function applyBrillo(){
 function setBrillo(v){
   _brillo=clamp(Math.round(v*10)/10, BRILLO_MIN, BRILLO_MAX);
   saveBrillo(); applyBrillo();
+  if(typeof syncControlPanel==="function") syncControlPanel();
 }
 ACTIONS.lumDown=function(){ setBrillo(_brillo-BRILLO_STEP); };
 ACTIONS.lumUp=function(){ setBrillo(_brillo+BRILLO_STEP); };
@@ -541,8 +656,9 @@ function updateFsIndicator(){
   var b=document.getElementById("h-fs");
   if(!b) return;
   var on=fsActive();
-  b.textContent="FULL: "+(on?"ON":"OFF");
-  if(on) b.classList.add("fs-on"); else b.classList.remove("fs-on");
+  b.classList.toggle("is-on",on);
+  b.setAttribute("aria-pressed",String(on));
+  b.setAttribute("aria-label","Pantalla completa: "+(on?"activada":"desactivada"));
   b.setAttribute("title", on?"salir de pantalla completa":"pantalla completa · alternar");
 }
 function toggleFs(){
