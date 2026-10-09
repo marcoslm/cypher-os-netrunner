@@ -491,6 +491,7 @@ button.btn{
   text-shadow:0 0 12px rgba(255,77,196,.8);margin:10px 0;
   font-variant-numeric:tabular-nums;}
 .combat-memoria .mem-phase{font-size:11px;color:var(--gris);margin-bottom:6px;}
+.mem-input-hint{font-size:11px;color:var(--gris);text-align:center;margin-bottom:4px;}
 @keyframes memReveal{
   0%{opacity:1;text-shadow:0 0 20px rgba(255,77,196,1);}
   100%{opacity:0;text-shadow:none;}

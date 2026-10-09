@@ -73,8 +73,9 @@ async function memoryInput(page) {
   expect(sequence).toHaveLength(3 + battle.phase + Math.min(battle.tier - 1, 1));
   // T3 reveal is 3500 ms plus the actual 600 ms fade callback.
   await page.clock.runFor(4100);
-  await expect(page.locator('#memPhase')).toHaveText('REPITE LA SECUENCIA');
-  await expect(page.locator('#memSeq')).toHaveText(Array(sequence.length).fill('?').join(' '));
+  await expect(page.locator('#memZone')).toBeHidden();
+  await expect(page.locator('#memSeq')).toBeEmpty();
+  await expect(page.locator('#memInputHint')).toHaveText(`Secuencia de ${sequence.length} caracteres`);
   await expect(page.locator('#memInput')).toBeFocused();
   return sequence;
 }

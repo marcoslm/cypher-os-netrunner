@@ -352,8 +352,9 @@ function renderCombatMemoria(){
         '<div class="mem-phase" id="memPhase">MEMORIZA LA SECUENCIA</div>'+
         '<div class="mem-sequence" id="memSeq"></div>'+
       '</div>'+
-      '<div id="memInputZone" style="display:none">'+
-        '<div class="code-box"><input class="code-input" id="memInput" type="text" inputmode="none" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="repite la secuencia..."></div>'+
+      '<div id="memInputZone" class="hidden">'+
+        '<div class="mem-input-hint" id="memInputHint"></div>'+
+        '<div class="code-box"><input class="code-input" id="memInput" type="text" inputmode="none" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Repite la secuencia hexadecimal" aria-describedby="memInputHint" placeholder="repite la secuencia..."></div>'+
         buildHexKB("memDel","memEnter")+
         '<div class="timer-lbl" id="timerLbl">T-0.0s</div>'+
         '<div class="timer-bar"><i id="timerBar" style="width:100%"></i></div>'+
@@ -405,7 +406,10 @@ function startMemoriaPhase(){
   var memZone=document.getElementById("memZone");
   if(seqEl) seqEl.textContent=s.split("").join(" ");
   if(phaseEl) phaseEl.textContent="MEMORIZA LA SECUENCIA";
-  if(inputZone) inputZone.style.display="none";
+  if(inputZone) inputZone.classList.add("hidden");
+  if(memZone) memZone.classList.remove("hidden");
+  var hint=document.getElementById("memInputHint");
+  if(hint) hint.textContent="Secuencia de "+len+" caracteres";
   if(seqEl){ seqEl.classList.remove("mem-fadeout"); void seqEl.offsetWidth; }
   if(memZone){ memZone.classList.remove("mem-fadeout"); void memZone.offsetWidth; }
   /* ocultar después de 2s + tier*0.5s */
@@ -419,13 +423,14 @@ function startMemoriaPhase(){
       if(COM!==battle||!battle.alive||battle.memPhase!=="reveal"||battle.memPhaseSerial!==phaseSerial) return;
       battle.memFadeTimer=null;
       battle.memPhase="input";
-      if(phaseEl) phaseEl.textContent="REPITE LA SECUENCIA";
-      if(seqEl) seqEl.textContent="?".repeat(len).split("").join(" ");
-      if(inputZone) inputZone.style.display="block";
+      if(memZone) memZone.classList.add("hidden");
+      if(seqEl) seqEl.textContent="";
+      if(inputZone) inputZone.classList.remove("hidden");
       var inp=document.getElementById("memInput");
       if(inp){ inp.value=""; inp.focus(); }
       /* timer de combate */
       battle.remaining=battle.time;
+      updateCombatBars();
       clearInterval(combatTimer);
       var memTimer=setInterval(function(){
         if(COM!==battle||!battle.alive||battle.memPhase!=="input"||battle.memPhaseSerial!==phaseSerial){
