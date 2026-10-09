@@ -361,7 +361,7 @@ function checkAchievements(){
     if(S.achievements.indexOf(a.id)<0 && a.check()){
       S.achievements.push(a.id);
       addLog("★ LOGRO ▸ "+a.icon+" "+a.name+".");
-      msg("★ LOGRO DESBLOQUEADO ▸ "+a.icon+" "+a.name+"!","magenta");
+      msg("★ LOGRO DESBLOQUEADO ▸ "+a.icon+" ¡"+a.name+"!","magenta");
       showBanner("logro", a.icon+" "+a.name, a.desc);
       sound.achievement();
       updateNotifications();

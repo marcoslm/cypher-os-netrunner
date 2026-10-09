@@ -46,7 +46,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="panel-h">③ LOS NODOS · leyenda</div><div class="box helpbox">'+
 '<div class="legend">'+
 '<div class="legend-row"><span class="sym cyan">⌂</span><span class="lg-key">PUERTO</span><span class="lg-desc">tu entrada. explora las capas.</span></div>'+
-'<div class="legend-row"><span class="sym verde">◆</span><span class="lg-key">DATOS</span><span class="lg-desc">cógelo: te llena la RAM y paga ₡. Para RECOLECTA.</span></div>'+
+'<div class="legend-row"><span class="sym verde">◆</span><span class="lg-key">DATOS</span><span class="lg-desc">cógelos: te llenan la RAM y pagan ₡. Para RECOLECTA.</span></div>'+
 '<div class="legend-row"><span class="sym verde">▣ T1</span><span class="lg-key">ICE T1</span><span class="lg-desc">defensa débil · combate de claves.</span></div>'+
 '<div class="legend-row"><span class="sym ambar">▣ T2</span><span class="lg-key">ICE T2</span><span class="lg-desc">defensa media · combate de claves.</span></div>'+
 '<div class="legend-row"><span class="sym rojo">▣ T3</span><span class="lg-key">ICE T3</span><span class="lg-desc">defensa dura · combate de escáner.</span></div>'+
@@ -63,7 +63,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 
 /* ④ MOVERSE */
 '<div class="panel-h">④ MOVERSE POR EL GRID</div><div class="box helpbox">'+
-'<p class="help-p">Solo puedes moverte a nodos <b>conectados</b> a tu posición actual. <b>Clic</b> en el nodo al que quieres ir. También pulsas las <b>teclas 1-9</b> (según el orden en que aparecen en el HUD).</p>'+
+'<p class="help-p">Solo puedes moverte a nodos <b>conectados</b> a tu posición actual. <b>Clic</b> en el nodo al que quieres ir. También puedes pulsar las <b>teclas 1-9</b> (según el orden en que aparecen en el HUD).</p>'+
 '<p class="help-p">El HUD cuenta ICE (incluidos rastreadores), daemons y nodos <b>visitados en esta inmersión</b>. Revelar un mapa no cuenta como visitarlo. <b>GRID EXPLORADO</b> significa que has visitado todos los nodos; <b>GRID AGOTADO</b>, que tampoco quedan objetivos fijos por resolver. La RAM llena y los vaults bloqueados siguen siendo pendientes. Los eventos y rastreadores no desaparecen: superficializa cuando te convenga. Los guardados antiguos indican <b>parcial</b> si falta historial.</p>'+
 '<div class="helprow">'+
 '<div class="helprow-item"><span class="kbd">Clic en nodo</span><span class="muted">moverse a un nodo vecino conectado</span></div>'+
@@ -81,7 +81,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="lg-key">AYUDA DEL CORVO</span><span class="lg-desc">una señal amiga: +15 CPU.</span></div>'+
 '<div class="legend-row"><span class="lg-key">TRAMPA DE SEGURIDAD</span><span class="lg-desc">−30₡ dispersados, pero ganas experiencia del incidente.</span></div>'+
 '<div class="legend-row"><span class="lg-key">CORRIENTE DE DATOS</span><span class="lg-desc">te arrastra una capa más profunda. +10 de calor.</span></div>'+
-'<div class="legend-row"><span class="lg-key">FRAGMENTO ENCRÍPTADO</span><span class="lg-desc">una cache olvidada: desbloquea un informe narrativo (no los expedientes recuperados de vaults).</span></div>'+
+'<div class="legend-row"><span class="lg-key">FRAGMENTO ENCRIPTADO</span><span class="lg-desc">una caché olvidada: desbloquea un informe narrativo (no los expedientes recuperados de vaults).</span></div>'+
 '<div class="legend-row"><span class="lg-key">RUIDO BLANCO</span><span class="lg-desc">ráfaga corporativa: +15 de calor.</span></div>'+
 '<div class="legend-row"><span class="lg-key">ECO DEL DECK</span><span class="lg-desc">la memoria de un portador anterior de tu deck: una pista de su voz… y algo de experiencia.</span></div>'+
 '</div>'+
@@ -125,7 +125,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 /* ⑧ CALOR / RAM / CPU */
 '<div class="panel-h">⑧ CALOR · RAM · CPU</div><div class="box helpbox">'+
 '<div class="helprow">'+
-'<div class="helprow-item"><span class="lg-key">CALOR</span><span class="muted">sube al profundizar, pelear y con eventos; baja solo con el tiempo (−1 cada 20 s), con subestaciones (−6), la NÉBULA FRESCA (−30) y al superficializar (−12). Con calor ≥50 los datos valen menos; con ≥90 suenas ruido blanco; con <b>100 estás en LOCKDOWN</b> y no puedes bajar a la red.</span></div>'+
+'<div class="helprow-item"><span class="lg-key">CALOR</span><span class="muted">sube al profundizar, pelear y con eventos; baja solo con el tiempo (−1 cada 20 s), con subestaciones (−6), la NÉBULA FRESCA (−30) y al superficializar (−12). Con calor ≥50 los datos valen menos; con ≥90 oyes ruido blanco; con <b>100 estás en LOCKDOWN</b> y no puedes bajar a la red.</span></div>'+
 '<div class="helprow-item"><span class="lg-key">RAM</span><span class="muted">guardas los datos recogidos. Cuando está llena, superficializa para <b>venderlos</b> (los datos se convierten en ₡; su valor escala con la capa y con HACK).</span></div>'+
 '<div class="helprow-item"><span class="lg-key">CPU</span><span class="muted">tu integridad neural. Al superficializar recuperas +8. Si llega a 0 → FLATLINE (ver ⑭).</span></div>'+
 '</div>'+
@@ -257,7 +257,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="lg-key">fixer</span><span class="lg-desc">quien te consigue contratos (Mama Wire, Night-0X). Cobran por facilitar.</span></div>'+
 '<div class="legend-row"><span class="lg-key">rastreador</span><span class="lg-desc">la policía de la red: emboscada si dejas mucho rastro.</span></div>'+
 '<div class="legend-row"><span class="lg-key">créditos (₡)</span><span class="lg-desc">la moneda de la calle.</span></div>'+
-'<div class="legend-row"><span class="lg-key">las Torres</span><span class="lg-desc">macro-obras que se dejaron de construir en 2071. Nadie habla de por qué.</span></div>'+
+'<div class="legend-row"><span class="lg-key">las Torres</span><span class="lg-desc">macroobras que se dejaron de construir en 2071. Nadie habla de por qué.</span></div>'+
 '<div class="legend-row"><span class="lg-key">el Parpadeo</span><span class="lg-desc">2091: alguien apagó el Núcleo 11 segundos. La calle recuerda 3.</span></div>'+
 '<div class="legend-row"><span class="lg-key">corporaciones y proyectos</span><span class="lg-desc">quién manda en la ciudad y qué esconde cada uno: todo en INFORMES, con su glosa en claro (▸).</span></div>'+
 '</div>'+

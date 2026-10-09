@@ -491,7 +491,7 @@ function tryScavenger(){
   if(S.player.heat>=95) chance*=2;
   if(Math.random()>chance) return false;
   var tier = clamp(1 + Math.floor(S.player.heat/50), 1, 3);
-  addLog("⚠ RASTREADOR CORPORATIVO · huele tu trazo!");
+  addLog("⚠ RASTREADOR CORPORATIVO · ¡huele tu trazo!");
   msg("¡RASTREADOR CORPORATIVO TE HUELE EL TRAZO! · defiéndete.","rojo");
   var tracker={type:"ice",tier:tier,tierName:"T"+tier,name:"RASTREADOR · "+pick(["RASEDOR","RASTRERO","FALCÓN","GUÍA","PERRO"]),scavenger:true};
   startCombat({

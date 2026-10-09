@@ -490,7 +490,7 @@ function renderTienda(){
     '<div class="box">CRÉDITOS: <b class="verde">₡'+Math.floor(p.credits)+'</b> · la calle no da fiado.</div>'+
     '<div class="panel-h">EQUIPO</div><div class="grid2">';
   TIENDA_DEF.forEach(function(it){
-    var now=stockCount(it), maxTxt=(it.kind==="upgrade")?("máx "+it.stock):("stock "+it.stock);
+    var now=stockCount(it), maxTxt=(it.kind==="upgrade")?("máx. "+it.stock):("stock "+it.stock);
     var canBuy=p.credits>=it.price && now<it.stock;
     html+='<div class="shopitem">'+
       '<div><div class="name">'+it.name+'</div><div class="desc">'+it.desc+'</div>'+
@@ -983,7 +983,7 @@ function renderEstado(){
     '<div class="panel-h">SKILLS <span class="muted text-xs">(puntos disponibles: '+p.skillPoints+')</span></div>'+
     '<div class="box">'+
     skillRow("HACK","claves más cortas · más tiempo para romper ICE",p.hack)+
-    skillRow("SIGILO","menos embuscadas · menos calor · huir más fácil",p.sigilo)+
+    skillRow("SIGILO","menos emboscadas · menos calor · huir más fácil",p.sigilo)+
     skillRow("NERVIOS","reduce el daño recibido",p.nervios)+
     '</div>'+
     '<div class="center"><button class="btn cyan" data-action="openSkillTree">★ VER ÁRBOL DE HABILIDADES</button></div>'+
@@ -1011,7 +1011,7 @@ function renderEstado(){
     row2("RACHA MÁX. COMBATES",p.stats.maxCombatStreak||0)+
     '</div>'+
     '<div class="panel-h">MEJOR REGISTRO</div><div class="box">'+
-    row2("NIVEL MÁX",S.best.level||"-")+row2("INMERSIONES",S.best.immerse||"-")+
+    row2("NIVEL MÁX.",S.best.level||"-")+row2("INMERSIONES",S.best.immerse||"-")+
     row2("ICE",S.best.ice||"-")+row2("DAEMONS",S.best.daemons||"-")+
     row2("CRÉDITOS","₡"+(S.best.credits||0))+row2("PROFUNDIDAD","capa "+(S.best.depth||"-"))+
     '</div>';
@@ -1454,7 +1454,7 @@ function showFlatline(){
     '<p>pérdida de señal.</p>'+
     '<div class="big">F L A T L I N E D</div>'+
     '<p>CPU: '+Math.round(S.player.cpu)+' · Nivel '+S.player.level+
-      ' · profundidad máx: capa '+(S.player.stats.maxDepth)+
+      ' · profundidad máx.: capa '+(S.player.stats.maxDepth)+
       ' · inmersiones: '+S.player.stats.immerse+'</p>'+
     (isHardcore?'<p class="rojo">MODO HARDCORE: sin reconexión.</p>':'')+
     '<div class="actions flatline-actions">'+

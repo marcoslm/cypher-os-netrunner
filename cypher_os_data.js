@@ -47,7 +47,7 @@ var INTEL = [
   {id:"anatomia", t:"ANATOMÍA DEL CABLE", r:"low", u:"first_immerse", k:"Qué es la red por dentro: capas superpuestas, como un cuerpo.",
    l:"El cable no es un río. Es un cuerpo.\nCapas superpuestas, cada cual más pesada\nque la anterior. En la superficie, luz y\ntráfico. En el fondo, algo que ya no se\nllama código.\n\n— Fragmento, cuaderno de un caído."},
   {id:"fixers", t:"LOS FIXERS", r:"low", u:"first_job", k:"Quiénes son los intermediarios que dan trabajo y cuál es su precio real.",
-   l:"No preguntéis por quién os trae el\ntrabajo. Preguntéis por quién os trae\nde vuelta. Ahí está el precio real.\n\nLos fixers no matan. Facilitan. Y la\nfacilitación cuesta más que la sangre."},
+   l:"No preguntéis por quién os trae el\ntrabajo. Preguntad por quién os trae\nde vuelta. Ahí está el precio real.\n\nLos fixers no matan. Facilitan. Y la\nfacilitación cuesta más que la sangre."},
   {id:"capas_bajas", t:"LO QUE HIERVE EN LAS CAPAS BAJAS", r:"med", u:"depth3", k:"Cuanto más bajas en la red, más riesgo: lo tranquilo esconde lo peor.",
    l:"Los netrunners viejos dicen que la\ncalle se comporta como el mar: lo\ntranquilo de arriba es solo lo que no\nha caído aún.\n\nNo confíes en lo quieto."},
   {id:"demonios", t:"LOS DEMONIOS NO SON MÁQUINAS", r:"med", u:"first_daemon", k:"Los daemons parecen máquinas, pero se comportan como si te recordaran.",
@@ -142,7 +142,7 @@ var CONTACTOS_DEF = [
    cls:"verde",
    frase:"La calle paga a los que preguntan. Empieza por abajo, chiquillo.",
    jobs:["recoleta","carrera"]},
-  {id:"doctorSudario", name:"DOCTOR SUDARIO", role:"NETRUNNER RETIRADO", loc:"AUN NO TE PRESENTA",
+  {id:"doctorSudario", name:"DOCTOR SUDARIO", role:"NETRUNNER RETIRADO", loc:"AÚN NO TE PRESENTA",
    cls:"cyan",
    frase:"He visto el Núcleo parpadear. La ciudad sueña, y nosotros somos su fiebre.",
    jobs:["datos","rompehielas","vault"]},
@@ -164,7 +164,7 @@ var TIENDA_DEF = [
    price:140, stock:5, kind:"consumable"},
   {id:"virus", name:"PAQUETE VIRUS", desc:"Elimina una fase al empezar un combate.",
    price:300, stock:3, kind:"consumable"},
-  {id:"breaker", name:"ROMPEHIELOS MK-II", desc:"Permanente. -1 a la longitud de las claves (mín 3).",
+  {id:"breaker", name:"ROMPEHIELOS MK-II", desc:"Permanente. -1 a la longitud de las claves (mín. 3).",
    price:260, stock:3, kind:"upgrade"},
   {id:"ram", name:"BARRA RAM +4", desc:"Permanente. +4 slots de datos.",
    price:220, stock:3, kind:"upgrade"},
@@ -215,7 +215,7 @@ var MENSAJES_DEF = [
     l:"Me dicen que ya has tocado la capa 4.\n\nAbajo el cable pesa. No se oye: se siente,\ncomo un recuerdo que no es tuyo. Si algo\nte llama por tu nombre allí abajo, no\ncontestes.\n\nYa lo sabes, ¿verdad? Por eso sigues\nbajando.\n\n— Sudario",
     when:function(){ return (S.player.stats.maxDepth||0)>=4; } },
   { id:"m_sd_ruido", from:"DOCTOR SUDARIO", emisor:"valido", t:"SOBRE EL RUIDO BLANCO",
-    l:"Dicen que has sonado ruido blanco. Ese\nzumbido no es tu aparato: es la ciudad\nponiéndote en su lista.\n\nYo viví un invierno entero con ese sonido.\nSe olvida todo menos eso.\n\nBaja el calor. O acostúmbrate.\n\n— Sudario",
+    l:"Dicen que has oído ruido blanco. Ese\nzumbido no es tu aparato: es la ciudad\nponiéndote en su lista.\n\nYo viví un invierno entero con ese sonido.\nSe olvida todo menos eso.\n\nBaja el calor. O acostúmbrate.\n\n— Sudario",
     when:function(){ return (S.player.stats.maxHeat||0)>=90; } },
   { id:"m_mw_libro", from:"MAMA WIRE", emisor:"valido", t:"EN EL LIBRO GORDO",
     l:"Tres líneas a tu nombre en el libro gordo\ny eso, en la calle, es un patrimonio.\n\nYa no te toca el trabajo que sobra: te toca\nel que se elige. Cobra en consecuencia.\n\n— M. W.",
@@ -224,7 +224,7 @@ var MENSAJES_DEF = [
     l:"Tres favores pagados. Ya no eres un nombre\nen mi lista: eres una cuenta.\n\nCuando quieras trofeos de verdad —los que\ncuelgan de las juntas directivas—, ya sabes\ndónde dejármelos. El imperio se poda por\ndentro.\n\n— 0X",
     when:function(){ return (S.player.rep.night0X||0)>=3; } },
   { id:"m_kairos_voz", from:"KAIROS", emisor:"enmascarado", t:"TE HAN PRESENTADO MAL",
-    l:"Night-0X te ha hablado de mí. Night-0X\nhabla mucho y explica poco: así que te lo\npongo yo en claro.\n\nSoy KAIROS. Las corporaciones me llevan en\nsu inventario; yo las llevo a mí en el mío.\nCuando quieras podar un poco, baja.\n\nNo me contestes: esta dirección ya no\nexiste. Nunca existió.\n\n— K",
+    l:"Night-0X te ha hablado de mí. Night-0X\nhabla mucho y explica poco: así que te lo\npongo yo en claro.\n\nSoy KAIROS. Las corporaciones me llevan en\nsu inventario; yo las llevo en el mío.\nCuando quieras podar un poco, baja.\n\nNo me contestes: esta dirección ya no\nexiste. Nunca existió.\n\n— K",
     when:function(){ return S.player.level>=4 && (S.player.rep.night0X||0)>=2; } },
   { id:"m_canal7_oyente", from:"EL OYENTE DEL CANAL 7", emisor:"no-valido", t:"LA CANCIÓN NO ES DE 2087",
     l:"La canción del canal 7 no es de 2087.\nEs de antes. Yo la reconozco porque mi\nmadre la cantaba sin saber que la cantaba.\n\nTodos la reconocemos y nadie lo comenta.\nEso también forma parte de la canción.\n\nSigue escuchando. Te escribo cuando cambie\nde estrofa.\n\n— un oyente más",
@@ -239,7 +239,7 @@ var MENSAJES_DEF = [
   { id:"m_gracias_reparacion", from:"(SIN REMITENTE)", emisor:"enmascarado", t:"GRACIAS POR LA REPARACIÓN",
     l:"GRACIAS POR LA REPARACIÓN.\n\npor un instante, la ciudad entera respiró\na través de ti. lo sigue haciendo cuando\nnadie mira.\n\nla ruta de esta carta no existe. la firma\ntampoco. puedes contestar igualmente:\nya sabes lo que pasa cuando se contesta\na lo que no firma.\n\n— [en blanco]",
     reply:[
-      { label:"CONTESTAR DE TODAS FORMAS: ¿quién firma?", xp:5, resp:"RETORNO ▸ la ruta de origen no admite tu respuesta.\n\n…aún así, algo acaba de leerla." },
+      { label:"CONTESTAR DE TODAS FORMAS: ¿quién firma?", xp:5, resp:"RETORNO ▸ la ruta de origen no admite tu respuesta.\n\n…aun así, algo acaba de leerla." },
       { label:"GUARDAR SILENCIO", xp:0, resp:null }],
     when:function(){ return S.history.finalDone; } },
   { id:"m_doc_sueno", from:"EL CURANDERO DE LA ZANJA 9", emisor:"no-valido", t:"PÁGINA SUELTA DEL CUADERNO MOJADO", doc:true,
@@ -275,7 +275,7 @@ var TICKER_FRASES = [
   "FALTA UN DECK EN LA ZANJA 9. NADIE LO RECLAMA",
   "VESPER NO APARECE EN NINGÚN ÍNDICE. BUSCA MEJOR",
   "LOS ARTEFACTOS SOMNIO SE VENDEN MEDIO USADOS",
-  "DOS DYNÁMICAS, UNA CIUDAD. NADIE PAGA A LAS DOS",
+  "DOS DYNAMICS, UNA CIUDAD. NADIE PAGA A LAS DOS",
   "LA LLUVIA DE 2087 NO HA DICHO QUE SE VAYA",
   /* fondo del sueño (LORE §3, capa 6): solo tras haber bajado hasta ahí */
   {t:"EL FONDO DEL SUEÑO NO SALE EN NINGÚN MAPA. BAJAN IGUAL.",
@@ -358,9 +358,9 @@ var GRID_EVENTS = [
        S.player.heat=clamp(S.player.heat+10,0,100);
      }
    }},
-  {id:"fragmento", name:"FRAGMENTO ENCRÍPTADO",
+  {id:"fragmento", name:"FRAGMENTO ENCRIPTADO",
    texts:[
-     "una cache olvidada contiene datos cifrados. si falta algún informe alcanzable, se desbloquea.",
+     "una caché olvidada contiene datos cifrados. si falta algún informe alcanzable, se desbloquea.",
      "archivos polvorientos resurgen del cable. algún informe pendiente se desbloquea.",
      "un baúl de datos antiguos se abre. si te falta un informe, hoy es tu día."],
    prob:0.04,
@@ -536,7 +536,7 @@ var FRASES_VIEWS = {
     "tus cartas, donde las dejaste. lee cuando quieras.",
     "el buzón no pide prisa. pero ahí sigue."],
   contactos:[
-    "canales abiertos. elige con quién arriesgarse.",
+    "canales abiertos. elige con quién arriesgarte.",
     "contactos en línea. ninguno te quiere bien del todo.",
     "los cuatro canales susurran. cobran caro por susurrar."],
   trabajos:[
@@ -548,7 +548,7 @@ var FRASES_VIEWS = {
     "pasillo de ferias. todo usado, todo caro, todo necesario.",
     "armas, mejoras y promesas. nada tiene garantía."],
   estado:[
-    "tu hoja en el cable, corvo. guácala bien.",
+    "tu hoja en el cable, corvo. guárdala bien.",
     "inventario de un cuerpo que aún resiste.",
     "números fríos para una vida caliente."],
   informes:[
@@ -767,7 +767,7 @@ var WHY_JOBS = {
     carrera:["Entrega exprés para un canal cerrado. Sin preguntas, sin nombres, sin calor."]
   },
   kairos:{
-    daemon:["Ese daemon guarda una clave que me pertenece. O me perteneció. Recuperala.",
+    daemon:["Ese daemon guarda una clave que me pertenece. O me perteneció. Recupérala.",
       "Lo que archiva podría demoler una junta directiva. Yo solo la observo… hoy."],
     rompehielas:["Ese ICE es un código que hay que podar. Ellos plantan jardines; yo llevo la tijera.",
       "Derribar esa defensa abre un hueco en su imperio. Un hueco basta."],

@@ -275,7 +275,7 @@ function doEscape(){
     S.player.heat=clamp(S.player.heat+5,0,100);
     recordHeatPeak();
     addLog("HUIR ▸ saliste del combate. calor +5.");
-    msg("HUIR ▸ te diste de baja. Enemigo sigue esperándote. calor +5.","ambar");
+    msg("HUIR ▸ te diste de baja. El enemigo sigue esperándote. calor +5.","ambar");
     updateTopbar();
     if(inImmersion && currentView==="red") renderGridHud();
     save(); updateAmbient();
@@ -612,7 +612,7 @@ function onScannerClick(e){
       winScannerPhase();
     } else {
       var msgEl=document.getElementById("scanMsg");
-      if(msgEl){ msgEl.textContent="¡BIEN!queda(n) "+(_scannerGaps.filter(function(g){return !g.hit;}).length)+" hueco(s)."; msgEl.className="scanner-hit"; }
+      if(msgEl){ msgEl.textContent="¡BIEN! queda(n) "+(_scannerGaps.filter(function(g){return !g.hit;}).length)+" hueco(s)."; msgEl.className="scanner-hit"; }
     }
   } else {
     sound.error();
