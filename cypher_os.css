@@ -165,7 +165,15 @@ body::after{   /* viñeta CRT + barrido vertical leve (ver nota de z-index arrib
   padding:0 14px;font-size:13px;color:var(--texto);
   border-top:1px solid var(--borde);background:var(--fondo-panel);
 }
-#msgbar .txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#msgbar .txt{display:flex;align-items:baseline;min-width:0;max-width:100%;white-space:nowrap;}
+#msg-text{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+#msg.msg-typing #msg-text{text-overflow:clip;}
+.msg-cursor{flex:0 0 auto;margin-left:1px;color:inherit;text-shadow:0 0 5px currentColor;
+  animation:caretBlink .8s steps(1) infinite;}
+.msg-typing .msg-cursor{animation:none;opacity:1;}
+@media(prefers-reduced-motion:reduce){
+  .msg-cursor,#msgbar.msg-flash{animation:none;}
+}
 
 /* ---- terminal inferior ---- */
 #term{

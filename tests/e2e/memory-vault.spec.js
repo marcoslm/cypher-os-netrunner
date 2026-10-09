@@ -405,7 +405,7 @@ test('memoria: Ctrl+S durante reveal guarda el grid, no COM, y tras recarga se r
   await page.keyboard.press('Enter');
   expect((await minigames(page)).combat.memPhase).toBe('reveal');
   await page.keyboard.press('Control+s');
-  await expect(page.locator('#msg')).toContainText('partida guardada');
+  await game.expectMessage('partida guardada');
   const saved = (await game.snapshot()).saved;
   expect(saved.player).toMatchObject({ cpu: 86, xp: 0, stats: { daemons: 0, totalDamageReceived: 14 } });
   expect(saved._inImmersion).toMatchObject({ current: '2_0', combatOccurred: true });

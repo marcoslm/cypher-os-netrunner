@@ -85,7 +85,7 @@ test('HARDCORE: foco e inert, Tab, Ctrl+K/S, recarga y NUEVO REGISTRO cancelar/c
     await expect(record).toBeFocused();
   }
   await page.keyboard.press('Control+s');
-  await expect(page.locator('#msg')).toContainText('partida guardada');
+  await game.expectMessage('partida guardada');
   expect((await game.snapshot()).saved.player.cpu).toBe(0);
 
   // Selecting NORMAL on the real intro must not resurrect a dead HARDCORE save.
@@ -249,14 +249,14 @@ test('combate: RESET/IMPORTAR del fondo no reciben input; guardia y FileReader r
     expect(guard).toEqual({ accepted: false, sameState: true, sameBattle: true, living: false });
   });
   await page.keyboard.press('Control+s');
-  await expect(page.locator('#msg')).toContainText('partida guardada');
+  await game.expectMessage('partida guardada');
   const before = await game.snapshot();
   const incoming = clone(before.saved);
   incoming.player.credits = 9000;
   // The inaccessible picker is not presented as usable: this probes the real async
   // file-input/FileReader completion path, as if a pending selection finished now.
   await page.locator('#import-file').setInputFiles(jsonFile(incoming, 'durante-combate.json'));
-  await expect(page.locator('#msg')).toContainText('termina el combate');
+  await game.expectMessage('termina el combate');
   await expect(page.locator('#combat')).toBeVisible();
   await expect(page.locator('#confirm-overlay')).toBeHidden();
   const after = await game.snapshot();
@@ -295,7 +295,7 @@ test('inmersión: recoger con input, GUARDAR/exportar, recargar y vender datos u
   await expect(page.locator('#h-ram')).toHaveText('1/6');
   await expect(page.locator('#adjlist')).toContainText('NODO DE DATOS');
   await page.locator('#btn-save').click();
-  await expect(page.locator('#msg')).toContainText('guardada a mano');
+  await game.expectMessage('guardada a mano');
   const saved = (await game.snapshot()).saved;
   expect(saved._inImmersion).toMatchObject({ current: '1_0', dataUsed: 1, data: [{ value: 77 }] });
   const downloadPromise = page.waitForEvent('download');
@@ -336,9 +336,9 @@ test('importación: picker real rechaza JSON/tipos dañados y recupera un grid v
   ];
   for (const [name, value, message] of invalid) {
     await page.keyboard.press('Control+s');
-    await expect(page.locator('#msg')).toContainText('partida guardada');
+    await game.expectMessage('partida guardada');
     await game.importFile(value, name);
-    await expect(page.locator('#msg')).toContainText(message);
+    await game.expectMessage(message);
     const after = await game.snapshot();
     expect(after.raw).toBe(before.raw);
     expect(after.state.player.credits).toBe(1234);
@@ -353,7 +353,7 @@ test('importación: picker real rechaza JSON/tipos dañados y recupera un grid v
   incoming.best = { level: 2 };
   incoming._inImmersion = makeImmersion({ loaded: true });
   await game.importFile(incoming, 'grid-valido.json');
-  await expect(page.locator('#msg')).toContainText('de vuelta en el grid');
+  await game.expectMessage('de vuelta en el grid');
   await expect(page.locator('#gridcanvas')).toBeVisible();
   await expect(page.locator('#h-cpu')).toHaveText('73/100');
   await expect(page.locator('#h-cc')).toHaveText('8765');
@@ -386,7 +386,7 @@ test('vault: solo se acepta en la calle, uno activo y un objetivo en el siguient
   await page.locator('[data-action="acceptJob"][data-id="vault-kuro"]').click();
   expect((await game.snapshot()).saved.jobs).toHaveLength(1);
   await page.locator('[data-action="acceptJob"][data-id="vault-lapida"]').click();
-  await expect(page.locator('#msg')).toContainText('UN contrato de vault');
+  await game.expectMessage('UN contrato de vault');
   expect((await game.snapshot()).state.jobs).toHaveLength(1);
   await nav(page, 'inicio').click();
   await action(page, 'dipGrid').click();

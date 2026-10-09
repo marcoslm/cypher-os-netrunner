@@ -299,11 +299,12 @@ async function finish(){
   const regressions = await require("./regressions").run({summary:true});
   const jobs = await require("./jobs-persistence").run({summary:true});
   const gridIntel = await require("./grid-intel-hud").run({summary:true});
-  const totalFails = fails + harness.fails + regressions.fails + jobs.fails + gridIntel.fails;
+  const messages = await require("./message-typewriter").run({summary:true});
+  const totalFails = fails + harness.fails + regressions.fails + jobs.fails + gridIntel.fails + messages.fails;
   console.log("\n================ RESUMEN ================");
   console.log("humo: " + passes + " correctas · arnés: " + harness.passes + "/" + harness.total +
-    " · regresiones: " + regressions.passes + "/" + regressions.total + " · trabajos/persistencia: " + jobs.passes + "/" + jobs.total + " · expedientes/HUD: " + gridIntel.passes + "/" + gridIntel.total);
-  console.log("correctas: " + (passes + harness.passes + regressions.passes + jobs.passes + gridIntel.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
+    " · regresiones: " + regressions.passes + "/" + regressions.total + " · trabajos/persistencia: " + jobs.passes + "/" + jobs.total + " · expedientes/HUD: " + gridIntel.passes + "/" + gridIntel.total + " · avisos: " + messages.passes + "/" + messages.total);
+  console.log("correctas: " + (passes + harness.passes + regressions.passes + jobs.passes + gridIntel.passes + messages.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
   process.exitCode = totalFails ? 1 : 0;
 }
 finish().catch(function(err){

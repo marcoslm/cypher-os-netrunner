@@ -187,6 +187,11 @@ const test = base.extend({
           }));
         });
       },
+      async expectMessage(text) {
+        // Semantic announcement is immediate; dedicated tests advance and inspect its visual typewriter.
+        const escaped=text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+        await expect(page.locator('#msg')).toHaveAttribute('aria-label',new RegExp(escaped));
+      },
       async command(text) {
         await page.keyboard.press('Control+k');
         await expect(page.locator('#cmd')).toBeFocused();

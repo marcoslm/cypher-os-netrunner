@@ -29,7 +29,7 @@ test('importación adversa: rechaza un contador numérico dañado sin reemplazar
   const before = await game.snapshot();
   await game.importFile(bad, 'contador-danado.json');
   const imported = await game.snapshot();
-  const message = await page.locator('#msg').innerText();
+  const message = await page.locator('#msg').getAttribute('aria-label');
   let afterPurchase = null;
   // Diagnostic only if a damaged file was wrongly accepted. The invariant below
   // remains a rejection assertion; this test must turn green once it is fixed.

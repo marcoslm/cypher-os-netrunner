@@ -140,6 +140,9 @@ function runBoot(onDone){
 
 var msgEl = null;
 var currentView = "inicio";
+var MSG_TYPE_DELAY=45, MSG_TYPE_MAX_DURATION=6000;
+var _msgTypeTimer=null, _msgTypeJob=null;
+var _msgMotion=window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
 
 /* El overlay visual no basta: impedir foco/clics en la partida que tapa.
    inert cubre navegadores modernos; captura de teclado/foco sirve de respaldo. */
@@ -198,18 +201,78 @@ document.addEventListener("focusin", function(e){
   if(layer && !layerContains(layer,e.target)) focusInputLayer(layer);
 }, true);
 
+/* Un solo aviso escribiéndose: el siguiente sustituye al anterior sin cola.
+   El texto accesible llega completo; la animación es exclusivamente visual. */
+function stopMessageTyping(){
+  if(_msgTypeTimer!==null) clearTimeout(_msgTypeTimer);
+  _msgTypeTimer=null;
+  var job=_msgTypeJob; _msgTypeJob=null;
+  if(job && job.el) job.el.classList.remove("msg-typing");
+}
+function finishMessageTyping(){
+  var job=_msgTypeJob; if(!job) return;
+  job.body.textContent=job.text;
+  job.body.scrollLeft=0;
+  stopMessageTyping();
+}
+function messageGlyphs(text){
+  /* No separar emojis compuestos ni letras con acentos combinados. */
+  if(typeof Intl!=="undefined" && Intl.Segmenter){
+    try{
+      return Array.from(new Intl.Segmenter("es",{granularity:"grapheme"}).segment(text),function(it){ return it.segment; });
+    }catch(e){}
+  }
+  return Array.from(text);
+}
 function msg(text, cls){
-  if(!msgEl) return;
-  msgEl.textContent = text;
-  msgEl.className = "txt " + (cls||"");
-  /* flash de animación al cambiar mensaje */
-  var bar = document.getElementById("msgbar");
+  if(!msgEl || document.getElementById("msg")!==msgEl) return;
+  stopMessageTyping();
+  text=String(text==null?"":text);
+  var body=document.getElementById("msg-text"), cursor=document.getElementById("msg-cursor");
+  if(!body || body.parentNode!==msgEl || !cursor || cursor.parentNode!==msgEl){
+    msgEl.textContent="";
+    body=document.createElement("span"); body.id="msg-text"; body.setAttribute("aria-hidden","true");
+    cursor=document.createElement("span"); cursor.id="msg-cursor"; cursor.className="msg-cursor";
+    cursor.textContent="▌"; cursor.setAttribute("aria-hidden","true");
+    msgEl.appendChild(body); msgEl.appendChild(cursor);
+  }
+  msgEl.className="txt "+(cls||"");
+  msgEl.setAttribute("role","status"); msgEl.setAttribute("aria-live","polite"); msgEl.setAttribute("aria-atomic","true");
+  msgEl.setAttribute("aria-label",text); msgEl.setAttribute("title",text);
+  body.scrollLeft=0;
+  var reduced=!!(_msgMotion && _msgMotion.matches);
+  var bar=document.getElementById("msgbar");
   if(bar){
     bar.classList.remove("msg-flash");
-    void bar.offsetWidth;
-    bar.classList.add("msg-flash");
+    if(!reduced){ void bar.offsetWidth; bar.classList.add("msg-flash"); }
   }
+  if(!text || reduced || document.hidden){ body.textContent=text; return; }
+  var chars=messageGlyphs(text);
+  var job={el:msgEl,body:body,text:text,chars:chars,index:0,start:Date.now(),delay:Math.min(MSG_TYPE_DELAY,MSG_TYPE_MAX_DURATION/chars.length)};
+  _msgTypeJob=job;
+  body.textContent=""; msgEl.classList.add("msg-typing");
+  function step(){
+    /* Cancelar/importar/resetear invalida también un callback ya despachado. */
+    if(_msgTypeJob!==job) return;
+    _msgTypeTimer=null;
+    if(msgEl!==job.el || document.getElementById("msg-text")!==job.body){ stopMessageTyping(); return; }
+    if(document.hidden || (_msgMotion && _msgMotion.matches)){ finishMessageTyping(); return; }
+    var next=Math.min(job.chars.length,Math.max(job.index+1,Math.floor((Date.now()-job.start)/job.delay)));
+    job.index=next; job.body.textContent=job.chars.slice(0,next).join("");
+    /* Si no cabe, el cursor sigue al extremo que se está escribiendo. */
+    job.body.scrollLeft=job.body.scrollWidth;
+    if(next===job.chars.length){ finishMessageTyping(); return; }
+    _msgTypeTimer=setTimeout(step,job.delay);
+  }
+  _msgTypeTimer=setTimeout(step,job.delay);
 }
+function onMessageMotionChange(e){ if(e.matches) finishMessageTyping(); }
+if(_msgMotion){
+  if(_msgMotion.addEventListener) _msgMotion.addEventListener("change",onMessageMotionChange);
+  else if(_msgMotion.addListener) _msgMotion.addListener(onMessageMotionChange);
+}
+document.addEventListener("visibilitychange",function(){ if(document.hidden) finishMessageTyping(); });
+window.addEventListener("pagehide",finishMessageTyping);
 function addLog(text){
   if(!S) return;
   S.log.push({ t: timeStr(S.clock), text:text });
@@ -1345,6 +1408,7 @@ if(_cmdEnterEl) _cmdEnterEl.addEventListener("click", function(){
 
 /* Desechar solo runtime; no completar enemigos ni heredar un grid anterior. */
 function clearSessionRuntime(){
+  stopMessageTyping();
   cancelActiveCombat();
   stopGridRender(); inImmersion=null;
   clearInterval(loopId); loopId=null;
@@ -1924,6 +1988,7 @@ function startGlitchLoop(){
 
 /* ---- ARRANQUE GENERAL ---- */
 function afterBoot(){
+  stopMessageTyping();
   msgEl = document.getElementById("msg");
   var saved = load();
   if(saved){

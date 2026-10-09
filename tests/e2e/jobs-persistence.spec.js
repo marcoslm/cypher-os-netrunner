@@ -61,7 +61,7 @@ test('exportar/reset/importar cuatro veces conserva datos, ICE vencido, subestac
     await page.locator('#confirm-overlay [data-action="confirmYes"]').click();
     expect((await game.snapshot()).immersion).toBeNull();
     await game.importFile(exported,'ciclo.json');
-    await expect(page.locator('#msg')).toContainText('de vuelta en el grid');
+    await game.expectMessage('de vuelta en el grid');
     const restored=await game.snapshot();
     expect(restored.immersion).toEqual(expected.immersion);
     expect(restored.state.player).toEqual(expected.state.player);
@@ -80,6 +80,6 @@ test('exportar/reset/importar cuatro veces conserva datos, ICE vencido, subestac
   const bad=JSON.parse(JSON.stringify(after.saved));
   bad._inImmersion.grid.nodes[1].done='false';
   await game.importFile(bad,'flags-invalidos.json');
-  await expect(page.locator('#msg')).toContainText('archivo inválido');
+  await game.expectMessage('archivo inválido');
   expect((await game.snapshot()).raw).toBe(after.raw);
 });
