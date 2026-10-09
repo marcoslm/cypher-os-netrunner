@@ -9,8 +9,14 @@ En fase alpha: jugable de principio a fin, pero sin probar a fondo. Pueden
 aparecer bugs sin identificar, incluidos algunos que impidan terminar una partida.
 
 Abre `cypher_os.html` y pulsa COMENZAR. Sin instalar nada, sin dependencias y sin
-conexión. El progreso se guarda en el navegador. El sonido es de interfaz por
-ahora; la música llegará más adelante.
+conexión. El progreso se guarda en el navegador. FX, ambiente y música tienen
+controles independientes.
+
+La música es opcional y no se distribuye en este repositorio. El catálogo de
+[`cypher_os_data.js`](cypher_os_data.js) admite 20 pistas locales `music/cyos-*.mp3`.
+Puedes añadirlas progresivamente con los nombres exactos del catálogo y recargar
+el juego: se saltan los archivos ausentes y las escenas sin pistas quedan en
+silencio, sin impedir jugar. Los MP3 locales no se versionan.
 
 ## Pruebas de desarrollo
 

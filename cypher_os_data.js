@@ -689,30 +689,35 @@ var STREET_ACTIVITIES = [
 
 /* ---- 4c. MÚSICA — pistas por escena (las consume cypher_os_audio.js) ---- */
 
+/* Catálogo definitivo: las pistas aún no añadidas se saltan durante la sesión.
+   Basta poner los MP3 con estos nombres en music/ y recargar el juego. */
 var MUSIC_TRACKS = {
   /* calle / menús */
-  ui:[ {f:"music/cyberpunk-drone-ambient.mp3", v:.26},
-       {f:"music/beats-slow-intriguing.mp3", v:.24},
-       {f:"music/cyberpunk-suspense-ambient.mp3", v:.25} ],
+  ui:[ {f:"music/cyos-ui-cable-no-duerme.mp3", v:.25},
+       {f:"music/cyos-ui-lluvia-larga.mp3", v:.24},
+       {f:"music/cyos-ui-octava.mp3", v:.25},
+       {f:"music/cyos-ui-mercado-de-calle.mp3", v:.24} ],
   /* inmersión en el grid */
-  grid:[ {f:"music/cyberpunk-suspense-ambient.mp3", v:.26},
-         {f:"music/cyberpunk-suspense-drone-ambient.mp3", v:.26},
-         {f:"music/dubstep-suspense-slow.mp3", v:.24} ],
+  grid:[ {f:"music/cyos-grid-inmersion.mp3", v:.26},
+         {f:"music/cyos-grid-el-tejido.mp3", v:.25},
+         {f:"music/cyos-grid-los-recuerdos.mp3", v:.26},
+         {f:"music/cyos-grid-ruido-blanco.mp3", v:.25} ],
   /* grid con calor alto: la caza empieza */
-  gridHot:[ {f:"music/dark-suspense-horror_scene-2.mp3", v:.28},
-            {f:"music/atmos-dark-ambient-hunting-dystopian-cyberpunk-they-will-find-you-horror.mp3", v:.28},
-            {f:"music/cyberpunk-suspense-drone-ambient.mp3", v:.26} ],
+  gridHot:[ {f:"music/cyos-hot-el-muro.mp3", v:.28},
+            {f:"music/cyos-hot-caza-abierta.mp3", v:.28},
+            {f:"music/cyos-hot-paranoia.mp3", v:.26} ],
   /* combate contra ICE / daemons */
-  combat:[ {f:"music/cyberpunk-fast-electro-action.mp3", v:.26},
-           {f:"music/cyberpunk-action-upbeat.mp3", v:.26},
-           {f:"music/cyberpunk-industrial-action.mp3", v:.28},
-           {f:"music/phonk-fast.mp3", v:.26},
-           {f:"music/dark-cyberpunk-sports.mp3", v:.26} ],
+  combat:[ {f:"music/cyos-combat-icebreakers.mp3", v:.26},
+           {f:"music/cyos-combat-claves-hex.mp3", v:.26},
+           {f:"music/cyos-combat-memoria-daemon.mp3", v:.27},
+           {f:"music/cyos-combat-escaner.mp3", v:.27},
+           {f:"music/cyos-combat-santo-cero.mp3", v:.28} ],
   /* EL NÚCLEO */
-  boss:[ {f:"music/dark-suspense-horror_scene-boss.mp3", v:.32},
-         {f:"music/cyberpunk-industrial-action.mp3", v:.28} ],
+  boss:[ {f:"music/cyos-nucleo-liturgia.mp3", v:.32},
+         {f:"music/cyos-nucleo-despertar.mp3", v:.30} ],
   /* puzzle del vault */
-  vault:[ {f:"music/phonk-suspense.mp3", v:.28} ]
+  vault:[ {f:"music/cyos-vault-la-herida.mp3", v:.28},
+          {f:"music/cyos-vault-ultima-llave.mp3", v:.28} ]
 };
 
 /* ---- boot: líneas de la BIOS (las consume cypher_os_ui.js) ---- */

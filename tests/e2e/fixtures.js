@@ -8,9 +8,11 @@ const GAME_URL = pathToFileURL(path.resolve(__dirname, '../../cypher_os.html')).
 const MUSIC_URL = pathToFileURL(path.resolve(__dirname, '../../music') + path.sep).href;
 const CLOCK_START = Date.parse('2030-01-01T00:00:00Z');
 
-function optionalMissingMusic(url, message) {
+function optionalMusicFailure(url, message) {
+  // Cambiar de escena/cancelar la precarga aborta peticiones MP3 legítimamente.
+  // Solo estos dos estados de recursos musicales locales son tolerables.
   return url.startsWith(MUSIC_URL) && /\.mp3(?:[?#]|$)/i.test(url) &&
-    /\bERR_FILE_NOT_FOUND\b/.test(message);
+    /\b(?:ERR_FILE_NOT_FOUND|ERR_ABORTED)\b/.test(message);
 }
 
 // Node-side saved grid, not a replacement for the real renderer or its handlers.
@@ -50,12 +52,12 @@ const test = base.extend({
     const onRequestFailed = request => {
       const message = request.failure()?.errorText || 'requestfailed';
       const entry = { type: 'requestfailed', url: request.url(), message };
-      (optionalMissingMusic(entry.url, message) ? optionalMusic : failures).push(entry);
+      (optionalMusicFailure(entry.url, message) ? optionalMusic : failures).push(entry);
     };
     const onConsole = message => {
       if (!['warning', 'error'].includes(message.type())) return;
       const entry = { type: `console.${message.type()}`, url: message.location().url || '', message: message.text() };
-      (optionalMissingMusic(entry.url, entry.message) ? optionalMusic : failures).push(entry);
+      (optionalMusicFailure(entry.url, entry.message) ? optionalMusic : failures).push(entry);
     };
     const onDialog = dialog => {
       failures.push({ type: 'native-dialog', message: `${dialog.type()}: ${dialog.message()}` });

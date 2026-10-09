@@ -429,13 +429,24 @@ async function run(options = {}){
     };
     click("#intro-start"); g.advance(180);
     click("#boot"); g.advance(520);
-    g.run('S._tutorialDone=true;S.player.level=6;S.player.sigilo=5;');
+    /* Grafo y tiradas explícitos: el barajado musical no debe decidir
+       qué enemigo aparece en una regresión del HUD. Input/handlers reales. */
+    g.run('S._tutorialDone=true;S.mus=false;stopMusic();S.player.level=6;S.player.sigilo=5;');
     click('[data-action="dipGrid"]');
-    for(let i=0;i<15;i++)click('.adj-node[data-idx="0"]');
+    g.run(`
+      var port={id:"0_0",layer:0,x:80,y:270,type:"puerto",name:"PUERTO DE CALLE",tier:0};
+      var data={id:"1_0",layer:1,x:280,y:180,type:"data",name:"NODO DE DATOS",data:10,tier:0};
+      var ice={id:"1_1",layer:1,x:280,y:360,type:"ice",name:"GRIFO",tier:1,tierName:"T1"};
+      inImmersion.grid={nodes:[port,data,ice],adj:{"0_0":["1_0","1_1"],"1_0":["0_0"],"1_1":["0_0"]},byLayer:[[port],[data,ice]],entry:"0_0",maxDepth:1};
+      inImmersion.current="1_0";inImmersion.visited=["0_0","1_0"];S.player._gridEventCooldown=3;
+      stopGridRender();renderGridHud();Math.random=function(){return 0;};
+    `);
+    click('.adj-node[data-idx="0"]');
     assert.equal(g.run('COM.node.scavenger'),true);
     assert.equal(g.run('inImmersion.current'),"0_0");
     assert.ok(g.sb.document.getElementById("adjlist").textContent.includes("PUERTO DE CALLE"),"HUD actualizado ya bajo la emboscada");
-    click("#escapeBtn"); click("#escapeBtn"); g.advance(1000);
+    g.run('Math.random=function(){return .99;};');click("#escapeBtn");
+    g.run('Math.random=function(){return 0;};');click("#escapeBtn");g.advance(1000);
     assert.equal(g.run("combatActive"),false);
     assert.equal(g.run("inImmersion.current"),"0_0");
     assert.ok(g.sb.document.getElementById("adjlist").textContent.includes("PUERTO DE CALLE"));
@@ -443,6 +454,7 @@ async function run(options = {}){
     assert.match(neighbor.textContent,/ICE T1/);
     assert.equal(g.run('currentNeighbors()[1].name'),"GRIFO");
     assert.ok(!neighbor.textContent.includes("DATOS"));
+    g.run('Math.random=function(){return .99;};');
     neighbor.click();
     assert.equal(g.run("inImmersion.current"),"1_1");
     assert.equal(g.run('COM.node.name'),"GRIFO");

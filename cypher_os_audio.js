@@ -291,7 +291,7 @@ function updateAmbientStress(){
    van ROTANDO (bolsa barajada + cambio al terminar cada pista).
    ============================================================ */
 
-var MUSIC={ el:null, scene:null, bags:{}, playing:{} };
+var MUSIC={ el:null, scene:null, bags:{}, playing:{}, unavailable:{}, serial:0, onMeta:null };
 
 function musicEnabled(){ return !!S && S.mus!==false; }
 /* escena musical actual (histéresis en el calor para no saltar de pista) */
@@ -312,6 +312,9 @@ function musicScene(){
 function musicBag(scene){
   var arr=MUSIC_TRACKS[scene];
   if(!arr||!arr.length) return null;
+  arr=arr.filter(function(t){ return !MUSIC.unavailable[t.f]; });
+  if(!arr.length) return null;
+  if(MUSIC.bags[scene]) MUSIC.bags[scene]=MUSIC.bags[scene].filter(function(t){ return !MUSIC.unavailable[t.f]; });
   if(!MUSIC.bags[scene]||!MUSIC.bags[scene].length){
     var bag=arr.slice(),i,j,tmp;
     for(i=bag.length-1;i>0;i--){ j=randInt(0,i); tmp=bag[i]; bag[i]=bag[j]; bag[j]=tmp; }
@@ -334,54 +337,82 @@ function ensureMusicEl(){
   MUSIC.el.preload="auto";
   /* al terminar una pista, la escena sigue: rota a la siguiente */
   MUSIC.el.addEventListener("ended", function(){
-    if(!MUSIC.scene) return;
+    var rec=MUSIC.scene && MUSIC.playing[MUSIC.scene];
+    if(!rec || !rec.t || !musicEnabled() || S.player.cpu<=0) return;
     playMusicScene(MUSIC.scene, true);
+  });
+  /* Cada archivo ausente/ilegible se intenta una sola vez por sesión.
+     Si la escena aún no tiene MP3, queda en silencio sin bucles de reintento. */
+  MUSIC.el.addEventListener("error", function(){
+    var scene=MUSIC.scene, rec=scene && MUSIC.playing[scene];
+    if(!rec || !rec.t || !musicEnabled() || S.player.cpu<=0) return;
+    if(MUSIC.el.currentSrc && MUSIC.el.currentSrc!==MUSIC.el.src) return;
+    MUSIC.unavailable[rec.t.f]=true;
+    playMusicScene(scene, true);
   });
 }
 /* reproduce una escena; rotate=true rota de pista, false reanuda la actual */
 function playMusicScene(scene, rotate){
   var arr=MUSIC_TRACKS[scene];
-  if(!arr||!arr.length||!musicEnabled()) return;
+  if(!arr||!arr.length||!musicEnabled()||S.player.cpu<=0) return;
+  var serial=++MUSIC.serial;
+  if(MUSIC.el && MUSIC.onMeta){
+    MUSIC.el.removeEventListener("loadedmetadata", MUSIC.onMeta);
+    MUSIC.onMeta=null;
+  }
   /* guardar la posición de la escena anterior para reanudarla luego */
   if(MUSIC.scene && MUSIC.el && MUSIC.playing[MUSIC.scene]){
     try{ MUSIC.playing[MUSIC.scene].pos=MUSIC.el.currentTime; }catch(e){}
   }
   var rec=MUSIC.playing[scene];
-  if(rotate || !rec || !rec.t){ rec={t:musicPickTrack(scene), pos:0}; MUSIC.playing[scene]=rec; }
-  if(!rec.t) return;
+  if(rotate || !rec || !rec.t || MUSIC.unavailable[rec.t.f]){ rec={t:musicPickTrack(scene), pos:0}; MUSIC.playing[scene]=rec; }
   MUSIC.scene=scene;
+  if(!rec.t){
+    if(MUSIC.el){ try{ MUSIC.el.pause(); }catch(e){} }
+    return;
+  }
   ensureMusicEl();
   try{
     var el=MUSIC.el, wantPos=rec.pos||0;
     if(el.src.indexOf(rec.t.f)<0){
       el.src=rec.t.f;
       el.loop=false;
-      el.addEventListener("loadedmetadata", function onMeta(){
+      MUSIC.onMeta=function onMeta(){
         el.removeEventListener("loadedmetadata", onMeta);
-        try{ if(wantPos>0 && wantPos<el.duration-1) el.currentTime=wantPos; }catch(e){}
-      });
+        if(serial!==MUSIC.serial) return;
+        MUSIC.onMeta=null;
+        try{ if(wantPos>=0 && wantPos<el.duration-1) el.currentTime=wantPos; }catch(e){}
+      };
+      el.addEventListener("loadedmetadata", MUSIC.onMeta);
     } else {
-      try{ if(wantPos>0 && wantPos<el.duration-1) el.currentTime=wantPos; }catch(e){}
+      try{ if(wantPos>=0 && wantPos<el.duration-1) el.currentTime=wantPos; }catch(e){}
     }
     el.volume=rec.t.v;
     var pr=el.play();
-    /* autoplay bloqueado por el navegador: reintentar en el siguiente tick */
-    if(pr && pr.catch) pr.catch(function(err){ if(err && err.name==="NotAllowedError") MUSIC.scene=null; });
+    /* autoplay bloqueado: reintentar; un rechazo de otra pista ya no actúa */
+    if(pr && pr.catch) pr.catch(function(err){
+      if(serial===MUSIC.serial && err && err.name==="NotAllowedError") MUSIC.scene=null;
+    });
   }catch(e){}
 }
 function updateMusic(){
   if(!S) return;
   if(!musicEnabled()){
-    if(MUSIC.el && !MUSIC.el.paused){ try{ MUSIC.el.pause(); }catch(e){} }
+    if(MUSIC.scene) stopMusic();
     return;
   }
   /* flatline: silencio (la pantalla de game over se queda sin música) */
-  if(S.player && S.player.cpu<=0) return;
+  if(S.player && S.player.cpu<=0){ if(MUSIC.scene) stopMusic(); return; }
   var scene=musicScene();
   if(scene===MUSIC.scene) return;
   playMusicScene(scene, false);
 }
 function stopMusic(){
+  MUSIC.serial++;
+  if(MUSIC.el && MUSIC.onMeta){
+    MUSIC.el.removeEventListener("loadedmetadata", MUSIC.onMeta);
+    MUSIC.onMeta=null;
+  }
   if(MUSIC.scene && MUSIC.el && MUSIC.playing[MUSIC.scene]){
     try{ MUSIC.playing[MUSIC.scene].pos=MUSIC.el.currentTime; }catch(e){}
   }
