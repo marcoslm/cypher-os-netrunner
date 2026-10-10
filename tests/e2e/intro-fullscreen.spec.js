@@ -27,4 +27,10 @@ test('intro F08: pantalla completa se controla desde la intro sin arrancar la pa
   await expect(page.locator('#h-fs')).toHaveAttribute('aria-pressed','true');
   await page.locator('#h-fs').click();
   await expect(page.locator('#h-fs')).toHaveAttribute('aria-pressed','false');
+  // F-07: una salida externa (sin pasar por el botón) sincroniza el texto de la intro.
+  await page.locator('#h-fs').click();
+  await expect(page.locator('#h-fs')).toHaveAttribute('aria-pressed','true');
+  await page.evaluate(()=>document.exitFullscreen());
+  await expect(page.locator('#h-fs')).toHaveAttribute('aria-pressed','false');
+  await expect(page.locator('#intro-fs-status')).toContainText('desactivada');
 });

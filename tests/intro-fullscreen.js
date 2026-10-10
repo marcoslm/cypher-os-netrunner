@@ -54,6 +54,27 @@ async function run(options={}) {
     assert.equal(btn(g).getAttribute('aria-pressed'),'false');
     assert.equal(doc.getElementById('h-fs').getAttribute('aria-pressed'),'false');
   });
+  await check('F-07: una salida externa sincroniza el texto de la intro con el estado real',g=>{
+    const doc=g.sb.document;
+    doc.documentElement.requestFullscreen=function(){ doc.fullscreenElement=doc.documentElement; };
+    doc.exitFullscreen=function(){ doc.fullscreenElement=null; };
+    g.run('toggleFs();');g.advance(150);
+    assert.match(status(g).textContent,/activada/);
+    doc.fullscreenElement=null;g.run('onFsChange();'); /* salida por ESC/barra del sistema */
+    assert.match(status(g).textContent,/desactivada/);
+    assert.equal(g.run('fsActive()'),false);
+    assert.equal(btn(g).getAttribute('aria-pressed'),'false');
+    doc.fullscreenElement=doc.documentElement;g.run('onFsChange();'); /* entrada externa */
+    assert.match(status(g).textContent,/activada/);
+    assert.equal(btn(g).getAttribute('aria-pressed'),'true');
+  });
+  await check('F-07: sin interacción previa un cambio externo no inventa texto',g=>{
+    const doc=g.sb.document;
+    assert.equal(status(g).textContent,'');
+    doc.fullscreenElement=doc.documentElement;g.run('onFsChange();');
+    assert.equal(status(g).textContent,'');
+    assert.equal(btn(g).getAttribute('aria-pressed'),'true');
+  });
   console.log(`Intro fullscreen: ${passes} correctas · ${fails} fallos`);
   return options.summary?{passes,fails,total:passes+fails}:fails;
 }

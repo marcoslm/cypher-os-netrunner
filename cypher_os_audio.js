@@ -705,6 +705,13 @@ ACTIONS.toggleFs=function(){ toggleFs(); };
 function onFsChange(){
   setFsWants(fsActive());
   updateFsIndicator();
+  /* Sincronizar el texto de la intro si hubo interacción previa (F-07):
+     una salida externa (ESC/barra del sistema) no debe dejar «activada» con el
+     estado en false. Sin interacción previa no se inventa texto. */
+  var st=document.getElementById("intro-fs-status");
+  if(st && st.textContent){
+    introFsStatus(fsActive()?"Pantalla completa activada. Sales con ESC o con el botón.":"Pantalla completa desactivada.");
+  }
 }
 document.addEventListener("fullscreenchange", onFsChange);
 document.addEventListener("webkitfullscreenchange", onFsChange);
