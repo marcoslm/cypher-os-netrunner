@@ -306,11 +306,12 @@ async function finish(){
   const fixers = await require("./fixer-offers").run({summary:true});
   const layout = await require("./grid-layout").run({summary:true});
   const saveTools = await require("./save-tools").run({summary:true});
-  const totalFails = fails + harness.fails + regressions.fails + jobs.fails + gridIntel.fails + messages.fails + music.fails + controls.fails + vaults.fails + fixers.fails + layout.fails + saveTools.fails;
+  const sidebar = await require("./sidebar").run({summary:true});
+  const totalFails = fails + harness.fails + regressions.fails + jobs.fails + gridIntel.fails + messages.fails + music.fails + controls.fails + vaults.fails + fixers.fails + layout.fails + saveTools.fails + sidebar.fails;
   console.log("\n================ RESUMEN ================");
   console.log("humo: " + passes + " correctas · arnés: " + harness.passes + "/" + harness.total +
-    " · regresiones: " + regressions.passes + "/" + regressions.total + " · trabajos/persistencia: " + jobs.passes + "/" + jobs.total + " · expedientes/HUD: " + gridIntel.passes + "/" + gridIntel.total + " · avisos: " + messages.passes + "/" + messages.total + " · música: " + music.passes + "/" + music.total + " · controles: " + controls.passes + "/" + controls.total + " · vaults/ofertas: " + vaults.passes + "/" + vaults.total + " · fixers/ofertas: " + fixers.passes + "/" + fixers.total + " · grid/layout: " + layout.passes + "/" + layout.total + " · partida/menú: " + saveTools.passes + "/" + saveTools.total);
-  console.log("correctas: " + (passes + harness.passes + regressions.passes + jobs.passes + gridIntel.passes + messages.passes + music.passes + controls.passes + vaults.passes + fixers.passes + layout.passes + saveTools.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
+    " · regresiones: " + regressions.passes + "/" + regressions.total + " · trabajos/persistencia: " + jobs.passes + "/" + jobs.total + " · expedientes/HUD: " + gridIntel.passes + "/" + gridIntel.total + " · avisos: " + messages.passes + "/" + messages.total + " · música: " + music.passes + "/" + music.total + " · controles: " + controls.passes + "/" + controls.total + " · vaults/ofertas: " + vaults.passes + "/" + vaults.total + " · fixers/ofertas: " + fixers.passes + "/" + fixers.total + " · grid/layout: " + layout.passes + "/" + layout.total + " · partida/menú: " + saveTools.passes + "/" + saveTools.total + " · lateral: " + sidebar.passes + "/" + sidebar.total);
+  console.log("correctas: " + (passes + harness.passes + regressions.passes + jobs.passes + gridIntel.passes + messages.passes + music.passes + controls.passes + vaults.passes + fixers.passes + layout.passes + saveTools.passes + sidebar.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
   process.exitCode = totalFails ? 1 : 0;
 }
 finish().catch(function(err){

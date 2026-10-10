@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>CYPHER://OS  ·  v9.2.7</title>
-<link rel="stylesheet" href="cypher_os.css?v=31">
+<link rel="stylesheet" href="cypher_os.css?v=32">
 </head>
 <body>
 
@@ -32,6 +32,7 @@
     <div class="spacer"></div>
     <div class="seg clk" id="h-clock">23:47</div>
     <div class="quick-controls" role="group" aria-label="Controles del deck">
+      <button type="button" class="quick-btn is-on" id="h-sidebar" data-action="toggleSidebar" aria-controls="sidebar" aria-expanded="true" title="Ocultar menú lateral" aria-label="Ocultar menú lateral"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M3 12h18M3 18h18"/></svg><span class="quick-state" aria-hidden="true"></span></button>
       <button type="button" class="quick-btn is-on" id="h-snd" data-action="toggleSound" title="FX: activados" aria-label="FX: activados" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 10h4l5-4v12l-5-4H4zM17 9v6M20 7v10"/></svg><span class="quick-state" aria-hidden="true"></span></button>
       <button type="button" class="quick-btn" id="h-amb" data-action="toggleAmbient" title="Ambiente: desactivado" aria-label="Ambiente: desactivado" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12h2l2-6 4 12 4-12 2 6h4"/></svg><span class="quick-state" aria-hidden="true"></span></button>
       <button type="button" class="quick-btn is-on" id="h-mus" data-action="toggleMusic" title="Música: activada" aria-label="Música: activada" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 17V5l11-2v12M9 8l11-2"/><circle cx="6" cy="17" r="3"/><circle cx="17" cy="15" r="3"/></svg><span class="quick-state" aria-hidden="true"></span></button>
@@ -44,7 +45,7 @@
   <div id="main">
 
     <!-- Menú lateral -->
-    <nav id="sidebar">
+    <nav id="sidebar" aria-label="Menú principal">
       <button class="navbtn" data-view="inicio"><span class="ic">◈</span><span class="lbl">INICIO</span></button>
       <button class="navbtn" data-view="red"><span class="ic">⬡</span><span class="lbl">RED</span></button>
       <button class="navbtn" data-view="contactos"><span class="ic">⌘</span><span class="lbl">CONTACTOS</span><span class="notif-dot" id="notif-contactos"></span></button>
@@ -173,12 +174,12 @@
 <!-- Overlay de árbol de habilidades -->
 <div id="skilltree-overlay" class="hidden"></div>
 
-<script src="cypher_os_help.js?v=32"></script>
+<script src="cypher_os_help.js?v=33"></script>
 <script src="cypher_os_data.js?v=1"></script>
 <script src="cypher_os_core.js?v=3"></script>
 <script src="cypher_os_audio.js?v=2"></script>
 <script src="cypher_os_grid.js?v=5"></script>
 <script src="cypher_os_combat.js?v=2"></script>
-<script src="cypher_os_ui.js?v=7"></script>
+<script src="cypher_os_ui.js?v=8"></script>
 </body>
 </html>

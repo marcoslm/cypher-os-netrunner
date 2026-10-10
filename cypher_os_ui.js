@@ -143,6 +143,39 @@ var MSG_TYPE_DELAY=45, MSG_TYPE_MAX_DURATION=6000;
 var _msgTypeTimer=null, _msgTypeJob=null;
 var _msgMotion=_displayMotion;
 
+/* Layout de este dispositivo: independiente del archivo de partida y del audio. */
+var SIDEBAR_PREFS_KEY="cypher_os_layout_v1";
+function loadSidebarPref(){
+  try{
+    var raw=localStorage.getItem(SIDEBAR_PREFS_KEY), data=raw?JSON.parse(raw):null;
+    if(data && typeof data==="object" && !Array.isArray(data) && typeof data.sidebarCollapsed==="boolean") return data.sidebarCollapsed;
+  }catch(e){ /* Sin storage o clave dañada: lateral visible. */ }
+  return false;
+}
+var _sidebarCollapsed=loadSidebarPref();
+function applySidebarPref(){
+  var root=document.documentElement, button=document.getElementById("h-sidebar");
+  if(root) root.classList.toggle("sidebar-collapsed",_sidebarCollapsed);
+  if(button){
+    button.classList.toggle("is-on",!_sidebarCollapsed);
+    button.setAttribute("aria-expanded",String(!_sidebarCollapsed));
+    var label=_sidebarCollapsed?"Mostrar menú lateral":"Ocultar menú lateral";
+    button.setAttribute("aria-label",label); button.setAttribute("title",label);
+  }
+}
+function setSidebarCollapsed(value){
+  if(typeof value!=="boolean") return;
+  var sidebar=document.getElementById("sidebar"), button=document.getElementById("h-sidebar");
+  if(value && sidebar && sidebar.contains(document.activeElement) && button) button.focus();
+  _sidebarCollapsed=value; applySidebarPref();
+  try{ localStorage.setItem(SIDEBAR_PREFS_KEY,JSON.stringify({sidebarCollapsed:value})); }catch(e){ /* Elección funcional en memoria. */ }
+  if(currentView==="red") resizeGridCanvas();
+}
+ACTIONS.toggleSidebar=function(){
+  if(!livingInteraction() || modalOpen()) return;
+  setSidebarCollapsed(!_sidebarCollapsed);
+};
+
 /* Panel de control: DOM estable para no perder el foco al mover sliders. */
 var _controlReturnFocus=null;
 function controlPanelOpen(){
@@ -2288,7 +2321,7 @@ _initIntroHandlers();
 updateLegendaryOption();
 initDifficultySelect();
 /* el brillo guardado se aplica desde el primer instante (intro incluida) */
-applyBrillo(); applyDisplayPrefs(); syncControlPanel();
+applyBrillo(); applyDisplayPrefs(); syncControlPanel(); applySidebarPref();
 /* pantalla completa: indicador inicial; si el navegador no la admite, se
    oculta el botón FULL (nunca controles decorativos) */
 if(!fsSupported()){

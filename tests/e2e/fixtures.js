@@ -203,7 +203,16 @@ const test = base.extend({
         await page.keyboard.type(text);
         await page.keyboard.press('Enter');
       },
+      async openSidebar({ touch = false } = {}) {
+        const sidebar = page.locator('#sidebar');
+        if (await sidebar.isHidden()) {
+          if (touch) await page.locator('#h-sidebar').tap();
+          else await page.locator('#h-sidebar').click();
+        }
+        await expect(sidebar).toBeVisible();
+      },
       async openSaveTools({ touch = false } = {}) {
+        await game.openSidebar({ touch });
         const group = page.locator('#save-tools');
         if (!(await group.evaluate(element => element.open))) {
           if (touch) await page.locator('#save-tools-toggle').tap();

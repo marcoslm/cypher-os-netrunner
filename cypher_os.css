@@ -181,6 +181,7 @@ html.motion-off .cyber-click,html.motion-off .cyber-click-cyan,html.motion-off .
   padding:8px;background:var(--fondo-panel);
   border-right:1px solid var(--borde);overflow-y:auto;
 }
+html.sidebar-collapsed #sidebar{display:none;}
 .navbtn{
   position:relative;flex:0 0 auto;
   text-align:left;background:transparent;border:1px solid transparent;
@@ -1029,8 +1030,8 @@ body.glitch-random{animation:glitchRandom .2s ease-out;}
   #topbar .clk{display:none;}
 }
 @media(max-width:420px){
-  #topbar{font-size:10px;letter-spacing:0;}
-  .quick-controls{gap:3px;}
+  #topbar{font-size:10px;letter-spacing:0;flex-wrap:wrap;}
+  .quick-controls{gap:3px;margin-left:auto;}
   .quick-btn{width:40px;height:44px;}
   #topbar .seg{gap:3px;}
 }
