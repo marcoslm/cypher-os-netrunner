@@ -21,6 +21,7 @@ test('fixers F03: ofertas estables entre vistas, exportar/importar y recarga; re
   await expectOfferCounts(page,expected);
   for(const view of ['trabajos','inicio','contactos']) await nav(page,view).click();
   expect((await game.snapshot()).state.offers).toEqual(expected);
+  await game.openSaveTools();
   await page.locator('#btn-save').click();
   const download=page.waitForEvent('download');await page.locator('#btn-export').click();
   const exported=await downloadJSON(await download);expect(exported.offers).toEqual(expected);

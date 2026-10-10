@@ -47,6 +47,7 @@ test('VESPER recuperado: expediente inmediato, sin cinco daemons, conserva expor
   const dossier=page.locator('.intel').filter({hasText:'EXPEDIENTE RECUPERADO // VESPER'});
   await expect(dossier).toContainText('FIRMA CENSURADA');
   await expect(dossier).toContainText('KURO GATECH y MONOLITH');
+  await game.openSaveTools();
   const promise=page.waitForEvent('download');await page.locator('#btn-export').click();
   const exported=await downloadJSON(await promise);
   await game.reload();expect((await game.snapshot()).state.intel).toContain('exp_vesper');
@@ -117,6 +118,7 @@ test('HUD: visitas, ICE, tres contratos y avisos persistentes de exploración y 
   await page.clock.runFor(1000);
   await expect(carrera).toContainText('objetivo alcanzado');
   await expect(page.locator('#grid-jobs-summary')).toContainText('3/3');
+  await game.openSaveTools();
   await page.locator('#btn-save').click();
   await game.reload();
   expect((await game.snapshot()).immersion.visited).toEqual(after.immersion.visited);

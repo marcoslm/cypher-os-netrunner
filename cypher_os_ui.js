@@ -1618,7 +1618,7 @@ ACTIONS.newRecord = function(){
   confirmModal({
     title: "⚠ NUEVO REGISTRO",
     body: "¿Nuevo registro? Se borrará <b>TODO</b> el progreso actual."+
-      "<br><br>Si quieres conservar tu partida, cancela y exporta primero desde el menú lateral (EXPORTAR).",
+      "<br><br>Si quieres conservar tu partida, cancela, despliega PARTIDA en el menú lateral y usa EXPORTAR.",
     yes: "NUEVO REGISTRO",
     no: "CANCELAR",
     danger: true,
@@ -1972,7 +1972,7 @@ if(_btnReset) _btnReset.addEventListener("click", function(){
   confirmModal({
     title: "⚠ RESET",
     body: "¿Reiniciar <b>TODO</b> el progreso (incluida la partida actual)?"+
-      "<br><br>Si quieres conservar tu partida, cancela y exporta primero desde el menú lateral (EXPORTAR).",
+      "<br><br>Si quieres conservar tu partida, cancela, despliega PARTIDA en el menú lateral y usa EXPORTAR.",
     yes: "REINICIAR",
     no: "CANCELAR",
     danger: true,

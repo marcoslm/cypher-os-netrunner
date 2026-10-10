@@ -63,6 +63,7 @@ test('importar y RESET mantienen audio, volúmenes y display del dispositivo',as
   for(const key of ['crt','glow','animations'])await pref(page,key).click();
   const before=await settings(page);await page.keyboard.press('Escape');await game.importFile(incoming);
   expect(await settings(page)).toEqual(before);
+  await game.openSaveTools();
   await page.locator('#btn-reset').click();await page.locator('#confirm-overlay [data-action="confirmYes"]').click();
   expect((await game.snapshot()).state.player.credits).toBe(500);expect(await settings(page)).toEqual(before);
   await game.reload();expect(await settings(page)).toEqual(before);

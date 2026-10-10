@@ -193,6 +193,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 
 /* ⑭ GUARDAR Y PARTIDAS */
 '<div class="panel-h">⑭ GUARDAR Y PARTIDAS</div><div class="box helpbox">'+
+'<p class="help-p">Despliega <b>PARTIDA</b> en el menú lateral para GUARDAR, EXPORTAR, IMPORTAR y RESET. Está cerrado al cargar la página: puedes abrirlo con clic/toque o con Tab y Enter/Espacio. <b>Ctrl+S</b> guarda aunque esté plegado. Plegarlo no cambia tu progreso ni detiene el reloj.</p>'+
 '<div class="helprow">'+
 '<div class="helprow-item"><span class="kbd">GUARDAR</span><span class="muted">guarda a mano (también hay autoguardado)</span></div>'+
 '<div class="helprow-item"><span class="kbd">EXPORTAR</span><span class="muted">descarga tu partida como archivo .json</span></div>'+

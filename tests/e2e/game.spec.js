@@ -213,6 +213,7 @@ test('combate: foco de claves, Enter daña, código real normalizado y Escape du
 
 test('combate: RESET/IMPORTAR del fondo no reciben input; guardia y FileReader rechazan sustitución', async ({ page, game }) => {
   await game.setup({ player: { credits: 2000 }, immersion: makeImmersion() });
+  await game.openSaveTools();
   await game.startCombat();
   let chooserCount = 0;
   page.on('filechooser', () => { chooserCount++; });
@@ -294,6 +295,7 @@ test('inmersión: recoger con input, GUARDAR/exportar, recargar y vender datos u
   if ((await game.snapshot()).combatActive) await solveCodeCombat(page);
   await expect(page.locator('#h-ram')).toHaveText('1/6');
   await expect(page.locator('#adjlist')).toContainText('NODO DE DATOS');
+  await game.openSaveTools();
   await page.locator('#btn-save').click();
   await game.expectMessage('guardada a mano');
   const saved = (await game.snapshot()).saved;
@@ -448,6 +450,7 @@ test.describe('navegación táctil responsive', () => {
         expect(box.x + box.width).toBeLessThanOrEqual(width);
       }
     }
+    await game.openSaveTools({touch:true});
     await page.locator('#btn-reset').tap();
     await expect(page.locator('#confirm-overlay')).toBeVisible();
     await page.locator('#confirm-overlay [data-action="confirmNo"]').tap();

@@ -182,7 +182,7 @@ html.motion-off .cyber-click,html.motion-off .cyber-click-cyan,html.motion-off .
   border-right:1px solid var(--borde);overflow-y:auto;
 }
 .navbtn{
-  position:relative;
+  position:relative;flex:0 0 auto;
   text-align:left;background:transparent;border:1px solid transparent;
   color:var(--texto);font-family:var(--fuente);font-size:13px;
   padding:8px 10px;cursor:pointer;border-radius:3px;letter-spacing:.5px;
@@ -197,6 +197,15 @@ html.motion-off .cyber-click,html.motion-off .cyber-click-cyan,html.motion-off .
   text-shadow:0 0 8px rgba(77,255,166,.5);
 }
 .navbtn .ic{color:var(--cyan);width:18px;display:inline-block;}
+.navbtn:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px;}
+/* Operaciones de partida: cerradas por defecto, separadas de las vistas. */
+.save-tools{flex:0 0 auto;margin-top:auto;padding-top:8px;}
+.save-tools summary{display:block;list-style:none;padding-right:22px;}
+.save-tools summary::-webkit-details-marker{display:none;}
+.save-tools summary::after{content:"▸";position:absolute;right:4px;top:8px;color:var(--cyan);}
+.save-tools[open] summary::after{content:"▾";}
+#save-tools-buttons{display:flex;flex-direction:column;gap:2px;padding-top:4px;}
+#save-tools-buttons .navbtn{width:100%;}
 .notif-dot{display:none;width:6px;height:6px;border-radius:50%;background:var(--rojo);
   position:absolute;top:6px;right:6px;box-shadow:0 0 6px rgba(255,93,106,.8);}
 .notif-dot.show{display:block;}

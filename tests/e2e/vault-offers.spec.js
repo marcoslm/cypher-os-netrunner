@@ -50,6 +50,7 @@ test('vault F02: resolver elimina ofertas inmediatamente, importar conserva cobr
   await nav(page,'contactos').click();
   await expect(page.locator('.offer').filter({hasText:'proyecto KURO'})).toHaveCount(0);
   await nav(page,'red').click();
+  await game.openSaveTools();
   const download=page.waitForEvent('download'); await page.locator('#btn-export').click();
   const exported=await downloadJSON(await download);
   exported.offers.push(offer('KURO','obsoleta'));
@@ -98,6 +99,7 @@ test('vault F02: ocho recuperados dejan trabajos repetibles; RESET recupera catÃ
     available.type==='carrera'?n.type==='data'&&n.layer>=3:available.type==='rompehielas'?n.type==='ice'&&n.tier>=2:n.type==='daemon');
   expect(targets.length).toBeGreaterThanOrEqual(available.n);
   expect(generated.immersion.grid.nodes.filter(n=>n.type==='vault')).toHaveLength(0);
+  await game.openSaveTools();
   await page.locator('#btn-reset').click(); await page.locator('#confirm-overlay [data-action="confirmYes"]').click();
   const reset=await game.snapshot();
   expect(reset.state.intel).toHaveLength(0); expect(reset.state.jobs).toHaveLength(0);

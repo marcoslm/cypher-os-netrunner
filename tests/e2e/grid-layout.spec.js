@@ -111,6 +111,7 @@ test('grid F04: redimensionar y cambiar Fullscreen conserva grafo, contratos y t
   await assertLayout(page);await page.locator('#h-fs').click();
   await expect(page.locator('#h-fs')).toHaveAttribute('aria-pressed','false');await assertLayout(page);
   expect((await game.snapshot()).immersion).toEqual(expected.immersion);
+  await game.openSaveTools();
   const download=page.waitForEvent('download');await page.locator('#btn-export').click();
   const exported=await downloadJSON(await download);expect(exported._inImmersion).toEqual(expected.immersion);
   await game.importFile(exported,'grid-layout.json');expect((await game.snapshot()).immersion).toEqual(expected.immersion);

@@ -52,6 +52,7 @@ test('vault F01: aceptar y generar conserva el nodo sorteado al guardar, exporta
   expect(reachable.has(vaults[0].id)).toBe(true);
   await page.keyboard.press('Control+g');
   expect((await game.snapshot()).immersion).toEqual(expected.immersion);
+  await game.openSaveTools();
   await page.locator('#btn-save').click();
   expect((await game.snapshot()).saved._inImmersion).toEqual(expected.immersion);
   const download=page.waitForEvent('download');
@@ -108,6 +109,7 @@ test('exportar/reset/importar cuatro veces conserva datos, ICE vencido, subestac
   expect(expected.immersion.grid.nodes.find(n=>n.id==='3_0')).toMatchObject({_used:true});
   expect(expected.immersion.grid.nodes.find(n=>n.id==='3_1')).toMatchObject({done:false});
   for (let cycle=0;cycle<4;cycle++) {
+    await game.openSaveTools();
     const promise=page.waitForEvent('download');
     await page.locator('#btn-export').click();
     const exported=await downloadJSON(await promise);

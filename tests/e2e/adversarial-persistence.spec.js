@@ -22,6 +22,7 @@ function ambushImmersion() {
 
 test('importación adversa: rechaza un contador numérico dañado sin reemplazar la partida', async ({ page, game }, testInfo) => {
   await game.setup({ player: { credits: 1234 } });
+  await game.openSaveTools();
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#btn-export').click();
   const bad = await downloadJSON(await downloadPromise);

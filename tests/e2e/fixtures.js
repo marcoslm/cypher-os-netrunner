@@ -203,7 +203,16 @@ const test = base.extend({
         await page.keyboard.type(text);
         await page.keyboard.press('Enter');
       },
+      async openSaveTools({ touch = false } = {}) {
+        const group = page.locator('#save-tools');
+        if (!(await group.evaluate(element => element.open))) {
+          if (touch) await page.locator('#save-tools-toggle').tap();
+          else await page.locator('#save-tools-toggle').click();
+        }
+        await expect(group).toHaveAttribute('open', '');
+      },
       async importFile(value, name) {
+        await game.openSaveTools();
         const chooserPromise = page.waitForEvent('filechooser');
         await page.locator('#btn-import').click();
         const chooser = await chooserPromise;

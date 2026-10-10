@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>CYPHER://OS  ·  v9.2.7</title>
-<link rel="stylesheet" href="cypher_os.css?v=30">
+<link rel="stylesheet" href="cypher_os.css?v=31">
 </head>
 <body>
 
@@ -56,11 +56,15 @@
       <button class="navbtn" data-view="registro"><span class="ic">◧</span><span class="lbl">REGISTRO</span></button>
       <button class="navbtn" data-view="logros"><span class="ic">★</span><span class="lbl">LOGROS</span></button>
       <button class="navbtn" data-view="ayuda"><span class="ic">?</span><span class="lbl">AYUDA</span></button>
-      <div class="spacer"></div>
-      <button class="navbtn" id="btn-save"><span class="ic">◰</span><span class="lbl">GUARDAR</span></button>
-      <button class="navbtn" id="btn-export"><span class="ic">⇗</span><span class="lbl">EXPORTAR</span></button>
-      <button class="navbtn" id="btn-import"><span class="ic">⇘</span><span class="lbl">IMPORTAR</span></button>
-      <button class="navbtn" id="btn-reset"><span class="ic">⌫</span><span class="lbl">RESET</span></button>
+      <details id="save-tools" class="save-tools">
+        <summary class="navbtn" id="save-tools-toggle" aria-label="Opciones de partida" aria-controls="save-tools-buttons" title="Guardar, exportar, importar y reset"><span class="ic">◰</span><span class="lbl">PARTIDA</span></summary>
+        <div id="save-tools-buttons">
+          <button class="navbtn" id="btn-save" aria-label="Guardar partida" title="Guardar partida"><span class="ic">◰</span><span class="lbl">GUARDAR</span></button>
+          <button class="navbtn" id="btn-export" aria-label="Exportar partida" title="Exportar partida"><span class="ic">⇗</span><span class="lbl">EXPORTAR</span></button>
+          <button class="navbtn" id="btn-import" aria-label="Importar partida" title="Importar partida"><span class="ic">⇘</span><span class="lbl">IMPORTAR</span></button>
+          <button class="navbtn" id="btn-reset" aria-label="Reiniciar partida" title="Reiniciar partida"><span class="ic">⌫</span><span class="lbl">RESET</span></button>
+        </div>
+      </details>
     </nav>
 
     <!-- Panel principal -->
@@ -169,12 +173,12 @@
 <!-- Overlay de árbol de habilidades -->
 <div id="skilltree-overlay" class="hidden"></div>
 
-<script src="cypher_os_help.js?v=31"></script>
+<script src="cypher_os_help.js?v=32"></script>
 <script src="cypher_os_data.js?v=1"></script>
 <script src="cypher_os_core.js?v=3"></script>
 <script src="cypher_os_audio.js?v=2"></script>
 <script src="cypher_os_grid.js?v=5"></script>
 <script src="cypher_os_combat.js?v=2"></script>
-<script src="cypher_os_ui.js?v=6"></script>
+<script src="cypher_os_ui.js?v=7"></script>
 </body>
 </html>
