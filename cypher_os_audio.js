@@ -652,28 +652,47 @@ function exitFs(onDone){
 function setFsWants(v){
   _fsWants=!!v; saveFsPref();
 }
+function introFsStatus(text){
+  var st=document.getElementById("intro-fs-status");
+  if(st) st.textContent=text||"";
+}
 function updateFsIndicator(){
+  var on=fsActive(), supported=fsSupported();
   var b=document.getElementById("h-fs");
-  if(!b) return;
-  var on=fsActive();
-  b.classList.toggle("is-on",on);
-  b.setAttribute("aria-pressed",String(on));
-  b.setAttribute("aria-label","Pantalla completa: "+(on?"activada":"desactivada"));
-  b.setAttribute("title", on?"salir de pantalla completa":"pantalla completa · alternar");
+  if(b){
+    b.classList.toggle("is-on",on);
+    b.setAttribute("aria-pressed",String(on));
+    b.setAttribute("aria-label","Pantalla completa: "+(on?"activada":"desactivada"));
+    b.setAttribute("title", on?"salir de pantalla completa":"pantalla completa · alternar");
+  }
+  /* Botón equivalente en la intro (F08): mismo estado accesible, oculto sin API. */
+  var ib=document.getElementById("intro-fs");
+  if(ib){
+    ib.classList.toggle("hidden",!supported);
+    ib.classList.toggle("is-on",on);
+    ib.setAttribute("aria-pressed",String(on));
+    ib.setAttribute("aria-label","Pantalla completa: "+(on?"activada":"desactivada"));
+    ib.setAttribute("title", on?"salir de pantalla completa":"pantalla completa · alternar");
+  }
 }
 function toggleFs(){
   if(!fsSupported()){
     msg("este navegador no admite pantalla completa. en tablet, añade el deck a pantalla de inicio o usa el modo kiosco del navegador.","ambar");
+    introFsStatus("Este navegador no admite pantalla completa.");
     return;
   }
   if(fsActive()){
     exitFs(function(ok){
-      msg(ok?"pantalla completa desactivada.":"no se pudo salir de pantalla completa.",ok?"cyan":"ambar");
+      var text=ok?"pantalla completa desactivada.":"no se pudo salir de pantalla completa.";
+      msg(text,ok?"cyan":"ambar");
+      introFsStatus(ok?"Pantalla completa desactivada.":"No se pudo salir de pantalla completa.");
     });
   } else {
     enterFs(function(ok){
-      msg(ok?"pantalla completa activada. sales con ESC o con el botón FULL.":
-        "el navegador rechazó la pantalla completa. sigues en ventana.",ok?"cyan":"ambar");
+      var text=ok?"pantalla completa activada. sales con ESC o con el botón FULL.":
+        "el navegador rechazó la pantalla completa. sigues en ventana.";
+      msg(text,ok?"cyan":"ambar");
+      introFsStatus(ok?"Pantalla completa activada. Sales con ESC o con el botón.":"El navegador rechazó la pantalla completa; sigues en ventana.");
     });
   }
   updateFsIndicator();

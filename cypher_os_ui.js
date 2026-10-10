@@ -591,7 +591,7 @@ document.addEventListener("click", function(e){
   var btn = e.target.closest("[data-action]");
   if(!btn) return;
   var a = btn.getAttribute("data-action");
-  var controlAction=["openControls","closeControls","toggleDeckPref","resetControls","confirmYes","confirmNo"].indexOf(a)>=0;
+  var controlAction=["openControls","closeControls","toggleDeckPref","resetControls","confirmYes","confirmNo","toggleFs"].indexOf(a)>=0;
   if(!S && a!=="startIntro" && !controlAction) return;
   if(controlPanelOpen() && !controlAction) return;
   if(S && S.player.cpu<=0 && ["reconnect","newRecord","confirmYes","confirmNo"].indexOf(a)<0) return;
