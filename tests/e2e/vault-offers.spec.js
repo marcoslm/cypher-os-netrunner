@@ -82,19 +82,27 @@ test('vault F02: ocho recuperados dejan trabajos repetibles; RESET recupera cat�
   for(let i=0;i<3;i++) {
     await page.locator('[data-action="refreshOffers"]').click();
     const offers=(await game.snapshot()).state.offers;
-    expect(offers).toHaveLength(8); expect(offers.filter(o=>o.type==='vault')).toHaveLength(0);
-    for(const contact of ['mamaWire','doctorSudario','night0X','kairos']) expect(offers.filter(o=>o.contact===contact)).toHaveLength(2);
+    expect(offers.filter(o=>o.type==='vault')).toHaveLength(0);
+    // F03 varía el número: F02 sigue exigiendo repetibles para todos los fixers.
+    for(const contact of ['mamaWire','doctorSudario','night0X','kairos']) {
+      const own=offers.filter(o=>o.contact===contact);
+      expect(own.length).toBeGreaterThanOrEqual(1); expect(own.length).toBeLessThanOrEqual(2);
+      expect(own.every(o=>o.type!=='vault')).toBe(true);
+    }
   }
-  const available=(await game.snapshot()).state.offers.find(o=>o.type==='recoleta');
+  const available=(await game.snapshot()).state.offers.find(o=>o.type!=='vault');
   await page.locator(`[data-action="acceptJob"][data-id="${available.id}"]`).click();
   await nav(page,'red').click(); await page.locator('[data-action="dipGrid"]').click();
   const generated=await game.snapshot();
-  expect(generated.immersion.grid.nodes.filter(n=>n.type==='data').length).toBeGreaterThanOrEqual(available.n);
+  const targets=generated.immersion.grid.nodes.filter(n=>available.type==='recoleta'?n.type==='data':
+    available.type==='carrera'?n.type==='data'&&n.layer>=3:available.type==='rompehielas'?n.type==='ice'&&n.tier>=2:n.type==='daemon');
+  expect(targets.length).toBeGreaterThanOrEqual(available.n);
   expect(generated.immersion.grid.nodes.filter(n=>n.type==='vault')).toHaveLength(0);
   await page.locator('#btn-reset').click(); await page.locator('#confirm-overlay [data-action="confirmYes"]').click();
   const reset=await game.snapshot();
   expect(reset.state.intel).toHaveLength(0); expect(reset.state.jobs).toHaveLength(0);
-  expect(reset.state.offers.some(o=>o.type==='vault')).toBe(true);
+  // RESET vuelve a hacer elegibles los ocho; una oferta concreta es opcional.
+  expect(await page.locator('body').evaluate(()=>PROYECTOS.filter(p=>!projectRecovered(p)).length)).toBe(8);
 });
 
 test('vault F02: importar duplicado legacy lo retira una vez sin calor ni otro pago',async({page,game})=>{

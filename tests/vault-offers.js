@@ -26,6 +26,8 @@ async function run(options={}) {
   await check('ofertas nuevas excluyen recuperados y reservados, sin duplicar proyectos entre fixers',g=>{
     g.run('S.player.level=4;S.player.rep.night0X=2;unlockProjectDossier("KURO");');
     g.run('S').jobs=[job('SOMNIO')];
+    // F02 comprueba el catálogo máximo; F03 cubre la distribución variable aparte.
+    g.run('Math.random=function(){return 0.999999;};');
     for(let refresh=0;refresh<24;refresh++) {
       g.run('generateOffers();');
       const vaults=g.run('S.offers').filter(o=>o.type==='vault');
@@ -42,7 +44,7 @@ async function run(options={}) {
   });
   await check('con uno o cero proyectos pendientes no inventa vaults ni quita trabajos repetibles',g=>{
     const projects=Array.from(g.run('PROYECTOS'));
-    g.run('S.player.level=4;S.player.rep.night0X=2;');
+    g.run('S.player.level=4;S.player.rep.night0X=2;Math.random=function(){return 0.999999;};');
     for(const project of projects.slice(0,-1)) g.run(`unlockProjectDossier('${project}');`);
     g.run('generateOffers();');
     const vaults=g.run('S.offers').filter(o=>o.type==='vault');
@@ -166,7 +168,7 @@ async function run(options={}) {
     g.run('unlockProjectDossier("KURO");S.best.finalDone=true;');
     clickAction(g,'newRecord'); clickAction(g,'confirmYes');
     assert.equal(g.run('projectRecovered("KURO")'),false); assert.equal(g.run('S.best.finalDone'),true);
-    assert.ok(g.run('S.offers').some(o=>o.type==='vault'));
+    assert.equal(g.run('PROYECTOS.filter(function(p){return !projectRecovered(p);}).length'),8,'RESET recupera todos los proyectos, no fuerza una oferta de vault en cada renovación');
   });
   await check('RECONEXIÓN conserva solo evidencia del checkpoint y permite reofertar lo perdido',g=>{
     g.run('S').jobs=[job()]; g.run('startImmersion(4);save();');

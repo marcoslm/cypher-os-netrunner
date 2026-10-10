@@ -767,14 +767,29 @@ ACTIONS.refreshOffers = function(){
 };
 
 function jobById(id){ for(var i=0;i<S.offers.length;i++) if(S.offers[i].id===id) return S.offers[i]; return null; }
+function vaultOfferProjects(){
+  return PROYECTOS.filter(function(p){
+    return !projectRecovered(p) && !projectReserved(p) && !S.offers.some(function(o){ return o.type==="vault" && o.project===p; });
+  });
+}
 function generateOffers(){
   S.offers=[];
   CONTACTOS_DEF.forEach(function(c){
     if(c.locked && !(S.player.level>=4 && S.player.rep.night0X>=2)) return;
-    var types=c.jobs;
-    /* una oferta por cada tipo de trabajo del contacto */
-    for(var t=0;t<types.length;t++){
-      var offer=buildOffer(c.id, types[t]);
+    var types=c.jobs.filter(function(type){ return type!=="vault" || vaultOfferProjects().length>0; });
+    if(!types.length) return;
+    var repeatable=types.filter(function(type){ return type!=="vault"; });
+    /* Garantizar un repetible, sin convertir el vault agotado en relleno.
+       Mama Wire conserva RECOLECTA para aprender en el primer nivel. */
+    var first=(c.id==="mamaWire" && S.player.level===1 && S.player.stats.jobsCompleted===0 && repeatable.indexOf("recoleta")>=0)
+      ? "recoleta" : pick(repeatable.length?repeatable:types);
+    var count=randInt(1,types.length), selected=[first];
+    var remaining=types.filter(function(type){ return type!==first; });
+    while(selected.length<count && remaining.length){
+      selected.push(remaining.splice(randInt(0,remaining.length-1),1)[0]);
+    }
+    for(var t=0;t<selected.length;t++){
+      var offer=buildOffer(c.id,selected[t]);
       if(offer) S.offers.push(offer);
     }
   });
@@ -796,9 +811,7 @@ function buildOffer(contact,type){
   if(type==="vault"){
     var td=Math.min(4,2+Math.floor(lvl/2));
     /* pareja canónica proyecto↔corporación (LORE.md §4): nunca un proyecto ajeno */
-    var pool=PROYECTOS.filter(function(p){
-      return !projectRecovered(p) && !projectReserved(p) && !S.offers.some(function(o){ return o.type==="vault" && o.project===p; });
-    });
+    var pool=vaultOfferProjects();
     if(!pool.length) return null;
     var proj=pick(pool);
     var corp=PROYECTO_CORP[proj]||pick(["KURO GATECH","MONOLITH"]); /* VESPER = consorcio */

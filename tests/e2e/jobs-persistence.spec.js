@@ -7,7 +7,12 @@ function job(type,n) {
     risk:'med',done:false,failed:false,prog:{[field]:0} };
 }
 test('nivel 30: tres contratos aceptados generan oportunidades suficientes en una inmersión', async ({ page,game }) => {
-  await game.setup({player:{level:30,rep:{night0X:2}}});
+  // Catálogo de fixture explícito: el caso de cuotas exige estos tres trabajos,
+  // pero una renovación real ya no ofrece necesariamente todos los tipos.
+  const fixtureOffers=[['recoleta',6,'mamaWire'],['rompehielas',4,'doctorSudario'],['daemon',3,'night0X']].map(([type,n,contact])=>({
+    id:'nivel30-'+type,title:type,desc:'Objetivo de prueba: '+n,type,n,contact,risk:'med',reward:100,xp:10
+  }));
+  await game.setup({player:{level:30,rep:{night0X:2}},state:{offers:fixtureOffers}});
   await nav(page,'contactos').click();
   const offers=(await game.snapshot()).state.offers;
   const selected=[['mamaWire','recoleta'],['doctorSudario','rompehielas'],['night0X','daemon']].map(([contact,type])=>offers.find(o=>o.contact===contact&&o.type===type));

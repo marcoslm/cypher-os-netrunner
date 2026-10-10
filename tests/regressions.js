@@ -314,7 +314,8 @@ async function run(options = {}){
 
   await check("VAULT no se acepta estando inmerso y vuelve a ser aceptable en la calle", () => {
     const g=game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();generateOffers();startImmersion(4);');
+    // La guardia necesita un vault concreto, no que el sorteo de ofertas lo incluya.
+    g.run('S=nuevoEstado();ensureStateIntegrity();S.offers=[buildOffer("doctorSudario","vault")];startImmersion(4);');
     const offer=g.run('S.offers.filter(function(o){return o.type==="vault";})[0]');
     const html=g.run('offerHtml(S.offers.filter(function(o){return o.type==="vault";})[0],CONTACTOS_DEF[1])');
     assert.ok(!html.includes('data-action="acceptJob"'));
