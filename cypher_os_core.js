@@ -46,6 +46,17 @@ function nuevoEstado() {
 var S = null;
 var ACTIONS = {};
 
+/* Fuente única de ingresos (A-05 / F-05 del reporte): saldo e histórico de la
+   partida crecen juntos, una sola vez por acción. Los logros económicos y
+   ESTADO leen el histórico; gastar nunca lo descuenta. */
+function earnCredits(n){
+  if(!S || !isFinite(n) || n<=0) return 0;
+  n=Math.round(n);
+  S.player.credits += n;
+  S.player.stats.credits = (S.player.stats.credits||0) + n;
+  return n;
+}
+
 function ramCap(){ return 6 + S.player.ramUp*4; }
 function fwVal(){ return 20 + S.player.fwUp*10; }
 function maxCpu(){ return 100 + S.player.linkUp*20; }
@@ -544,7 +555,7 @@ function completeJob(job){
   var rep = p.rep[job.contact] || 0;
   var reward = Math.round(job.reward * (1 + rep*0.06));
   gainXp(job.xp);
-  p.credits += reward; p.stats.credits += reward;
+  earnCredits(reward);
   p.stats.jobsCompleted=(p.stats.jobsCompleted||0)+1;
   p.rep[job.contact] = clamp(rep+1,0,5);
   if(job.contact==="doctorSudario") unlock("invierno");

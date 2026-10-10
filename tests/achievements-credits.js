@@ -49,6 +49,30 @@ async function run(options={}) {
     g.run('checkAchievements();');
     for(const id of ids) assert.equal(has(g,id),false,id+' se reinicia');
   });
+  await check('F-05: la subestación suma ingresos históricos y dispara FORTUNA al cruzar el umbral',g=>{
+    g.run('startImmersion(4);S.player.stats.credits=49998;S.player.credits=0;');
+    const sub=g.run('inImmersion.grid.nodes').find(n=>n.type==='substation'&&n.layer<=3) ||
+      g.run('inImmersion.grid.nodes')[1];
+    g.sb.__sub=sub;sub.type='substation';sub._used=false;
+    g.sb.Math.random=()=>0; /* gain determinista: randInt mínimo = 15 */
+    const before=g.run('S.player.stats.credits');
+    g.run('useSubstation(window.__sub);checkAchievements();');
+    const after=g.run('S.player.stats.credits');
+    assert.equal(after,before+15,'el ingreso se computa una vez en el histórico');
+    assert.equal(g.run('S.player.credits'),15,'el saldo recibe el mismo ingreso');
+    assert.equal(has(g,'fortune50k'),true,'FORTUNA se gana al cruzar 50000₡');
+    g.run('useSubstation(window.__sub);');
+    assert.equal(g.run('S.player.stats.credits'),after,'el nodo agotado no vuelve a pagar');
+  });
+  await check('F-05: gastar no descuenta del histórico y las fuentes usan la misma utilidad',g=>{
+    assert.ok(g.run('typeof earnCredits')==='function');
+    assert.equal(g.run('earnCredits(0)'),0);assert.equal(g.run('earnCredits(-5)'),0);
+    g.run('earnCredits(100);');assert.equal(g.run('S.player.stats.credits'),100);
+    g.run('earnCredits(25);');assert.equal(g.run('S.player.stats.credits'),125);
+    assert.equal(g.run('S.player.credits'),500+125);
+    g.run('S.player.credits-=125;'); /* gastar en tienda/actividades */
+    assert.equal(g.run('S.player.stats.credits'),125,'el histórico no se descuenta al gastar');
+  });
   console.log(`Logros/créditos: ${passes} correctas · ${fails} fallos`);
   return options.summary?{passes,fails,total:passes+fails}:fails;
 }

@@ -548,7 +548,7 @@ function useSubstation(n){
   if(n._used){ msg(pickFresh("subest-agotada", FRASES_SUBEST_AGOTADA),"gris"); renderGridHud(); return; }
   n._used = true;
   var gain = randInt(15,45);
-  S.player.credits += gain;
+  earnCredits(gain);
   S.player.heat = clamp(S.player.heat-6,0,100);
   S.player.stats.substationsUsed=(S.player.stats.substationsUsed||0)+1;
   addLog("SUBESTACIÓN ▸ +"+gain+"₡ · calor -6.");
@@ -611,7 +611,7 @@ function onNodeDefeated(ctx){
 
 function defeatNucleo(){
   S.player.stats.ice++;
-  gainXp(600); S.player.credits += 5000; S.player.stats.credits += 5000;
+  gainXp(600); earnCredits(5000);
   S.history.finalDone = true;
   if(!S.best) S.best={};
   S.best.finalDone = true; /* marca permanente: LEGENDARIO disponible incluso tras NUEVO REGISTRO */
@@ -714,7 +714,7 @@ function doSuperficializar(){
   for(var i=0;i<inm.data.length;i++){
     sellTotal += Math.round(inm.data[i].value * (1 + S.player.hack*0.1));
   }
-  S.player.credits += sellTotal; S.player.stats.credits += sellTotal;
+  earnCredits(sellTotal);
   if(sellTotal>0) addLog("DATOS VENDIDOS ▸ +"+sellTotal+"₡.");
 
   var completed=0, failed=0, carreraCompletedThisRun=false, jobResults=[];

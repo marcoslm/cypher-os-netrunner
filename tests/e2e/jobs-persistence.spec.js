@@ -140,3 +140,26 @@ test('exportar/reset/importar cuatro veces conserva datos, ICE vencido, subestac
   await game.expectMessage('archivo inválido');
   expect((await game.snapshot()).raw).toBe(after.raw);
 });
+
+test('economía F-05: la subestación suma ingresos históricos y desbloquea FORTUNA',async({page,game})=>{
+  await game.setup({immersion:makeImmersion(),state:{offers:[]},player:{sigilo:20,_gridEventCooldown:10000}});
+  await page.evaluate(()=>{
+    S.player.stats.credits=49998;S.player.credits=0;
+    const n=nodeById(inImmersion.grid.adj[inImmersion.current][0]);
+    n.type='substation';n.name='SUBESTACIÓN';n._used=false;
+    renderGridHud();
+  });
+  await page.locator('#adjlist .adj-node[data-idx="0"]').click();
+  const after=await game.snapshot();
+  // El histórico parte de 49998 y el saldo de 0: el ingreso nuevo debe coincidir en ambos.
+  expect(after.state.player.stats.credits).toBeGreaterThanOrEqual(50013);
+  expect(after.state.player.stats.credits-49998).toBe(after.state.player.credits);
+  // Los logros económicos se celebran al volver a la calle, como el resto.
+  await page.locator('[data-action="doSuperficie"]').click();
+  const surfaced=await game.snapshot();
+  expect(surfaced.state.achievements).toContain('fortune50k');
+  await game.reload();
+  const persisted=await game.snapshot();
+  expect(persisted.state.player.stats.credits).toBe(after.state.player.stats.credits);
+  expect(persisted.state.achievements).toContain('fortune50k');
+});
