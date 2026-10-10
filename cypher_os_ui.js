@@ -76,12 +76,14 @@ function toggleAmbient(){
 
 
 function runBoot(onDone){
+  _entryMode="boot";
   var bootEl = document.getElementById("boot");
   var body = document.getElementById("boot-body");
   bootEl.classList.add("show");
   bootEl.style.display="flex";
   bootEl.style.opacity="1";
   body.innerHTML="";
+  syncGameInputLock();
   var idx=0, done=false, timer=null;
 
   function line(){
@@ -125,7 +127,7 @@ function runBoot(onDone){
     }, 520);
   }
   function skip(){ if(done) return; fadeOut(); }
-  function skipOnce(e){ if(e && e.repeat) return; skip(); }
+  function skipOnce(e){ if(e && (e.repeat || e.ctrlKey || e.altKey || e.metaKey)) return; skip(); }
 
   bootEl.addEventListener("click", skip);
   window.addEventListener("keydown", skipOnce);
@@ -230,7 +232,7 @@ function syncControlPanel(){
   syncMotionStatus();
 }
 function openControlPanel(){
-  if(combatActive || confirmOpen() || (S && S.player.cpu<=0) || (!S && _bootStarted)) return;
+  if(combatActive || confirmOpen() || (S && S.player.cpu<=0) || entryMode()==="boot") return;
   if(controlPanelOpen() || modalOpen()) return;
   var el=document.getElementById("controls-overlay"); if(!el) return;
   _controlReturnFocus=document.activeElement;
@@ -245,7 +247,8 @@ function closeControlPanel(restoreFocus){
   var b=document.getElementById("h-controls"); if(b) b.setAttribute("aria-expanded","false");
   var target=_controlReturnFocus; _controlReturnFocus=null;
   syncGameInputLock();
-  if(restoreFocus!==false && target && document.documentElement.contains(target) && !gameInputLayer()) target.focus();
+  var layer=gameInputLayer();
+  if(restoreFocus!==false && target && document.documentElement.contains(target) && (!layer || layerContains(layer,target))) target.focus();
 }
 ACTIONS.openControls=openControlPanel;
 ACTIONS.closeControls=function(){ closeControlPanel(); };
@@ -277,10 +280,16 @@ if(_controlsOverlay){
 
 /* El overlay visual no basta: impedir foco/clics en la partida que tapa.
    inert cubre navegadores modernos; captura de teclado/foco sirve de respaldo. */
+/* Tránsito de sesión solo en runtime, nunca en el archivo de partida.
+   Antes del primer COMENZAR, S=null identifica la intro inicial. */
+var _entryMode=null;
+function entryMode(){ return _entryMode || (!S ? "intro" : null); }
 function gameInputLayer(){
   if(confirmOpen()) return document.getElementById("confirm-overlay");
   if(controlPanelOpen() && (combatActive || (S && S.player.cpu<=0))) closeControlPanel(false);
   if(controlPanelOpen()) return document.getElementById("controls-overlay");
+  var mode=entryMode();
+  if(mode) return document.getElementById(mode);
   if(S && S.player.cpu<=0) return document.getElementById("flatline");
   if(combatActive) return document.getElementById("combat");
   return null;
@@ -317,7 +326,7 @@ function syncGameInputLock(){
   if(flat) flat.inert=!!(layer && layer!==flat);
   if(layer && (document.activeElement===layer || !layerContains(layer, document.activeElement))) focusInputLayer(layer);
 }
-function livingInteraction(){ return !!(S && S.player.cpu>0 && !combatActive && !confirmOpen() && !controlPanelOpen()); }
+function livingInteraction(){ return !!(S && !entryMode() && S.player.cpu>0 && !combatActive && !confirmOpen() && !controlPanelOpen()); }
 
 document.addEventListener("keydown", function(e){
   var layer=gameInputLayer();
@@ -485,7 +494,7 @@ if(_confirmOverlay) _confirmOverlay.addEventListener("click", function(e){
 });
 
 function showView(v, skipLog){
-  if(combatActive || (S && S.player.cpu<=0 && v!=="inicio")) return;
+  if(!S || entryMode() || combatActive || (S.player.cpu<=0 && v!=="inicio")) return;
   currentView = v;
   if(v !== "red") stopGridRender();
   document.querySelectorAll(".navbtn[data-view]").forEach(function(b){
@@ -592,6 +601,8 @@ document.addEventListener("click", function(e){
   if(!btn) return;
   var a = btn.getAttribute("data-action");
   var controlAction=["openControls","closeControls","toggleDeckPref","resetControls","confirmYes","confirmNo","toggleFs"].indexOf(a)>=0;
+  var mode=entryMode(), layer=gameInputLayer();
+  if(mode && (mode==="boot" || !controlAction || !layerContains(layer,btn))) return;
   if(!S && a!=="startIntro" && !controlAction) return;
   if(controlPanelOpen() && !controlAction) return;
   if(S && S.player.cpu<=0 && ["reconnect","newRecord","confirmYes","confirmNo"].indexOf(a)<0) return;
@@ -1089,13 +1100,13 @@ function clockMin(){ return (S.player.stats.totalPlayTime||0); }
 function activityOnCooldown(act){ return clockMin() < (S._activityCooldowns[act.id]||0); }
 
 ACTIONS.dipGrid = function(){
-  if(combatActive || (S && S.player.cpu<=0)) return;
+  if(!livingInteraction()) return;
   if(inImmersion){ showView("red"); return; }
   startImmersion(S.nextDepth || 4);
 };
 ACTIONS.startIntro = beginIntro;
 ACTIONS.startEndless = function(){
-  if(combatActive || (S && S.player.cpu<=0)) return;
+  if(!livingInteraction()) return;
   if(inImmersion){ msg("ya estás en el grid. superficializa primero.","ambar"); return; }
   if(isLockdown()){
     msg("LOCKDOWN ACTIVO ▸ calor demasiado alto. espera a que baje para conectarte.","rojo");
@@ -1246,7 +1257,7 @@ ACTIONS.backToIntro = function(){
       var introEl=document.getElementById("intro"), bootBg=document.getElementById("boot");
       if(bootBg){ bootBg.style.display="none"; bootBg.style.opacity="1"; }
       if(introEl){ introEl.style.display="flex"; introEl.style.opacity="1"; introEl.style.transition=""; }
-      _bootStarted=false;
+      _bootStarted=false; _entryMode="intro";
       updateLegendaryOption(); initDifficultySelect();
       msg("partida guardada. intro lista para continuar.","verde");
     }
@@ -2215,6 +2226,7 @@ function startGlitchLoop(){
 
 /* ---- ARRANQUE GENERAL ---- */
 function afterBoot(){
+  _entryMode=null;
   stopMessageTyping();
   msgEl = document.getElementById("msg");
   var saved = load();
@@ -2292,7 +2304,7 @@ var _bootStarted=false;
 var _pendingDifficulty=null;
 function beginIntro(){
   if(_bootStarted || controlPanelOpen() || confirmOpen()) return;
-  _bootStarted=true;
+  _bootStarted=true; _entryMode="boot";
   /* si la última sesión quedó en pantalla completa, volver a entrar AHORA:
      el clic de ▶ COMENZAR es el gesto de usuario que exige el navegador
      (sin gesto, requestFullscreen se deniega) */
@@ -2308,6 +2320,7 @@ function beginIntro(){
   var introEl=document.getElementById("intro");
   var bootBg=document.getElementById("boot");
   if(bootBg){ bootBg.style.display="flex"; bootBg.style.opacity="1"; }
+  syncGameInputLock();
   if(introEl){
     introEl.style.transition="opacity .15s";
     introEl.style.opacity="0";
@@ -2352,7 +2365,7 @@ document.addEventListener("keydown", function(e){
     if(e.key==="Escape"){ closeControlPanel(); e.preventDefault(); }
     return;
   }
-  if(combatActive) return;
+  if(entryMode() || combatActive) return;
   /* si el foco está en un input/textarea, no ejecutar atajos (excepto Ctrl+K y Escape) */
   var el=document.activeElement;
   var inInput=el && (el.tagName==="INPUT" || el.tagName==="TEXTAREA");
@@ -2412,6 +2425,7 @@ if(!fsSupported()){
   if(_fsBtn) _fsBtn.classList.add("hidden");
 }
 updateFsIndicator();
+syncGameInputLock();
 /* también como fallback por si el DOM aún no estuviera listo (algunos navegadores) */
 if(document.readyState==="loading"){
   window.addEventListener("DOMContentLoaded", _initIntroHandlers);
