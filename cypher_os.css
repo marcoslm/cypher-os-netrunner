@@ -124,6 +124,7 @@ body::after{   /* viñeta CRT + barrido vertical leve (ver nota de z-index arrib
 .control-channel{padding:10px 0 16px;border-bottom:1px dashed var(--borde);}
 .control-channel:last-child{border:0;}
 .control-panel .control-hint{margin:5px 0;color:var(--texto);font-size:11px;line-height:1.5;}
+.control-motion-state{font-size:13px;font-weight:bold;line-height:1.5;margin:12px 0 5px;}
 .control-effect{padding:12px 0;border-bottom:1px dashed var(--borde);}
 .control-effect>div{min-width:0;}
 .control-toggle{flex:0 0 auto;width:48px;min-height:34px;font-family:var(--fuente);font-size:11px;cursor:pointer;

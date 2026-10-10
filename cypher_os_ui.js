@@ -182,6 +182,26 @@ function controlPanelOpen(){
   var el=document.getElementById("controls-overlay");
   return !!(el && el.classList.contains("show"));
 }
+function syncMotionStatus(){
+  var enabled=decorativeMotion(), system=!!(_displayMotion && _displayMotion.matches);
+  var source=system?"SISTEMA/NAVEGADOR":_deckPrefs.reducedMotion?"AJUSTE LOCAL":!_deckPrefs.animations?"ANIMACIONES DESACTIVADAS":"AJUSTES ACTIVOS";
+  var status=document.getElementById("controls-motion-state"), note=document.getElementById("controls-motion");
+  var text="AVISOS Y TRANSICIONES: "+(enabled?"ON":"OFF")+" · "+source;
+  if(status){
+    if(status.textContent!==text) status.textContent=text;
+    var statusClass="control-motion-state "+(enabled?"verde":"ambar");
+    if(status.className!==statusClass) status.className=statusClass;
+  }
+  var explanation=system
+    ? "Movimiento reducido del sistema activo: el navegador comunica esta preferencia. El OFF local no anula esa señal: los avisos y las transiciones no se animan. Es accesibilidad, no una medición de la CPU."
+    : _deckPrefs.reducedMotion
+      ? "Movimiento reducido local activo: avisos completos sin escritura animada y sin transiciones decorativas. Las señales y tiempos del juego se conservan."
+      : !_deckPrefs.animations
+        ? "Animaciones decorativas desactivadas: avisos completos sin escritura animada y sin transiciones. El movimiento reducido local está OFF."
+        : "Escritura de avisos y transiciones activadas. El navegador no solicita reducción y el ajuste local está OFF; todas las señales y mecánicas se conservan.";
+  /* No volver a anunciar el mismo estado en cada actualización del reloj. */
+  if(note && note.textContent!==explanation) note.textContent=explanation;
+}
 function syncControlPanel(){
   var channels=[{key:"snd",id:"h-snd",name:"FX"},{key:"amb",id:"h-amb",name:"Ambiente"},{key:"mus",id:"h-mus",name:"Música"}];
   channels.forEach(function(ch){
@@ -207,8 +227,7 @@ function syncControlPanel(){
     var out=document.getElementById(key==="brillo"?"h-brillo":"value-"+key);
     if(out) out.textContent=value+"%";
   });
-  var note=document.getElementById("controls-motion");
-  if(note) note.textContent=_displayMotion && _displayMotion.matches ? "Movimiento reducido del sistema activo: tiene prioridad sobre las animaciones." : reducedMotion()?"Movimiento reducido activo: las animaciones decorativas quedan suspendidas.":"Los avisos, el Grid y los minijuegos conservan toda su información.";
+  syncMotionStatus();
 }
 function openControlPanel(){
   if(combatActive || confirmOpen() || (S && S.player.cpu<=0) || (!S && _bootStarted)) return;

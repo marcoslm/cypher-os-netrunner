@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>CYPHER://OS  ·  v9.2.7</title>
-<link rel="stylesheet" href="cypher_os.css?v=32">
+<link rel="stylesheet" href="cypher_os.css?v=33">
 </head>
 <body>
 
@@ -143,7 +143,8 @@
       <div class="control-effect"><div><span id="label-crt">TEXTURA CRT</span><p class="control-hint">Scanlines y viñeta.</p></div><button type="button" class="control-toggle" data-action="toggleDeckPref" data-pref="crt" aria-labelledby="label-crt" aria-pressed="true">ON</button></div>
       <div class="control-effect"><div><span id="label-glow">RESPLANDOR</span><p class="control-hint">Fósforo, halos y brillo de los nodos.</p></div><button type="button" class="control-toggle" data-action="toggleDeckPref" data-pref="glow" aria-labelledby="label-glow" aria-pressed="true">ON</button></div>
       <div class="control-effect"><div><span id="label-animations">ANIMACIONES DECORATIVAS</span><p class="control-hint">Flicker, glitches, partículas y transiciones.</p></div><button type="button" class="control-toggle" data-action="toggleDeckPref" data-pref="animations" aria-labelledby="label-animations" aria-pressed="true">ON</button></div>
-      <div class="control-effect"><div><span id="label-reducedMotion">MOVIMIENTO REDUCIDO</span><p class="control-hint">Sin parpadeos ni escritura animada; conserva las señales de juego.</p></div><button type="button" class="control-toggle" data-action="toggleDeckPref" data-pref="reducedMotion" aria-labelledby="label-reducedMotion" aria-pressed="false">OFF</button></div>
+      <div class="control-effect"><div><span id="label-reducedMotion">MOVIMIENTO REDUCIDO LOCAL</span><p class="control-hint" id="hint-reducedMotion">Preferencia del juego. OFF no anula la reducción solicitada por el sistema o navegador.</p></div><button type="button" class="control-toggle" data-action="toggleDeckPref" data-pref="reducedMotion" aria-labelledby="label-reducedMotion" aria-describedby="hint-reducedMotion controls-motion" aria-pressed="false">OFF</button></div>
+      <p id="controls-motion-state" class="control-motion-state" role="status" aria-live="polite" aria-atomic="true"></p>
       <p id="controls-motion" class="control-hint"></p>
     </fieldset>
     </div>
@@ -174,12 +175,12 @@
 <!-- Overlay de árbol de habilidades -->
 <div id="skilltree-overlay" class="hidden"></div>
 
-<script src="cypher_os_help.js?v=33"></script>
+<script src="cypher_os_help.js?v=34"></script>
 <script src="cypher_os_data.js?v=1"></script>
 <script src="cypher_os_core.js?v=3"></script>
 <script src="cypher_os_audio.js?v=2"></script>
 <script src="cypher_os_grid.js?v=5"></script>
 <script src="cypher_os_combat.js?v=2"></script>
-<script src="cypher_os_ui.js?v=8"></script>
+<script src="cypher_os_ui.js?v=9"></script>
 </body>
 </html>
