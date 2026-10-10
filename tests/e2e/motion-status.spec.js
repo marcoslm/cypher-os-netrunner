@@ -4,6 +4,18 @@ const state=page=>page.locator('#controls-motion-state');
 const pref=(page,key)=>page.locator(`#controls-overlay [data-pref="${key}"]`);
 const close=page=>page.locator('#controls-overlay .control-close').click();
 
+test('movimiento F-06: el epílogo muestra la cita completa con movimiento reducido',async({page,game})=>{
+  await game.setup({state:{offers:[]}});
+  await page.emulateMedia({reducedMotion:'reduce'});
+  // Abrir la escena del epílogo; la escritura debe ser inmediata bajo reduced motion.
+  await page.evaluate(()=>{ showNucleoEnding(); });
+  await expect(page.locator('#nucleo-quote')).toContainText('GRACIAS POR LA REPARACIÓN');
+  expect(await page.locator('#nucleo-quote').innerText()).not.toBe('▌');
+  expect(await page.evaluate(()=>_typeTimers.length)).toBe(0);
+  await page.locator('[data-action="nucleoContinue"]').click();
+  await expect(page.locator('#overlay')).toBeHidden();
+  await page.emulateMedia({reducedMotion:'no-preference'});
+});
 test('movimiento F06: sistema reducido explica OFF local y mantiene avisos/transiciones estáticos',async({page,game})=>{
   await page.emulateMedia({reducedMotion:'reduce'});await game.setup({state:{offers:[]}});
   await page.locator('#h-controls').click();

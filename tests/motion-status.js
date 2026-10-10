@@ -49,6 +49,27 @@ async function run(options={}) {
     assert.equal(Object.prototype.hasOwnProperty.call(g.saved(),'motionStatus'),false);
     assert.equal(g.sb.document.getElementById('controls-motion-state').getAttribute('role'),'status');
   });
+  await check('F-06: el epílogo muestra la cita completa con movimiento reducido',g=>{
+    g.run('setDeckPref("animations",false);');
+    const quote=g.sb.document.createElement('div');
+    g.sb.__quote=quote;
+    g.run('typeInto(window.__quote,"GRACIAS POR LA REPARACIÓN",55);');
+    assert.equal(quote.textContent,'GRACIAS POR LA REPARACIÓN','texto completo de inmediato');
+    assert.equal(g.run('_typeTimers.length'),0,'sin timers de escritura');
+    assert.equal(g.run('_typeJob'),null);
+  });
+  await check('F-06: cambiar la preferencia durante la escritura completa la cita',g=>{
+    const quote=g.sb.document.createElement('div');
+    g.sb.__quote=quote;
+    g.run('setDeckPref("animations",true);typeInto(window.__quote,"GRACIAS POR LA REPARACIÓN",55);');
+    g.advance(200);
+    assert.ok(quote.textContent.length<25,'la escritura progresa con animaciones ON');
+    g.run('setDeckPref("reducedMotion",true);applyDisplayPrefs();');
+    assert.equal(quote.textContent,'GRACIAS POR LA REPARACIÓN','la cita se completa al reducir el movimiento');
+    assert.equal(g.run('_typeTimers.length'),0);
+    assert.equal(g.run('_typeJob'),null);
+    g.run('setDeckPref("reducedMotion",false);setDeckPref("animations",true);');
+  });
   console.log(`Movimiento efectivo: ${passes} correctas · ${fails} fallos`);
   return options.summary?{passes,fails,total:passes+fails}:fails;
 }

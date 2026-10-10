@@ -642,20 +642,34 @@ function showNucleoEnding(onDone){
     closeOverlay(); ACTIONS.nucleoContinue=null;
   };
 }
-/* máquina de escribir del epílogo: timers propios, limpiados siempre en closeOverlay */
-var _typeTimers=[];
+/* máquina de escribir del epílogo: timers propios, limpiados siempre en closeOverlay.
+   Respeta el estado efectivo de movimiento (A-06 / F-06 del reporte): con
+   movimiento reducido o animaciones OFF el texto aparece completo de inmediato,
+   igual que los avisos; si la preferencia cambia durante la escritura, finishType
+   completa la cita sin dejar timers ni cursor colgando. */
+var _typeTimers=[], _typeJob=null;
 function clearType(){
   for(var i=0;i<_typeTimers.length;i++) clearTimeout(_typeTimers[i]);
   _typeTimers=[];
+  _typeJob=null;
+}
+function finishType(){
+  var job=_typeJob;
+  clearType();
+  if(job && job.el) job.el.textContent=job.text;
 }
 function typeInto(el, text, speed){
   if(!el) return;
+  clearType();
+  if(!decorativeMotion()){ el.textContent=text; return; }
   el.textContent="";
   var cursor=document.createElement("span");
   cursor.className="type-cursor"; cursor.textContent="▌";
   el.appendChild(cursor);
+  _typeJob={el:el,text:text};
   var i=0;
   function step(){
+    if(_typeJob && _typeJob.el!==el) return;
     if(i<text.length){
       cursor.insertAdjacentText("beforebegin", text.charAt(i));
       i++;
