@@ -76,6 +76,22 @@ async function run(options={}) {
     assert.equal(g.run('S.difficulty'),'normal');assert.ok(g.run('S.player.cpu')>0);
     assert.deepEqual(clone(g.run('S.jobs')),jobs);
   });
+  await check('F-04: una red restaurada conserva su dificultad aunque la intro elija otro modo',g=>{
+    g.run('startImmersion(4);save();'); /* snapshot vivo con red y dificultad normal */
+    const graph=JSON.stringify(g.run('inImmersion.grid'));
+    g.run('inImmersion=null;_pendingDifficulty="hardcore";afterBoot();');
+    assert.equal(g.run('S.difficulty'),'normal','la red no cambia de reglas al restaurarse');
+    assert.ok(g.run('inImmersion'),'la inmersión se restaura igual');
+    assert.equal(JSON.stringify(g.run('inImmersion.grid')),graph,'el grafo no se regenera');
+    assert.match(g.sb.document.getElementById('msg').getAttribute('aria-label'),/conserva su dificultad/);
+    assert.equal(g.run('_pendingDifficulty'),null,'la selección se consume');
+  });
+  await check('F-04: en calle la selección de la intro sí se aplica con normalidad',g=>{
+    g.run('_pendingDifficulty="hardcore";afterBoot();');
+    assert.equal(g.run('S.difficulty'),'hardcore');
+    assert.equal(g.run('inImmersion'),null);
+    assert.ok(!g.sb.document.getElementById('msg').getAttribute('aria-label').includes('conserva su dificultad'));
+  });
   console.log(`Dificultad en calle: ${passes} correctas · ${fails} fallos`);
   return options.summary?{passes,fails,total:passes+fails}:fails;
 }

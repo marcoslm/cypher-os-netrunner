@@ -22,6 +22,19 @@ test('dificultad F07A: cambio en calle con confirmación real y persistencia',as
   await expect(btn(page,'hardcore')).toHaveAttribute('aria-pressed','true');
 });
 
+test('dificultad F-04: una red restaurada conserva sus reglas aunque la intro elija otro modo',async({page,game})=>{
+  await game.setup({immersion:makeImmersion(),state:{offers:[]}});
+  const before=await game.snapshot();
+  expect(before.state.difficulty).toBe('normal');
+  await game.reload({difficulty:'hardcore'});
+  const after=await game.snapshot();
+  expect(after.state.difficulty).toBe('normal');
+  expect(after.immersion).not.toBeNull();
+  expect(after.immersion.grid.nodes.map(n=>n.id)).toEqual(before.immersion.grid.nodes.map(n=>n.id));
+  await game.expectMessage('conserva su dificultad');
+  await page.locator('.navbtn[data-view="estado"]').click();
+  await expect(page.locator('[data-action="setDifficulty"][data-diff="normal"]')).toHaveAttribute('aria-pressed','true');
+});
 test('dificultad F07A: bloqueada en inmersión y LEGENDARIO requiere al Núcleo',async({page,game})=>{
   await game.setup({immersion:makeImmersion(),state:{offers:[]}});
   await nav(page,'estado').click();

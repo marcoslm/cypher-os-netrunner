@@ -2268,13 +2268,19 @@ function afterBoot(){
     generateOffers(); addLog("registro nuevo · corvo-7 en la calle.");
     if(_invalidSaveRecovered) addLog("GUARDADO ▸ archivo dañado rechazado. Copia original conservada en el resguardo local cypher_os_save_recovery_v9.");
   }
-  /* la dificultad elegida en el intro solo afecta a partidas VIVAS: cambiar
-     el radio no puede resucitar un guardado HARDCORE tras una recarga. */
+  /* la dificultad elegida en el intro solo afecta a partidas VIVAS y EN CALLE:
+     cambiar el radio no puede resucitar un guardado HARDCORE tras una recarga,
+     ni alterar las reglas de una red que ya se generó con otra dificultad (F-04). */
+  var deferredDiffNote=false;
   if(_pendingDifficulty && S.player.cpu>0){
     if(_pendingDifficulty==="legendario" && !finalDoneEver()){
       _pendingDifficulty="normal"; /*legendario solo si ya se derrotó al Núcleo alguna vez*/
     }
-    S.difficulty=_pendingDifficulty;
+    if(S._inImmersion && S._inImmersion.grid && S._inImmersion.grid.nodes){
+      deferredDiffNote=_pendingDifficulty!==S.difficulty;
+    } else {
+      S.difficulty=_pendingDifficulty;
+    }
   }
   _pendingDifficulty=null;
   startGlitchLoop(); syncGameInputLock();
@@ -2299,6 +2305,7 @@ function afterBoot(){
   showView(inImmersion ? "red" : "inicio");
   var c=document.getElementById("cmd"); if(c) c.focus();
   startTutorial();
+  if(deferredDiffNote) msg("la red en curso conserva su dificultad "+diffLabel(S.difficulty)+". cámbiala en ESTADO al volver a la calle.","ambar");
   /* refrescar opciones del intro para la próxima carga */
   updateLegendaryOption();
   initDifficultySelect();
