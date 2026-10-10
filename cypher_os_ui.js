@@ -1231,6 +1231,28 @@ ACTIONS.setDifficulty = function(btn){
   });
 };
 
+/* Volver a la intro desde la calle (F07B): guarda antes y reutiliza el ciclo
+   intro→boot→partida sin duplicar relojes, timers ni listener del botón. */
+ACTIONS.backToIntro = function(){
+  if(!livingInteraction() || inImmersion || combatActive || modalOpen()) return;
+  confirmModal({
+    title:"VOLVER A LA INTRO",
+    body:"¿Guardar la partida y volver a la intro? Podrás cambiar la dificultad antes de continuar. Tu progreso se conserva en este dispositivo.",
+    yes:"VOLVER", no:"CANCELAR",
+    onYes:function(){
+      if(!livingInteraction() || inImmersion || combatActive){ msg("el retorno a la intro ya no es válido.","ambar"); return; }
+      save(true);
+      clearSessionRuntime();
+      var introEl=document.getElementById("intro"), bootBg=document.getElementById("boot");
+      if(bootBg){ bootBg.style.display="none"; bootBg.style.opacity="1"; }
+      if(introEl){ introEl.style.display="flex"; introEl.style.opacity="1"; introEl.style.transition=""; }
+      _bootStarted=false;
+      updateLegendaryOption(); initDifficultySelect();
+      msg("partida guardada. intro lista para continuar.","verde");
+    }
+  });
+};
+
 ACTIONS.addSkill = function(btn){
   var sk=btn.getAttribute("data-skill");
   var key=(sk==="HACK"?"hack":sk==="SIGILO"?"sigilo":"nervios");
