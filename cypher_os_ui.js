@@ -1243,7 +1243,10 @@ ACTIONS.setDifficulty = function(btn){
 };
 
 /* Volver a la intro desde la calle (F07B): guarda antes y reutiliza el ciclo
-   intro→boot→partida sin duplicar relojes, timers ni listener del botón. */
+   intro→boot→partida sin duplicar relojes, timers ni listener del botón.
+   Si el storage falla (F-02), la continuación vive en memoria de runtime y
+   afterBoot la prioriza: COMENZAR nunca descarta el progreso de la sesión. */
+var _resumeAfterIntro=null;
 ACTIONS.backToIntro = function(){
   if(!livingInteraction() || inImmersion || combatActive || modalOpen()) return;
   confirmModal({
@@ -1252,14 +1255,16 @@ ACTIONS.backToIntro = function(){
     yes:"VOLVER", no:"CANCELAR",
     onYes:function(){
       if(!livingInteraction() || inImmersion || combatActive){ msg("el retorno a la intro ya no es válido.","ambar"); return; }
-      save(true);
+      var persisted=save(true);
+      _resumeAfterIntro=persisted?null:S;
       clearSessionRuntime();
       var introEl=document.getElementById("intro"), bootBg=document.getElementById("boot");
       if(bootBg){ bootBg.style.display="none"; bootBg.style.opacity="1"; }
       if(introEl){ introEl.style.display="flex"; introEl.style.opacity="1"; introEl.style.transition=""; }
       _bootStarted=false; _entryMode="intro";
       updateLegendaryOption(); initDifficultySelect();
-      msg("partida guardada. intro lista para continuar.","verde");
+      if(persisted) msg("partida guardada. intro lista para continuar.","verde");
+      else msg("no se pudo guardar en este dispositivo. tu partida sigue viva en memoria hasta que recargues la página.","ambar");
     }
   });
 };
@@ -2229,15 +2234,22 @@ function afterBoot(){
   _entryMode=null;
   stopMessageTyping();
   msgEl = document.getElementById("msg");
-  var saved = load();
-  if(saved){
+  /* Continuación interna (F-02): si el guardado falló al volver a la intro,
+     esta sesión conserva su partida viva aunque el storage tenga un archivo viejo. */
+  var resume=_resumeAfterIntro; _resumeAfterIntro=null;
+  var saved = resume ? true : load();
+  if(resume){
+    S=resume;
+    if(!S.history) S.history={finalUnlocked:false,finalDone:false};
+  } else if(saved){
     S=saved;
     if(!S.history) S.history={finalUnlocked:false,finalDone:false};
   } else {
     S=nuevoEstado();
   }
   ensureStateIntegrity();
-  if(saved) addLog("partida restaurada desde el cable.");
+  if(resume) addLog("partida reanudada desde la memoria de esta sesión.");
+  else if(saved) addLog("partida restaurada desde el cable.");
   else {
     generateOffers(); addLog("registro nuevo · corvo-7 en la calle.");
     if(_invalidSaveRecovered) addLog("GUARDADO ▸ archivo dañado rechazado. Copia original conservada en el resguardo local cypher_os_save_recovery_v9.");

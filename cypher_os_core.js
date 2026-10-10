@@ -55,6 +55,8 @@ function xpParaNivel(){ return 80 + S.player.level*40; }
 function isLockdown(){ return S && S.player.heat>=100; }
 
 var _lastSaveShow=0;
+/* Devuelve true si el guardado llegó al storage. Un false permite a la UI
+   conservar la sesión en memoria en vez de recargar un archivo obsoleto. */
 function save(showIndicator){
   try {
     S._inImmersion = inImmersion ? JSON.parse(JSON.stringify(inImmersion)) : null;
@@ -63,7 +65,8 @@ function save(showIndicator){
       var now=Date.now();
       if(now-_lastSaveShow>3000){ _lastSaveShow=now; showSaveIndicator(); }
     }
-  } catch(e){ /* puede fallar; el juego sigue en sesión */ }
+    return true;
+  } catch(e){ /* puede fallar; el juego sigue en sesión */ return false; }
 }
 function showSaveIndicator(){
   var el=document.getElementById("save-indicador");
