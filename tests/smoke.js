@@ -236,8 +236,8 @@ ok(T.emisorLine({ emisor:"valido", from:"X" }).indexOf("sin respuesta") >= 0 &&
    T.emisorLine({ emisor:"no-valido", from:"X" }).indexOf("ruta desechable") >= 0,
    "el pie de la carta explica la no-respuesta según el emisor");
 /* logros del buzón (Fase 2) */
-ok(Array.isArray(T.ACHIEVEMENTS) && T.ACHIEVEMENTS.length === 23,
-   "ACHIEVEMENTS con 23 hazañas (actual: " + T.ACHIEVEMENTS.length + ")");
+ok(Array.isArray(T.ACHIEVEMENTS) && T.ACHIEVEMENTS.length === 26,
+   "ACHIEVEMENTS con 26 hazañas (actual: " + T.ACHIEVEMENTS.length + ")");
 ok(new Set(T.ACHIEVEMENTS.map(a => a.id)).size === T.ACHIEVEMENTS.length, "ids de logros únicos");
 ok(T.ACHIEVEMENTS.every(a => a.id && a.name && a.icon && a.desc && typeof a.check === "function"),
    "logros con id/name/icon/desc/check");
@@ -255,7 +255,7 @@ T.ACTIONS.openMsg({ getAttribute(k){ return k === "data-id" ? "m_sd_fracaso" : n
 ok((S3.player.stats.msgsAtNight || 0) === nightBefore + 1 &&
    T.ACHIEVEMENTS.find(a => a.id === "mailMadrugada").check(),
    "CORREO DE LAS 4: abrir de madrugada cuenta en stats y cumple el logro");
-ok(sandbox.HELP_HTML.indexOf("23 hazañas") >= 0, "AYUDA cuadra el recuento de hazañas (23)");
+ok(sandbox.HELP_HTML.indexOf("26 hazañas") >= 0, "AYUDA cuadra el recuento de hazañas (26)");
 /* Fase 3: respuestas binarias, informes sueltos y cruces INTEL↔bandeja */
 const withReply = T.MENSAJES_DEF.filter(m => m.reply);
 const docsSueltos = T.MENSAJES_DEF.filter(m => m.doc);
@@ -312,11 +312,12 @@ async function finish(){
   const intro = await require("./intro-return").run({summary:true});
   const introFs = await require("./intro-fullscreen").run({summary:true});
   const reports = await require("./achievements-reports").run({summary:true});
-  const totalFails = fails + harness.fails + regressions.fails + jobs.fails + gridIntel.fails + messages.fails + music.fails + controls.fails + vaults.fails + fixers.fails + layout.fails + saveTools.fails + sidebar.fails + motion.fails + difficulty.fails + intro.fails + introFs.fails + reports.fails;
+  const wealth = await require("./achievements-credits").run({summary:true});
+  const totalFails = fails + harness.fails + regressions.fails + jobs.fails + gridIntel.fails + messages.fails + music.fails + controls.fails + vaults.fails + fixers.fails + layout.fails + saveTools.fails + sidebar.fails + motion.fails + difficulty.fails + intro.fails + introFs.fails + reports.fails + wealth.fails;
   console.log("\n================ RESUMEN ================");
   console.log("humo: " + passes + " correctas · arnés: " + harness.passes + "/" + harness.total +
-    " · regresiones: " + regressions.passes + "/" + regressions.total + " · trabajos/persistencia: " + jobs.passes + "/" + jobs.total + " · expedientes/HUD: " + gridIntel.passes + "/" + gridIntel.total + " · avisos: " + messages.passes + "/" + messages.total + " · música: " + music.passes + "/" + music.total + " · controles: " + controls.passes + "/" + controls.total + " · vaults/ofertas: " + vaults.passes + "/" + vaults.total + " · fixers/ofertas: " + fixers.passes + "/" + fixers.total + " · grid/layout: " + layout.passes + "/" + layout.total + " · partida/menú: " + saveTools.passes + "/" + saveTools.total + " · lateral: " + sidebar.passes + "/" + sidebar.total + " · movimiento: " + motion.passes + "/" + motion.total + " · dificultad: " + difficulty.passes + "/" + difficulty.total + " · intro: " + intro.passes + "/" + intro.total + " · intro-fullscreen: " + introFs.passes + "/" + introFs.total + " · logros/informes: " + reports.passes + "/" + reports.total);
-  console.log("correctas: " + (passes + harness.passes + regressions.passes + jobs.passes + gridIntel.passes + messages.passes + music.passes + controls.passes + vaults.passes + fixers.passes + layout.passes + saveTools.passes + sidebar.passes + motion.passes + difficulty.passes + intro.passes + introFs.passes + reports.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
+    " · regresiones: " + regressions.passes + "/" + regressions.total + " · trabajos/persistencia: " + jobs.passes + "/" + jobs.total + " · expedientes/HUD: " + gridIntel.passes + "/" + gridIntel.total + " · avisos: " + messages.passes + "/" + messages.total + " · música: " + music.passes + "/" + music.total + " · controles: " + controls.passes + "/" + controls.total + " · vaults/ofertas: " + vaults.passes + "/" + vaults.total + " · fixers/ofertas: " + fixers.passes + "/" + fixers.total + " · grid/layout: " + layout.passes + "/" + layout.total + " · partida/menú: " + saveTools.passes + "/" + saveTools.total + " · lateral: " + sidebar.passes + "/" + sidebar.total + " · movimiento: " + motion.passes + "/" + motion.total + " · dificultad: " + difficulty.passes + "/" + difficulty.total + " · intro: " + intro.passes + "/" + intro.total + " · intro-fullscreen: " + introFs.passes + "/" + introFs.total + " · logros/informes: " + reports.passes + "/" + reports.total + " · logros/créditos: " + wealth.passes + "/" + wealth.total);
+  console.log("correctas: " + (passes + harness.passes + regressions.passes + jobs.passes + gridIntel.passes + messages.passes + music.passes + controls.passes + vaults.passes + fixers.passes + layout.passes + saveTools.passes + sidebar.passes + motion.passes + difficulty.passes + intro.passes + introFs.passes + reports.passes + wealth.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
   process.exitCode = totalFails ? 1 : 0;
 }
 finish().catch(function(err){

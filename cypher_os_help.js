@@ -183,7 +183,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 
 /* ⑬ LOGROS Y POST-PARTIDA */
 '<div class="panel-h">⑬ LOGROS Y TRAS EL NÚCLEO</div><div class="box helpbox">'+
-'<p class="help-p">La pantalla <b>LOGROS</b> guarda tus 23 hazañas (los que faltan aparecen cifrados). Y cuando derrotas a <b>EL NÚCLEO</b>… el juego no termina:</p>'+
+'<p class="help-p">La pantalla <b>LOGROS</b> guarda tus 26 hazañas (los que faltan aparecen cifrados). Y cuando derrotas a <b>EL NÚCLEO</b>… el juego no termina:</p>'+
 '<div class="helprow">'+
 '<div class="helprow-item"><span class="kbd">◎ SEÑAL</span><span class="muted">nodos residuales del Núcleo: +30 XP</span></div>'+
 '<div class="helprow-item"><span class="kbd">▣ ECO</span><span class="muted">ICE T2 especiales que dan más XP</span></div>'+
