@@ -785,17 +785,19 @@ function offerHtml(o,c){
   var taken=S.jobs.some(function(j){ return j.id===o.id && !j.done; });
   var resolved=null;
   for(var i=0;i<S.jobs.length;i++){ if(S.jobs[i].id===o.id && S.jobs[i].done){ resolved=S.jobs[i]; break; } }
-  var riskCls=o.risk||"ext";
+  /* Textos y clases de datos de partida siempre seguros: un importado jamás
+     inyecta HTML/JS ni clases ajenas al catálogo de riesgos (F-03/A-03). */
+  var riskCls=RISK_TXT[o.risk]?o.risk:"ext";
   var action;
   if(taken) action='<span class="verde">✓</span>';
   else if(resolved) action=resolved.failed?'<span class="rojo">✗</span>':'<span class="verde">✓</span>';
   else if(o.type==="vault" && projectRecovered(o.project)) action='<span class="ambar text-xs">PROYECTO RECUPERADO</span>';
   else if(o.type==="vault" && projectReserved(o.project)) action='<span class="ambar text-xs">PROYECTO EN CURSO</span>';
   else if(jobOfferBlocked(o)) action='<span class="ambar text-xs">'+(o.type==="vault"?"ACEPTAR EN LA CALLE":"SIN CAPACIDAD EN ESTE GRID")+'</span>';
-  else action=' <button class="btn small" data-action="acceptJob" data-id="'+o.id+'" data-contact="'+c.id+'">ACEPTAR</button>';
-  return '<div class="offer"><div class="desc">'+o.title+'<div class="task-line text-xs">'+o.desc+'</div>'+
-    (o.why?'<div class="offer-why">'+o.why+'</div>':'')+'</div>'+
-    '<span class="tag '+riskCls+'">'+RISK_TXT[o.risk]+'</span> <span class="gris">₡'+o.reward+'</span>'+action+'</div>';
+  else action=' <button class="btn small" data-action="acceptJob" data-id="'+escapeHtml(o.id)+'" data-contact="'+escapeHtml(c.id)+'">ACEPTAR</button>';
+  return '<div class="offer"><div class="desc">'+escapeHtml(o.title)+'<div class="task-line text-xs">'+escapeHtml(o.desc)+'</div>'+
+    (o.why?'<div class="offer-why">'+escapeHtml(o.why)+'</div>':'')+'</div>'+
+    '<span class="tag '+riskCls+'">'+RISK_TXT[riskCls]+'</span> <span class="gris">₡'+o.reward+'</span>'+action+'</div>';
 }
 
 ACTIONS.acceptJob = function(btn){
@@ -911,14 +913,14 @@ function renderTrabajos(){
     });
     list.forEach(function(e){
       var j=e.j;
-      var riskCls=j.risk||"ext";
+      var riskCls=RISK_TXT[j.risk]?j.risk:"ext";
       var statusTxt=j._vaultRetired?"RETIRADO":(j.failed?"FRACASADO":(j.done?"COMPLETADO":"EN CURSO"));
       var statusCls=j.failed?"rojo":(j.done?"verde":"cyan");
       html+='<div class="job"><div class="flex-sb">'+
-        '<div><b class="cyan">'+j.title+'</b> <span class="muted text-xs">'+j.contact+'</span>'+
-        '<div class="task-line job-meta-sub">'+j.desc+'</div>'+
-        (j.why?'<div class="offer-why">'+j.why+'</div>':'')+'</div>'+
-        '<div class="text-right"><span class="tag '+riskCls+'">'+RISK_TXT[j.risk]+'</span>'+
+        '<div><b class="cyan">'+escapeHtml(j.title)+'</b> <span class="muted text-xs">'+escapeHtml(j.contact)+'</span>'+
+        '<div class="task-line job-meta-sub">'+escapeHtml(j.desc)+'</div>'+
+        (j.why?'<div class="offer-why">'+escapeHtml(j.why)+'</div>':'')+'</div>'+
+        '<div class="text-right"><span class="tag '+riskCls+'">'+RISK_TXT[riskCls]+'</span>'+
         '<div class="'+statusCls+' job-meta-sub">'+statusTxt+'</div></div></div>'+
         '<div class="prog muted">'+progText(j)+'</div></div>';
     });
@@ -934,7 +936,7 @@ function progText(j){
     case "recoleta": return "recogidos: "+j.prog.gathered+"/"+j.n;
     case "carrera": return "datos en cap≥3: "+j.prog.deepGathered+"/"+j.n+" · (calor <45 al volver)";
     case "rompehielas": return "ICE T2/T3 destruidos: "+j.prog.iceT2+"/"+j.n+" · los daemons no cuentan";
-    case "vault": return j.prog.vaulted?"proyecto recuperado ✓":"llega a la capa "+j.targetDepth+" y recupera "+j.project;
+    case "vault": return j.prog.vaulted?"proyecto recuperado ✓":"llega a la capa "+j.targetDepth+" y recupera "+escapeHtml(j.project);
     case "daemon": return "daemons: "+j.prog.daemons+"/"+j.n;
     default: return "";
   }
@@ -1033,7 +1035,7 @@ function renderInicio(){
   else {
     var active=S.jobs.filter(function(j){return !j.done;});
     if(active.length){
-      dir=pickFresh("dir-jobs", FRASES_DIR_CONTRATOS)+active.map(function(j){return j.title;}).join(", ")+".";
+      dir=pickFresh("dir-jobs", FRASES_DIR_CONTRATOS)+active.map(function(j){return escapeHtml(j.title);}).join(", ")+".";
     } else {
       var calle=FRASES_CALLE.filter(function(f){ return !f.when || f.when(); });
       var dirObj=pickFresh("calle", calle);
@@ -1813,13 +1815,25 @@ if(_btnExport) _btnExport.addEventListener("click", function(){
 function importObject(v){ return !!v && typeof v==="object" && !Array.isArray(v); }
 function importNumber(v){ return typeof v==="number" && isFinite(v); }
 function importNatural(v){ return importNumber(v) && v>=0 && Math.floor(v)===v; }
+/* Límites de textos de partida importados: contenido siempre escapado al
+   renderizar, y tamaño/patrones acotados para no abusar de la interfaz.
+   Los catálogos de contacto/riesgo/proyecto toleran valores legacy desconocidos;
+   solo se exige un patrón de caracteres seguro, nunca HTML ni atributos. */
+var IMPORT_JOB_ID=/^[A-Za-z0-9_.-]{1,64}$/;
+var IMPORT_NAME=/^[A-Za-z0-9_.\- áéíóúÁÉÍÓÚñÑ]{0,40}$/;
+function importText(v,max){ return typeof v==="string" && v.length<=max; }
 function validImportJob(j,active){
   var types=["recoleta","carrera","rompehielas","vault","daemon"];
-  if(!importObject(j) || typeof j.id!=="string" || !j.id || typeof j.title!=="string" ||
-     typeof j.desc!=="string" || types.indexOf(j.type)<0 || typeof j.contact!=="string" ||
+  if(!importObject(j) || !IMPORT_JOB_ID.test(j.id||"") || !importText(j.title,200) ||
+     !importText(j.desc,600) || types.indexOf(j.type)<0 ||
+     !IMPORT_NAME.test(j.contact||"") ||
      !importNatural(j.n) || j.n<1 || !importNumber(j.reward) || j.reward<0 ||
-     !importNumber(j.xp) || j.xp<0) return false;
-  if(j.type==="vault" && (!importNatural(j.targetDepth) || j.targetDepth<2 || j.targetDepth>4 || typeof j.project!=="string")) return false;
+     !importNumber(j.xp) || j.xp<0 ||
+     (j.why!=null && !importText(j.why,600)) ||
+     (j.risk!=null && !IMPORT_NAME.test(j.risk)) ||
+     (j.project!=null && !IMPORT_NAME.test(j.project))) return false;
+  if(j.type==="vault" && (!importNatural(j.targetDepth) || j.targetDepth<2 || j.targetDepth>4 ||
+     !importText(j.project,40))) return false;
   if(j._vaultRetired!=null && typeof j._vaultRetired!=="boolean") return false;
   if(j._vaultRetired===true && (!active || j.type!=="vault" || j.done!==true || j.failed!==true)) return false;
   if(!active) return true;
@@ -1860,8 +1874,8 @@ function validImportImmersion(inm,ram){
     if((n.type==="daemon" || n.type==="vault") && n.tier!==3) return false;
     if(n.type==="nucleo" && n.tier!==4) return false;
     for(var f=0;f<flags.length;f++) if(n[flags[f]]!=null && typeof n[flags[f]]!=="boolean") return false;
-    if((n.name!=null && typeof n.name!=="string") || (n.tierName!=null && typeof n.tierName!=="string") ||
-       (n.proj!=null && typeof n.proj!=="string")) return false;
+    if((n.name!=null && !importText(n.name,80)) || (n.tierName!=null && !importText(n.tierName,16)) ||
+       (n.proj!=null && !importText(n.proj,40))) return false;
     byId[n.id]=n;
   }
   if(!byId[g.entry] || !byId[inm.current] || inm.maxDepthReached<byId[inm.current].layer) return false;

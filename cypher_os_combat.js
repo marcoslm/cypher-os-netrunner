@@ -696,7 +696,7 @@ function renderVaultPuzzle(){
   var vp=VAULT_PUZZLE;
   el.innerHTML=
     '<div class="combat-card">'+
-      '<div class="combat-title ambar">⬢ VAULT · '+vp.node.proj+'</div>'+
+      '<div class="combat-title ambar">⬢ VAULT · '+escapeHtml(vp.node.proj)+'</div>'+
       '<div class="combat-sub">MEMORIZA EL ORDEN DE LOS SÍMBOLOS</div>'+
       '<div class="vault-puzzle">'+
         '<div class="vp-label">secuencia correcta:</div>'+
@@ -715,7 +715,7 @@ function renderVaultPuzzleInput(){
   }
   el.innerHTML=
     '<div class="combat-card">'+
-      '<div class="combat-title ambar">⬢ VAULT · '+vp.node.proj+'</div>'+
+      '<div class="combat-title ambar">⬢ VAULT · '+escapeHtml(vp.node.proj)+'</div>'+
       '<div class="combat-sub">HAZ CLIC EN EL ORDEN CORRECTO ('+vp.picks.length+'/'+vp.symbols.length+')</div>'+
       '<div class="vault-puzzle">'+
         '<div class="vp-label">ordena los símbolos:</div>'+

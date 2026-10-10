@@ -50,6 +50,23 @@ test('importación adversa: rechaza un contador numérico dañado sin reemplazar
   expect(imported.state.player.stats.totalCreditsSpent).toBe(0);
 });
 
+test('importación adversa: el markup de una oferta importada no crea controles ni ejecuta eventos', async ({ page, game }, testInfo) => {
+  await game.setup({ state: { offers: [] }, player: { credits: 4321 } });
+  const candidate = (await game.snapshot()).saved;
+  candidate.offers = [{
+    id: 'safe-audit-job', type: 'recoleta', n: 1, contact: 'mamaWire', reward: 10, xp: 0, risk: 'low',
+    title: '<button id="audit-inject" onclick="window.__auditInjected=true">MARCADOR</button>',
+    desc: '<svg id="audit-svg" onload="window.__auditInjected=true"></svg> desc', why: 'why'
+  }];
+  await game.importFile(candidate, 'oferta-marcador.json');
+  await game.expectMessage('de vuelta en la calle');
+  await page.locator('.navbtn[data-view="contactos"]').click();
+  expect(await page.locator('#audit-inject').count()).toBe(0);
+  expect(await page.locator('#audit-svg').count()).toBe(0);
+  expect(await page.evaluate(() => window.__auditInjected === undefined)).toBe(true);
+  expect(await page.locator('#panel-scroll').innerHTML()).toContain('&lt;button');
+  await testInfo.attach('resultado', { body: Buffer.from(JSON.stringify({ marcadorLiteral: true, sinEventos: true })), contentType: 'application/json' });
+});
 test('rastreador: huir refresca el nodo y los vecinos del HUD antes de otra elección', async ({ page, game }, testInfo) => {
   await game.setup({
     player: { level: 6, sigilo: 5, decoys: 5, _gridEventCooldown: 3 },

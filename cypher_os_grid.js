@@ -672,7 +672,7 @@ function superficializar(){
      los que ya cumplan su objetivo (jobComplete) se pagan sin preguntar */
   var pending = S.jobs.filter(function(j){ return !j.done && !jobComplete(j); });
   if(pending.length > 0){
-    var names = pending.map(function(j){ return j.title; }).join(" · ");
+    var names = pending.map(function(j){ return escapeHtml(j.title); }).join(" · ");
     var phrase = pending.length===1
       ? ("Aún no se cumpliría el contrato <b>"+names+"</b>")
       : ("Aún no se cumplirían los contratos <b>"+names+"</b>");
@@ -1325,13 +1325,13 @@ function updateGridHud(){
   if(adj){
     var list=currentNeighbors();
     var cur=nodeById(inImmersion.current);
-    var html='<b>EN EL NODO:</b> '+(cur?(SIM[cur.type]+' '+(cur.name||'')):'·')+' &nbsp; ';
+    var html='<b>EN EL NODO:</b> '+(cur?(SIM[cur.type]+' '+escapeHtml(cur.name||'')):'·')+' &nbsp; ';
     list.forEach(function(n,i){
       var s=SIM[n.type]||"·";
       var label=(n.type==="data")?("DATOS") :
-        (n.type==="ice")?("ICE "+n.tierName) :
-        (n.type==="daemon")?("DAEMON "+n.name) :
-        (n.type==="vault")?("VAULT "+n.proj) :
+        (n.type==="ice")?("ICE "+escapeHtml(n.tierName)) :
+        (n.type==="daemon")?("DAEMON "+escapeHtml(n.name)) :
+        (n.type==="vault")?("VAULT "+escapeHtml(n.proj)) :
         (n.type==="substation")?("SUBESTACIÓN") :
         (n.type==="nucleo")?("NÚCLEO") :
         (SIM[n.type]||"·");
