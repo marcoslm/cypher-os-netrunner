@@ -125,7 +125,7 @@ function generateGrid(maxDepth, spawnBoss){
   // Inyectar vault activo (uno solo) en la capa objetivo del contrato.
   // Solo del contrato ACTIVO: los resueltos (done) no deben generar vaults.
   for(var v=0; v<S.jobs.length; v++){
-    if(S.jobs[v].type==="vault" && !S.jobs[v].done){
+    if(S.jobs[v].type==="vault" && !S.jobs[v].done && !(S.jobs[v].prog && S.jobs[v].prog.vaulted===true)){
       var vv=S.jobs[v];
       var vl = Math.min(vv.targetDepth || maxDepth, maxDepth);
       var target = (byLayer[vl] || []).filter(function(n){
@@ -205,10 +205,7 @@ function restoreImmersion(inm){
   }
   ensureImmersionTracking(inm);
   /* Complementa los contratos conservados con evidencia directa del snapshot. */
-  for(var v=0;v<inm.grid.nodes.length;v++){
-    var recovered=inm.grid.nodes[v];
-    if(recovered.type==="vault" && (recovered.done || recovered._done)) unlockProjectDossier(recovered.proj);
-  }
+  restoreProjectDossiersFromSnapshot(inm);
   return inm;
 }
 
@@ -255,6 +252,7 @@ function gridCompletion(inm){
   for(var i=0;i<nodes.length;i++){
     var n=nodes[i];
     if(n.type==="substation") { if(!n._used) pending++; }
+    else if(n.type==="vault" && projectRecovered(n.proj)) continue;
     else if(["data","ice","daemon","vault","signal","nucleo"].indexOf(n.type)>=0 && !n.done && !n._done) pending++;
   }
   var explored=inm.visited.length===nodes.length;
@@ -289,11 +287,12 @@ function startImmersion(depth){
     return;
   }
   migrateJobQuotas();
-  /* Cada red nueva empieza sus contratos de cero; una restauración nunca pasa
-     por aquí. Evita arrastrar progreso legacy sin snapshot a otra inmersión. */
+  retireRecoveredVaultJobs(null);
+  /* Cada red nueva reinicia objetivos por inmersión, salvo un proyecto ya
+     recuperado que aún deba cobrarse. Restaurar un snapshot no pasa por aquí. */
   for(var ji=0;ji<S.jobs.length;ji++){
     var job=S.jobs[ji];
-    if(!job.done){
+    if(!job.done && !(job.type==="vault" && job.prog.vaulted===true)){
       if(jobProgressValue(job)>0) addLog("CONTRATO ▸ "+job.title+": progreso reiniciado para la nueva inmersión.");
       job.prog=newProg(job.type);
     }
@@ -581,6 +580,9 @@ function collectData(n){
 function onNodeDefeated(ctx){
   var n = ctx.node;
   if(!n || n.done || n._done) return;
+  if(n.type==="vault" && projectRecovered(n.proj)){
+    msg("ya recuperaste el proyecto "+n.proj+". Ese vault no entrega otra recompensa.","ambar"); return;
+  }
   if(n.type==="ice" || n.type==="daemon" || n.type==="nucleo") recordImmersionEnemy(n);
   n.done = true;
   if(n.type==="ice"){

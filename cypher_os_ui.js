@@ -667,8 +667,10 @@ function getContactDialogue(contact, rep){
 }
 
 function renderContactos(){
+  pruneRecoveredVaultOffers();
   var html='<h1 class="title">CONTACTOS</h1>'+
     '<div class="sub">canales cifrados · no confíes en nadie</div>';
+  if(PROYECTOS.every(projectRecovered)) html+='<div class="box muted">Los ocho proyectos están recuperados. Los demás trabajos continúan.</div>';
   CONTACTOS_DEF.forEach(function(c){
     var unlocked=!c.locked || (S.player.level>=4 && S.player.rep.night0X>=2);
     var rep=S.player.rep[c.id]||0;
@@ -707,6 +709,10 @@ function pickWhy(contact,type){
   return list?pick(list):"";
 }
 function jobOfferBlocked(o){
+  if(o.type==="vault"){
+    if(projectRecovered(o.project)) return "ya recuperaste el proyecto "+o.project+". No hay un nuevo contrato para ese vault.";
+    if(projectReserved(o.project)) return "ese proyecto ya tiene un contrato en curso.";
+  }
   if(!inImmersion) return "";
   if(o.type==="vault") return "acepta el contrato de vault en la calle, antes de generar el siguiente grid.";
   if(o.n>jobTargetCount(o.type,inImmersion)) return "no quedan suficientes objetivos o RAM para este contrato en el grid actual. Acéptalo en la calle para la siguiente inmersión.";
@@ -720,6 +726,8 @@ function offerHtml(o,c){
   var action;
   if(taken) action='<span class="verde">✓</span>';
   else if(resolved) action=resolved.failed?'<span class="rojo">✗</span>':'<span class="verde">✓</span>';
+  else if(o.type==="vault" && projectRecovered(o.project)) action='<span class="ambar text-xs">PROYECTO RECUPERADO</span>';
+  else if(o.type==="vault" && projectReserved(o.project)) action='<span class="ambar text-xs">PROYECTO EN CURSO</span>';
   else if(jobOfferBlocked(o)) action='<span class="ambar text-xs">'+(o.type==="vault"?"ACEPTAR EN LA CALLE":"SIN CAPACIDAD EN ESTE GRID")+'</span>';
   else action=' <button class="btn small" data-action="acceptJob" data-id="'+o.id+'" data-contact="'+c.id+'">ACEPTAR</button>';
   return '<div class="offer"><div class="desc">'+o.title+'<div class="task-line text-xs">'+o.desc+'</div>'+
@@ -788,7 +796,11 @@ function buildOffer(contact,type){
   if(type==="vault"){
     var td=Math.min(4,2+Math.floor(lvl/2));
     /* pareja canónica proyecto↔corporación (LORE.md §4): nunca un proyecto ajeno */
-    var proj=pick(PROYECTOS);
+    var pool=PROYECTOS.filter(function(p){
+      return !projectRecovered(p) && !projectReserved(p) && !S.offers.some(function(o){ return o.type==="vault" && o.project===p; });
+    });
+    if(!pool.length) return null;
+    var proj=pick(pool);
     var corp=PROYECTO_CORP[proj]||pick(["KURO GATECH","MONOLITH"]); /* VESPER = consorcio */
     return mkOffer(contact,"EL VAULT DE "+corp,"Llega a la capa "+td+" y recupera el proyecto "+proj+".","vault",1,Math.round(base*2.2),30,"high",{project:proj,targetDepth:td});
   }
@@ -824,7 +836,7 @@ function renderTrabajos(){
     list.forEach(function(e){
       var j=e.j;
       var riskCls=j.risk||"ext";
-      var statusTxt=j.failed?"FRACASADO":(j.done?"COMPLETADO":"EN CURSO");
+      var statusTxt=j._vaultRetired?"RETIRADO":(j.failed?"FRACASADO":(j.done?"COMPLETADO":"EN CURSO"));
       var statusCls=j.failed?"rojo":(j.done?"verde":"cyan");
       html+='<div class="job"><div class="flex-sb">'+
         '<div><b class="cyan">'+j.title+'</b> <span class="muted text-xs">'+j.contact+'</span>'+
@@ -841,6 +853,7 @@ function renderTrabajos(){
   msg(pickFresh("view-trabajos", FRASES_VIEWS.trabajos),"cyan");
 }
 function progText(j){
+  if(j._vaultRetired) return "retirado: proyecto ya recuperado · sin calor ni recompensa";
   switch(j.type){
     case "recoleta": return "recogidos: "+j.prog.gathered+"/"+j.n;
     case "carrera": return "datos en cap≥3: "+j.prog.deepGathered+"/"+j.n+" · (calor <45 al volver)";
@@ -1662,6 +1675,8 @@ function validImportJob(j,active){
      !importNatural(j.n) || j.n<1 || !importNumber(j.reward) || j.reward<0 ||
      !importNumber(j.xp) || j.xp<0) return false;
   if(j.type==="vault" && (!importNatural(j.targetDepth) || j.targetDepth<2 || j.targetDepth>4 || typeof j.project!=="string")) return false;
+  if(j._vaultRetired!=null && typeof j._vaultRetired!=="boolean") return false;
+  if(j._vaultRetired===true && (!active || j.type!=="vault" || j.done!==true || j.failed!==true)) return false;
   if(!active) return true;
   if(!importObject(j.prog) || typeof j.done!=="boolean" || (j.failed!=null && typeof j.failed!=="boolean")) return false;
   switch(j.type){

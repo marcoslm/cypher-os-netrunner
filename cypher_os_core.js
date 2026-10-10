@@ -172,6 +172,9 @@ function ensureStateIntegrity(){
   if(!S._activityCooldowns || S._cdVersion!==2){ S._activityCooldowns={}; S._cdVersion=2; }
   if(S._tutorialDone==null) S._tutorialDone=false;
   restoreProjectDossiersFromJobs();
+  restoreProjectDossiersFromSnapshot(S._inImmersion);
+  retireRecoveredVaultJobs(S._inImmersion);
+  pruneRecoveredVaultOffers();
 }
 
 
@@ -285,7 +288,53 @@ function unlockProjectDossier(project){
   if(!Object.prototype.hasOwnProperty.call(PROYECTO_EXPEDIENTE,project)) return false;
   var id=PROYECTO_EXPEDIENTE[project], fresh=S.intel.indexOf(id)<0;
   unlock(id);
+  pruneRecoveredVaultOffers();
   return fresh;
+}
+/* Los expedientes son evidencia persistente por proyecto, incluso cuando el
+   historial limitado de contratos ya no conserva el trabajo que los entregó. */
+function snapshotRecoveredProject(inm,project){
+  return !!(inm && inm.grid && Array.isArray(inm.grid.nodes) && inm.grid.nodes.some(function(n){
+    return n.type==="vault" && n.proj===project && (n.done===true || n._done===true);
+  }));
+}
+function paidVaultProject(project){
+  return S.jobs.some(function(j){ return j.type==="vault" && j.project===project && j.done===true && j.failed!==true; });
+}
+function projectRecovered(project){
+  if(!S || !Object.prototype.hasOwnProperty.call(PROYECTO_EXPEDIENTE,project)) return false;
+  return S.intel.indexOf(PROYECTO_EXPEDIENTE[project])>=0 || paidVaultProject(project) ||
+    S.jobs.some(function(j){ return j.type==="vault" && j.project===project && j.prog && j.prog.vaulted===true; }) ||
+    snapshotRecoveredProject(S._inImmersion,project);
+}
+function projectReserved(project){
+  return S.jobs.some(function(j){ return j.type==="vault" && j.project===project && !j.done; });
+}
+function pruneRecoveredVaultOffers(){
+  S.offers=S.offers.filter(function(o){ return o.type!=="vault" || !projectRecovered(o.project); });
+}
+function restoreProjectDossiersFromSnapshot(inm){
+  if(!inm || !inm.grid || !Array.isArray(inm.grid.nodes)) return;
+  for(var i=0;i<inm.grid.nodes.length;i++){
+    var n=inm.grid.nodes[i];
+    if(n.type==="vault" && (n.done===true || n._done===true)) unlockProjectDossier(n.proj);
+  }
+}
+/* Compatibilidad: conservar una recuperación propia sin cobrar. Un segundo
+   contrato de un proyecto ya recuperado se retira como fracaso administrativo
+   una sola vez, sin pagar, penalizar calor ni alterar el snapshot. */
+function retireRecoveredVaultJobs(inm){
+  for(var i=0;i<S.jobs.length;i++){
+    var j=S.jobs[i];
+    if(j.type!=="vault" || j.done || !projectRecovered(j.project)) continue;
+    if(!paidVaultProject(j.project)){
+      if(j.prog.vaulted===true) continue;
+      if(snapshotRecoveredProject(inm,j.project)){ j.prog.vaulted=true; continue; }
+    }
+    j.done=true; j.failed=true; j._vaultRetired=true;
+    S.player.stats.jobsFailed=(S.player.stats.jobsFailed||0)+1;
+    addLog("CONTRATO RECTIFICADO ▸ "+j.title+": proyecto ya recuperado. Retirado sin calor ni recompensa.");
+  }
 }
 /* Tras superficializar ya no hay snapshot. Los contratos conservados sí prueban
    el proyecto: recuperación explícita o contrato de vault completado con éxito.

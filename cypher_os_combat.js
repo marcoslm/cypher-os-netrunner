@@ -661,6 +661,9 @@ function clearVaultTimers(vp){
 
 function startVaultPuzzle(n){
   if(combatActive || !n || n.done || n._done) return;
+  if(projectRecovered(n.proj)){
+    msg("ya recuperaste el proyecto "+n.proj+". Ese vault no entrega otra recompensa.","ambar"); return;
+  }
   clearVaultTimers(VAULT_PUZZLE);
   combatActive=true;
   if(inImmersion) inImmersion.combatOccurred=true;
