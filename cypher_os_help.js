@@ -163,6 +163,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="lg-key verde">NORMAL</span><span class="lg-desc">más tiempo en combate, daño normal, y puedes RECONEXIONAR al caer.</span></div>'+
 '<div class="legend-row"><span class="lg-key ambar">HARDCORE</span><span class="lg-desc">combates más rápidos, daño ×1.5, el calor es más pegajoso, y al flatlinear solo hay NUEVO REGISTRO.</span></div>'+
 '<div class="legend-row"><span class="lg-key magenta">LEGENDARIO</span><span class="lg-desc">se desbloquea al derrotar al Núcleo. Los grids van +1 capa más profundos y los ICE suben de tier.</span></div>'+
+'<p class="help-p">La dificultad también se puede cambiar desde <b>ESTADO</b> cuando estás en la calle: pide confirmación, no altera la red actual y solo aplica daños/enfriamiento/RECONEXIÓN futuros. Está bloqueada en inmersión, combate y flatline.</p>'+
 '</div>'+
 '</div>'+
 

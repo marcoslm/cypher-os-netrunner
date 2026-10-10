@@ -1159,6 +1159,7 @@ function renderEstado(){
     '<div class="panel-h">INVENTARIO</div><div class="box">'+
     row2("DISCOS DECOY",p.decoys)+row2("PAQUETES VIRUS",p.virus)+
     '</div>'+
+    '<div class="panel-h">DIFICULTAD</div><div class="box">'+difficultyRow()+'</div>'+
     '<div class="panel-h">REPUTACIÓN</div><div class="box">'+repRows()+'</div>'+
     '<div class="panel-h">HISTORIAL</div><div class="box">'+
     row2("INMERSIONES",p.stats.immerse)+row2("ICE DESTRUIDOS",p.stats.ice)+
@@ -1188,6 +1189,47 @@ function skillRow(name, desc, val){
   return '<div class="row"><div><span class="val">'+name+'</span> <span class="gris">×'+val+'</span><br><span class="muted text-xs">'+desc+'</span></div>'+
     '<div><button class="btn small" data-action="addSkill" data-skill="'+name+'"'+(can>0?"":" disabled")+'>+</button></div></div>';
 }
+
+function diffLabel(d){
+  return d==="hardcore"?"HARDCORE":d==="legendario"?"LEGENDARIO":"NORMAL";
+}
+/* Dificultad en caliente: solo en calle, con confirmación propia; nunca altera
+   una red activa ni puede resucitar un guardado HARDCORE muerto (F07A). */
+function difficultyRow(){
+  var allowed=!inImmersion && !combatActive && S.player.cpu>0 && livingInteraction() && !modalOpen();
+  var legend=finalDoneEver(), current=S.difficulty;
+  function diffBtn(key,label,locked){
+    return '<button type="button" class="btn small diff-live'+(current===key?" ambar":"")+'" data-action="setDifficulty" data-diff="'+key+'"'+
+      ((!allowed||locked)?" disabled":"")+' aria-pressed="'+(current===key)+'">'+label+'</button>';
+  }
+  var note=allowed
+    ? "cambia solo en calle y con confirmación. La red actual nunca se altera; daños, enfriamiento y RECONEXIÓN futuros usan la nueva dificultad."
+    : "bloqueado durante inmersión, combate, modales o flatline; vuelve a la calle para cambiarla.";
+  return '<div class="quick diff-live-row">'+diffBtn("normal","NORMAL")+diffBtn("hardcore","HARDCORE")+
+      diffBtn("legendario","LEGENDARIO",!legend)+'</div>'+
+    '<div class="muted text-xs">'+note+(legend?"":" LEGENDARIO se desbloquea al derrotar al Núcleo.")+'</div>';
+}
+ACTIONS.setDifficulty = function(btn){
+  if(!livingInteraction() || modalOpen()) return;
+  var diff=btn.getAttribute("data-diff");
+  if(["normal","hardcore","legendario"].indexOf(diff)<0) return;
+  if(inImmersion || combatActive){ msg("cambia la dificultad en la calle, no dentro del grid.","ambar"); return; }
+  if(diff==="legendario" && !finalDoneEver()){ msg("LEGENDARIO se desbloquea al derrotar al Núcleo.","ambar"); return; }
+  if(diff===S.difficulty){ msg("ya estás jugando en "+diffLabel(diff)+".","cyan"); return; }
+  confirmModal({
+    title:"⚠ CAMBIAR DIFICULTAD",
+    body:"¿Cambiar la dificultad a <b>"+diffLabel(diff)+"</b>? Se aplica ahora, sin alterar la red actual (estás en la calle). Créditos, contratos y progreso no cambian. Los daños, el enfriamiento y RECONEXIÓN futuros usarán la nueva dificultad.",
+    yes:"CAMBIAR", no:"CANCELAR",
+    onYes:function(){
+      if(!livingInteraction() || inImmersion || combatActive){ msg("el cambio de dificultad ya no es válido.","ambar"); renderEstado(); return; }
+      S.difficulty=diff; save(true);
+      addLog("DIFICULTAD ▸ "+diffLabel(diff)+".");
+      msg("dificultad cambiada a "+diffLabel(diff)+".","verde");
+      renderEstado();
+    },
+    onNo:function(){ renderEstado(); }
+  });
+};
 
 ACTIONS.addSkill = function(btn){
   var sk=btn.getAttribute("data-skill");

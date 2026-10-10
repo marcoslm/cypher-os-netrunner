@@ -353,6 +353,9 @@ button.btn{
   border-bottom:1px solid var(--borde);margin-top:6px;}
 .ticker b{color:var(--cyan);}
 .quick{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0;}
+.diff-live-row{justify-content:flex-start;margin:10px 0;}
+.diff-live{min-width:7em;}
+.diff-live[aria-pressed="true"]{border-color:var(--ambar);color:var(--ambar);}
 
 /* ---- GRID / CANVAS ---- */
 /* El mapa conserva 16:9 en su zona. El HUD usa espacio propio y permite
