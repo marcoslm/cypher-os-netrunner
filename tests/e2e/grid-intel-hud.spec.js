@@ -56,6 +56,19 @@ test('VESPER recuperado: expediente inmediato, sin cinco daemons, conserva expor
   await nav(page,'informes').click();
   await expect(page.locator('.intel').filter({hasText:'EXPEDIENTE RECUPERADO // VESPER'})).toHaveCount(1);
 });
+test('emboscada encadenada en ruta al vault resuelve el combate y abre el puzzle', async ({page,game}) => {
+  const inm=trackedImmersion();
+  Object.assign(inm.grid.nodes[2],{type:'vault',tier:3,tierName:'T3',name:'VAULT VESPER',proj:'VESPER'});
+  inm.current='1_0';inm.visited.push('1_0');inm.grid.nodes[1].done=inm.grid.nodes[1]._done=true;
+  await game.setup({immersion:inm,player:{sigilo:20,_gridEventCooldown:10000},state:{offers:[]}});
+  // Arrange: sin eventos por cooldown y emboscada garantizada por RNG; el flujo
+  // combate→resolución→efecto del nodo es real y no sustituye handlers del juego.
+  await page.evaluate(()=>{Math.random=()=>0;});
+  await move(page,game,'2_0');
+  await expect(page.locator('.vp-sequence')).toBeVisible();
+  await solveVault(page);
+  expect((await game.snapshot()).state.intel).toContain('exp_vesper');
+});
 test('legacy en la calle: importar y cargar recuperan VESPER desde el contrato sin repetir pago ni XP', async ({page,game}) => {
   await game.setup({state:{offers:[]},player:{credits:4321}});
   const incoming=(await game.snapshot()).saved;

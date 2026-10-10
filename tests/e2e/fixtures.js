@@ -246,6 +246,9 @@ async function solveCodeCombat(page) {
   // Read the displayed challenge; do not assign COM.code or replace combat functions.
   for (let phase = 0; phase < 4; phase++) {
     if (!(await page.locator('#combat').isVisible())) return;
+    // El juego puede encadenar el efecto del nodo tras el combate (p. ej. emboscada
+    // antes de un vault): la UI ya no es de claves y esta rutina termina aquí.
+    if (!(await page.locator('#codeInput').isVisible())) return;
     await expect(page.locator('#codeInput')).toBeFocused();
     const code = (await page.locator('#codeTarget').innerText()).replace(/\s/g, '').toLowerCase();
     expect(code).toMatch(/^[0-9a-f]{3,}$/);
