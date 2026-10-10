@@ -794,7 +794,7 @@ function offerHtml(o,c){
   else if(o.type==="vault" && projectRecovered(o.project)) action='<span class="ambar text-xs">PROYECTO RECUPERADO</span>';
   else if(o.type==="vault" && projectReserved(o.project)) action='<span class="ambar text-xs">PROYECTO EN CURSO</span>';
   else if(jobOfferBlocked(o)) action='<span class="ambar text-xs">'+(o.type==="vault"?"ACEPTAR EN LA CALLE":"SIN CAPACIDAD EN ESTE GRID")+'</span>';
-  else action=' <button class="btn small" data-action="acceptJob" data-id="'+escapeHtml(o.id)+'" data-contact="'+escapeHtml(c.id)+'">ACEPTAR</button>';
+  else action=' <button class="btn small" data-action="acceptJob" data-id="'+escapeHtml(o.id)+'">ACEPTAR</button>';
   return '<div class="offer"><div class="desc">'+escapeHtml(o.title)+'<div class="task-line text-xs">'+escapeHtml(o.desc)+'</div>'+
     (o.why?'<div class="offer-why">'+escapeHtml(o.why)+'</div>':'')+'</div>'+
     '<span class="tag '+riskCls+'">'+RISK_TXT[riskCls]+'</span> <span class="gris">₡'+o.reward+'</span>'+action+'</div>';
@@ -802,7 +802,7 @@ function offerHtml(o,c){
 
 ACTIONS.acceptJob = function(btn){
   if(!livingInteraction()) return;
-  var id=btn.getAttribute("data-id"), contact=btn.getAttribute("data-contact");
+  var id=btn.getAttribute("data-id");
   var o=jobById(id); if(!o){ renderContactos(); return; }
   var blocked=jobOfferBlocked(o);
   if(blocked){ msg(blocked,"ambar"); return; }
@@ -2348,11 +2348,10 @@ function beginIntro(){
      el clic de ▶ COMENZAR es el gesto de usuario que exige el navegador
      (sin gesto, requestFullscreen se deniega) */
   if(_fsWants && !fsActive() && fsSupported()) enterFs();
-  /* leer dificultad seleccionada (S aún es null aquí; se aplica en afterBoot) */
+  /* leer la dificultad seleccionada (aún no aplicada: se decide en afterBoot,
+     que la aplica solo a partidas vivas y en calle) */
   var diffEl=document.querySelector('input[name="diff"]:checked');
   _pendingDifficulty = diffEl ? diffEl.value : "normal";
-  var startEl=document.getElementById("intro-start");
-  if(startEl) startEl.removeEventListener("click", beginIntro);
   /* flash visual en la intro antes de pasar al boot. El boot (fondo opaco
      #010605, aún sin líneas) se muestra ANTES del fade: si no, al bajar la
      opacidad de la intro se veía la UI del juego por debajo durante esos ms */
@@ -2445,8 +2444,10 @@ function _initIntroHandlers(){
   _introHandlersReady=true;
   var startEl=document.getElementById("intro-start");
   /* SOLO el botón ▶ COMENZAR inicia la partida (CONTRACTS §1): un clic en
-     cualquier otra zona de la intro no debe arrancar el boot */
-  if(startEl){ startEl.addEventListener("click", function(){ beginIntro(); }); }
+     cualquier otra zona de la intro no debe arrancar el boot. El listener
+     persiste entre retornos a la intro; _bootStarted es la guarda de doble
+     arranque (L-02: sin retiradas de callback ineficaces). */
+  if(startEl){ startEl.addEventListener("click", beginIntro); }
   else { beginIntro(); }
 }
 var _introHandlersReady=false;

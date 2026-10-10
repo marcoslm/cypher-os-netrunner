@@ -621,7 +621,7 @@ button.btn{
   color:var(--ambar);cursor:pointer;transition:all .12s;background:rgba(255,196,77,.06);}
 .vault-symbol:hover{background:rgba(255,196,77,.18);box-shadow:0 0 10px rgba(255,196,77,.4);}
 .vault-symbol:active{transform:scale(.92);}
-.vault-symbol.picked{background:rgba(77,255,166,.15);border-color:var(--verde);color:var(--verde);}
+.vault-symbol.picked{background:rgba(77,255,166,.15);border-color:var(--verde);color:var(--verde);pointer-events:none;}
 .vault-puzzle .vp-hint{font-size:11px;color:var(--gris);margin-top:6px;}
 .vault-locked{opacity:.4;pointer-events:none;}
 

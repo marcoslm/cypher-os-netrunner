@@ -319,10 +319,10 @@ async function run(options = {}){
     const offer=g.run('S.offers.filter(function(o){return o.type==="vault";})[0]');
     const html=g.run('offerHtml(S.offers.filter(function(o){return o.type==="vault";})[0],CONTACTOS_DEF[1])');
     assert.ok(!html.includes('data-action="acceptJob"'));
-    clickAction(g,"acceptJob",{"data-id":offer.id,"data-contact":offer.contact});
+    clickAction(g,"acceptJob",{"data-id":offer.id});
     assert.equal(g.run("S.jobs.length"),0);
     g.run('superficializar();ACTIONS.closeResume();showView("contactos");');
-    clickAction(g,"acceptJob",{"data-id":offer.id,"data-contact":offer.contact});
+    clickAction(g,"acceptJob",{"data-id":offer.id});
     assert.equal(g.run("S.jobs.length"),1);
     g.run('startImmersion(4);');
     assert.equal(g.run('inImmersion.grid.nodes.filter(function(n){return n.type==="vault";}).length'),1);
@@ -360,7 +360,7 @@ async function run(options = {}){
     const g=game({timers:true});
     g.run('S=nuevoEstado();ensureStateIntegrity();generateOffers();');
     const offers=g.run('S.offers.filter(function(o){return o.type!=="vault";}).slice(0,3)');
-    for(const o of offers)clickAction(g,"acceptJob",{"data-id":o.id,"data-contact":o.contact});
+    for(const o of offers)clickAction(g,"acceptJob",{"data-id":o.id});
     g.run('S.player.heat=80;S.player.stats.maxHeat=80;startImmersion(4);superficializar();ACTIONS.confirmSurf();');
     assert.equal(g.run("S.player.heat"),88);
     assert.equal(g.run("S.player.stats.maxHeat"),100);

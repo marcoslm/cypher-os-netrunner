@@ -1,6 +1,8 @@
 /* ============================================================
    CYPHER://OS  ·  contenido de la pantalla AYUDA
-   Extraído de cypher_os.js para reducir peso del JS principal.
+   Historia de extracción: el peso del JS principal se alivió sacando la AYUDA
+   de lo que antes era un único cypher_os.js monolítico; hoy vive en los seis
+   módulos de AGENTS.md §0.
    Variable global: HELP_HTML
    ============================================================ */
 
@@ -201,7 +203,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="helprow-item"><span class="kbd">EXPORTAR</span><span class="muted">descarga tu partida como archivo .json</span></div>'+
 '<div class="helprow-item"><span class="kbd">IMPORTAR</span><span class="muted">restaura una partida desde un .json</span></div>'+
 '<div class="helprow-item"><span class="kbd">RESET</span><span class="muted">borra todo (con confirmación) · conserva tu mejor registro</span></div>'+
-'<div class="helprow-item"><span class="kbd">VOLVER A INTRO</span><span class="muted">guarda y vuelve a la intro para cambiar la dificultad sin recargar; CONTINUAR reanuda tu partida intacta</span></div>'+
+'<div class="helprow-item"><span class="kbd">VOLVER A INTRO</span><span class="muted">guarda y vuelve a la intro para cambiar la dificultad sin recargar; COMENZAR reanuda tu partida intacta</span></div>'+
 '</div>'+
 '<div class="callout ambar">⚠ <b>FLATLINE</b> (CPU a 0): <b>RECONEXIÓN</b> recupera la última partida —pierdes los datos de la inmersión, CPU al ~50% y el calor baja— o <b>NUEVO REGISTRO</b> empieza desde cero (tu mejor registro se conserva aparte). En <b>HARDCORE</b> solo hay NUEVO REGISTRO.</div>'+
 '</div>'+

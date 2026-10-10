@@ -88,7 +88,7 @@ function buildHexKB(delId,enterId){
 function renderCombat(){
   var el=document.getElementById("combat");
   el.classList.add("show");
-  /* teclado hex virtual: 56789 DEF / 01234 ABC + borrar + enviar */
+  /* teclado hex virtual compartido: 789 EF / 456 CD / 123 AB + borrar + enviar */
   var hexKB=buildHexKB("hexDel","hexEnter");
   el.innerHTML =
     '<div class="combat-card">'+
@@ -767,7 +767,6 @@ function onVaultSymbolClick(e){
   var sym=vp.shuffled[idx];
   vp.picks.push(sym);
   e.currentTarget.classList.add("picked");
-  e.currentTarget.style.pointerEvents="none";
   sound.type();
   /* actualizar selección */
   var picksEl=document.getElementById("vpPicks");

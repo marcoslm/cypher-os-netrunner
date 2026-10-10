@@ -14,6 +14,10 @@
 
 var HEX = "0123456789ABCDEF";
 
+/* Catálogo de canon (nombres, sector y línea de voz de las corporaciones del
+   mundo). Es referencia de lore para textos y documentación; los emparejamientos
+   funcionales corporación↔proyecto viven en PROYECTO_CORP, que es la fuente que
+   usan las ofertas de vault. No duplicar esos datos aquí. */
 var CORPORACIONES = [
   "NEON DYNAMICS","TYCHO DYNAMICS","HELIOX","KURO GATECH",
   "VAAL SYSTEMS","OCTAVE","MONOLITH"
