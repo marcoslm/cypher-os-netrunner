@@ -1660,6 +1660,7 @@ function clearSessionRuntime(){
   cancelActiveCombat();
   stopGridRender(); inImmersion=null;
   clearInterval(loopId); loopId=null;
+  stopGlitchLoop();
   closeOverlay(); closeControlPanel(false);
   var tree=document.getElementById("skilltree-overlay");
   if(tree){ tree.classList.remove("show"); tree.classList.add("hidden"); }
@@ -2225,12 +2226,17 @@ function playCanal7(){
   }catch(e){}
 }
 
-/* Glitches exclusivamente visuales: no dependen del mute de audio. */
+/* Glitches exclusivamente visuales: no dependen del mute de audio.
+   stopGlitchLoop limpia la decoración de la sesión anterior (F-08/A-08):
+   sin timers huérfanos ni clases colgando al volver a la intro. */
 var _glitchId=null, _glitchEndId=null;
-function startGlitchLoop(){
+function stopGlitchLoop(){
   clearTimeout(_glitchId); clearTimeout(_glitchEndId);
   _glitchId=null; _glitchEndId=null;
   document.body.classList.remove("glitch-random");
+}
+function startGlitchLoop(){
+  stopGlitchLoop();
   if(!S || !decorativeMotion()) return;
   function scheduleGlitch(){
     _glitchId=setTimeout(function(){
