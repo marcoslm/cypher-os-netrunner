@@ -128,11 +128,16 @@ function generateGrid(maxDepth, spawnBoss){
     if(S.jobs[v].type==="vault" && !S.jobs[v].done){
       var vv=S.jobs[v];
       var vl = Math.min(vv.targetDepth || maxDepth, maxDepth);
-      var target = byLayer[vl];
-      if(target && target.length){
-        var node = target.length>1 ? target[1] : target[0];
+      var target = (byLayer[vl] || []).filter(function(n){
+        return n.id!==entry.id && n.type!=="puerto" && n.type!=="nucleo" && !n.boss;
+      });
+      /* Sortear solo al generar una red nueva; el snapshot conserva el nodo.
+         Limpiar metadatos del objetivo procedural sustituido por el vault. */
+      if(target.length){
+        var node = pick(target);
         node.type="vault"; node.tier=3; node.tierName="T3";
         node.name="VAULT · "+vv.project; node.proj=vv.project; node.isVault=true;
+        node.data=0; node.isEcho=false;
       }
       break;
     }

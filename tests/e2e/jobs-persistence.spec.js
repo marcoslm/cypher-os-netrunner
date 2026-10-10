@@ -24,6 +24,56 @@ test('nivel 30: tres contratos aceptados generan oportunidades suficientes en un
   await nav(page,'trabajos').click();
   await expect(page.locator('#panel-scroll')).toContainText('los daemons no cuentan');
 });
+test('vault F01: aceptar y generar conserva el nodo sorteado al guardar, exportar/importar y recargar', async ({page,game}) => {
+  const offer={id:'vault-f01',title:'EL VAULT DE KURO GATECH',desc:'Recupera el proyecto KURO en la capa 4.',
+    type:'vault',contact:'doctorSudario',risk:'high',reward:100,xp:10,n:1,project:'KURO',targetDepth:4};
+  await game.setup({state:{offers:[offer]}});
+  await nav(page,'contactos').click();
+  await page.locator('[data-action="acceptJob"][data-id="vault-f01"]').click();
+  await nav(page,'red').click();
+  await page.locator('[data-action="dipGrid"]').click();
+  const expected=await game.snapshot(), grid=expected.immersion.grid;
+  const vaults=grid.nodes.filter(n=>n.type==='vault');
+  expect(vaults).toHaveLength(1);
+  expect(vaults[0]).toMatchObject({layer:4,proj:'KURO',tier:3,done:false,data:0,isEcho:false});
+  expect(grid.byLayer[4].some(n=>n.id===vaults[0].id)).toBe(true);
+  expect(grid.nodes.find(n=>n.id===grid.entry).type).toBe('puerto');
+  const reachable=new Set([grid.entry]), queue=[grid.entry];
+  for (const id of queue) for (const next of grid.adj[id]) {
+    expect(grid.adj[next]).toContain(id);
+    if (!reachable.has(next)) { reachable.add(next); queue.push(next); }
+  }
+  expect(reachable.size).toBe(grid.nodes.length);
+  expect(reachable.has(vaults[0].id)).toBe(true);
+  await page.keyboard.press('Control+g');
+  expect((await game.snapshot()).immersion).toEqual(expected.immersion);
+  await page.locator('#btn-save').click();
+  expect((await game.snapshot()).saved._inImmersion).toEqual(expected.immersion);
+  const download=page.waitForEvent('download');
+  await page.locator('#btn-export').click();
+  const exported=await downloadJSON(await download);
+  expect(exported._inImmersion).toEqual(expected.immersion);
+  await page.locator('#btn-reset').click();
+  await page.locator('#confirm-overlay [data-action="confirmYes"]').click();
+  expect((await game.snapshot()).immersion).toBeNull();
+  await game.importFile(exported,'vault-f01.json');
+  await game.expectMessage('de vuelta en el grid');
+  for (const reload of [false,true]) {
+    if (reload) await game.reload();
+    const restored=await game.snapshot();
+    expect(restored.immersion).toEqual(expected.immersion);
+    expect(restored.saved._inImmersion).toEqual(expected.immersion);
+    const expectedPlayer=JSON.parse(JSON.stringify(expected.state.player));
+    // reload() reanuda el reloj durante BIOS; solo ese tiempo legítimo cambia.
+    if (reload) {
+      const elapsed=(restored.state.clock-expected.state.clock+1440)%1440;
+      expectedPlayer.stats.totalPlayTime+=elapsed;
+    } else expect(restored.state.clock).toBe(expected.state.clock);
+    expect(restored.state.player).toEqual(expectedPlayer);
+    expect(restored.state.jobs).toEqual(expected.state.jobs);
+    await expect(page.locator('#gridcanvas')).toBeVisible();
+  }
+});
 test('exportar/reset/importar cuatro veces conserva datos, ICE vencido, subestación y contador', async ({page,game}) => {
   const immersion=makeImmersion();
   Object.assign(immersion.grid.nodes[2],{type:'ice',tier:2,tierName:'T2',name:'ICE DE PRUEBA'});

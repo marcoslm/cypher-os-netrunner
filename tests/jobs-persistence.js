@@ -62,6 +62,103 @@ async function run(options = {}) {
     assert.equal(g.run('bossGrid.nodes.filter(function(n){return n.boss;}).length'),1);
     assert.equal(g.run('bossGrid.nodes.filter(function(n){return n.type==="vault";}).length'),1);
   });
+  await check('vault F01: varias semillas recorren posiciones de la capa sin alterar objetivos ni conexiones', () => {
+    const placements = { 2:new Set(), 3:new Set(), 4:new Set() };
+    for (let seed=1;seed<=24;seed++) {
+      const sample=loadGame({ timers:'virtual', seed, strictDOM:true, canvas:'stub' });
+      try {
+        sample.run('S=nuevoEstado();ensureStateIntegrity();');
+        for (const depth of [2,3,4]) {
+          const contract={...job('vault',1),targetDepth:depth};
+          sample.run('S').jobs=[contract,job('carrera',4),job('rompehielas',4)];
+          const grid=sample.run('generateGrid(4,false)'), vaults=grid.nodes.filter(n=>n.type==='vault');
+          assert.equal(vaults.length,1);
+          const vault=vaults[0];
+          assert.equal(vault.layer,depth); assert.equal(vault.proj,'KURO');
+          assert.equal(vault.tier,3); assert.equal(vault.tierName,'T3');
+          assert.equal(vault.data,0); assert.equal(vault.isEcho,false);
+          assert.equal(grid.nodes.find(n=>n.id===grid.entry).type,'puerto');
+          assert.ok(grid.nodes.filter(n=>n.type==='data' && n.layer>=3).length>=4);
+          assert.ok(grid.nodes.filter(n=>n.type==='ice' && n.tier>=2).length>=4);
+          const visited=new Set([grid.entry]), queue=[grid.entry];
+          for (const id of queue) for (const next of grid.adj[id]) {
+            assert.ok(grid.adj[next].includes(id),'conexión bidireccional');
+            if (!visited.has(next)) { visited.add(next); queue.push(next); }
+          }
+          assert.equal(visited.size,grid.nodes.length);
+          assert.ok(visited.has(vault.id)); placements[depth].add(vault.id);
+        }
+      } finally { sample.dispose(); }
+    }
+    for (const depth of [2,3,4]) assert.ok(placements[depth].size>1,`capa ${depth}: vault no fijo`);
+  });
+  await check('vault F01: el sorteo cubre todos los candidatos y excluye el Núcleo', g => {
+    for (const [roll,index] of [[0,0],[0.2,1],[0.4,2],[0.6,3],[0.999999,4]]) {
+      setJobs(g,[job('vault',1)]);
+      g.run(`Math.random=function(){return ${roll};};`);
+      const grid=g.run('generateGrid(4,false)');
+      assert.equal(grid.nodes.find(n=>n.type==='vault').id,`4_${index}`);
+    }
+    for (const [roll,id] of [[0,'5_1'],[0.999999,'5_2']]) {
+      setJobs(g,[{...job('vault',1),targetDepth:5}]);
+      g.run(`Math.random=function(){return ${roll};};`);
+      const grid=g.run('generateGrid(5,true)');
+      assert.equal(grid.nodes.find(n=>n.type==='vault').id,id);
+      assert.equal(grid.nodes.filter(n=>n.boss).length,1);
+      assert.equal(grid.nodes.find(n=>n.boss).type,'nucleo');
+      assert.equal(grid.nodes.find(n=>n.id===grid.entry).type,'puerto');
+    }
+  });
+  await check('vault F01: candidato único, capa limitada y contratos resueltos siguen siendo seguros', g => {
+    g.run('NODOS_CAPA[4]=1;Math.random=function(){return 0.999999;};');
+    setJobs(g,[job('vault',1)]);
+    assert.equal(g.run('generateGrid(4,false).nodes.filter(function(n){return n.type==="vault";})[0].id'),'4_0');
+    setJobs(g,[{...job('vault',1),targetDepth:4}]);
+    const limited=g.run('generateGrid(3,false)');
+    assert.equal(limited.nodes.find(n=>n.type==='vault').layer,3);
+    for (const contracts of [[],[{...job('vault',1),done:true}],[{...job('vault',1),done:true,failed:true}]]) {
+      setJobs(g,contracts);
+      assert.equal(g.run('generateGrid(4,false).nodes.filter(function(n){return n.type==="vault";}).length'),0);
+    }
+    // Estado sintético sin candidatos: nunca sustituir el único nodo protegido.
+    g.run('NODOS_CAPA[5]=1;');
+    setJobs(g,[{...job('vault',1),targetDepth:5}]);
+    const protectedGrid=g.run('generateGrid(5,true)');
+    assert.equal(protectedGrid.nodes.find(n=>n.id==='5_0').type,'nucleo');
+    assert.equal(protectedGrid.nodes.find(n=>n.id===protectedGrid.entry).type,'puerto');
+    assert.equal(protectedGrid.nodes.filter(n=>n.type==='vault').length,0);
+  });
+  await check('vault F01: exportar/importar/cargar conserva posición, flags y premios antes y después de recuperar', g => {
+    for (const consumed of [false,true]) {
+      g.run('clearSessionRuntime();S=nuevoEstado();ensureStateIntegrity();S._tutorialDone=true;');
+      setJobs(g,[job('vault',1),job('recoleta',2)]); g.run('startImmersion(4);');
+      const vault=g.run('inImmersion').grid.nodes.find(n=>n.type==='vault');
+      if (consumed) { g.sb.__vault=vault; g.run('onNodeDefeated({node:window.__vault});'); }
+      g.run('save();');
+      const expected=clone(g.run('inImmersion')), player=clone(g.run('S.player')), jobs=clone(g.run('S.jobs'));
+      g.emitElement('btn-export','click');
+      const exported=JSON.parse(g.sb.__blobs.at(-1).parts.join(''));
+      assert.deepEqual(exported._inImmersion,expected);
+      // Cambiar el RNG no puede cambiar el grafo ni recolocar el vault al restaurar.
+      g.run('Math.random=function(){return 0.999999;};');
+      g.sb.__candidate=exported;
+      assert.equal(g.run('importGameState(window.__candidate)'),true);
+      assert.deepEqual(clone(g.run('inImmersion')),expected);
+      assert.deepEqual(clone(g.run('S.player')),player);
+      assert.deepEqual(clone(g.run('S.jobs')),jobs);
+      g.run('afterBoot();');
+      assert.deepEqual(clone(g.run('inImmersion')),expected);
+      assert.deepEqual(clone(g.run('S.player')),player);
+      assert.deepEqual(clone(g.run('S.jobs')),jobs);
+      assert.ok(g.run('inImmersion.grid.byLayer.every(function(layer){return layer.every(function(n){return n===nodeById(n.id);});})'));
+      if (consumed) {
+        g.run(`onNodeDefeated({node:nodeById('${vault.id}')});`);
+        assert.deepEqual(clone(g.run('S.player')),player);
+        assert.deepEqual(clone(g.run('S.jobs')),jobs);
+      }
+      g.run('Math.random=function(){return 0.75;};');
+    }
+  });
   await check('aceptación en inmersión rechaza objetivos consumidos y RAM insuficiente', g => {
     g.run('startImmersion(4);');
     const S = g.run('S'), inm = g.run('inImmersion');
