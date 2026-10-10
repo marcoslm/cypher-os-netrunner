@@ -818,7 +818,7 @@ function doSuperficializar(){
    GRID RENDER (canvas)
    ============================================================ */
 
-var canvas=null, ctx2d=null;
+var canvas=null, ctx2d=null, _gridLayoutObserver=null;
 /* efectos visuales del grid (decorativo): ondas, chispas y estelas de viaje */
 var gridFx=[], _fxLast=0;
 
@@ -855,6 +855,7 @@ function startGridRender(){
 }
 function stopGridRender(){
   gridRender=false;
+  if(_gridLayoutObserver){ _gridLayoutObserver.disconnect(); _gridLayoutObserver=null; }
   window.removeEventListener("resize", resizeGridCanvas);
   if(canvas){ canvas.removeEventListener("click", onGridClick); canvas.removeEventListener("mousemove", onGridHover); canvas.removeEventListener("mouseleave", hideGridTooltip); canvas.removeEventListener("touchstart", onGridTouch); }
   canvas=null; ctx2d=null;
@@ -862,26 +863,28 @@ function stopGridRender(){
   particles=[]; particleGrid=[];
   gridFx=[]; _fxLast=0; gridHoverNode=null;
 }
+function watchGridLayout(){
+  if(_gridLayoutObserver){ _gridLayoutObserver.disconnect(); _gridLayoutObserver=null; }
+  var stage=document.getElementById("grid-stage");
+  if(stage && window.ResizeObserver){
+    _gridLayoutObserver=new window.ResizeObserver(function(){ resizeGridCanvas(); });
+    _gridLayoutObserver.observe(stage);
+  }
+}
 function resizeGridCanvas(){
-  if(!canvas) return;
-  var wrap=document.getElementById("gridwrap");
-  var scrollEl=document.getElementById("panel-scroll");
-  if(!wrap||!scrollEl) return;
-  canvas.width=960; canvas.height=540;
-  /* área real disponible en el panel de contenido (fuera de su padding).
-     El HUD y los botones no restan espacio: van superpuestos al canvas. */
-  var cs=window.getComputedStyle(scrollEl);
-  var availW=scrollEl.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
-  var availH=scrollEl.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-2;
-  var w=availW, h=Math.floor(w*540/960);
-  /* si el alto es el límite, recortar ancho conservando el 16:9 lógico */
-  if(availH>40 && h>availH){ h=availH; w=Math.floor(h*960/540); }
-  if(w<120){ w=120; h=Math.floor(w*540/960); }
-  canvas.style.width=w+"px"; canvas.style.height=h+"px";
-  /* el HUD flotante escala con el canvas (em sobre #gridwrap) */
-  wrap.style.fontSize=clamp(Math.round(h*0.0235),10,15)+"px";
-  /* fuera de inmersión el bitmap se acaba de resetear: redibujar el idle */
-  if(!inImmersion) drawGridIdle();
+  if(!canvas || currentView!=="red") return;
+  var stage=document.getElementById("grid-stage"); if(!stage) return;
+  /* Mantener el bitmap lógico: un refresco del HUD no debe borrarlo. */
+  var bitmapChanged=canvas.width!==960 || canvas.height!==540;
+  if(canvas.width!==960) canvas.width=960;
+  if(canvas.height!==540) canvas.height=540;
+  var availW=stage.clientWidth, availH=stage.clientHeight;
+  if(availW<1 || availH<1) return;
+  var h=Math.min(availH,availW*540/960), w=h*960/540;
+  var cssW=w+"px", cssH=h+"px";
+  var changed=Math.abs((parseFloat(canvas.style.width)||0)-w)>0.01 || Math.abs((parseFloat(canvas.style.height)||0)-h)>0.01;
+  if(changed){ canvas.style.width=cssW; canvas.style.height=cssH; hideGridTooltip(); }
+  if(!inImmersion && (changed || bitmapChanged)) drawGridIdle();
 }
 function drawGridIdle(){
   var c=document.getElementById("gridcanvas");
@@ -1220,22 +1223,21 @@ function renderGridHud(){
   var btn = immersed
     ? '<button class="btn ambar" data-action="doSuperficie">SUPERFICIE (volver)</button><button class="btn small" id="helpToggle" data-action="toggleHelp">?</button>'
     : '<button class="btn cyan" data-action="dipGrid">◈ DIP AL GRID</button>';
-  /* HUD y controles van en una capa flotante sobre el canvas: el grid
-     conserva todo el alto disponible del panel */
+  /* El HUD ocupa su propio espacio. Mapa y tooltip comparten origen,
+     incluso cuando el canvas queda centrado en una zona más grande. */
   adm.innerHTML =
     '<div id="gridwrap">'+
-      '<canvas id="gridcanvas"></canvas>'+
-      '<div id="grid-tooltip" class="hidden"></div>'+
-      '<div id="grid-overlay">'+
-        '<div id="grid-bar">'+
-          '<div id="gridhud"></div>'+
-          '<div id="grid-actions">'+btn+'</div>'+
-        '</div>'+
-        '<div id="grid-status" role="status"></div>'+
-        '<details id="grid-jobs"'+(window.innerWidth>900 && window.innerHeight>600?' open':'')+'>'+
-          '<summary id="grid-jobs-summary">TRABAJOS</summary><div id="grid-job-items"></div>'+
-        '</details>'+
-        '<div id="adjlist"></div>'+
+      '<div id="grid-stage"><div id="grid-map">'+
+        '<canvas id="gridcanvas"></canvas>'+
+        '<div id="grid-tooltip" class="hidden"></div>'+
+      '</div></div>'+
+      '<div id="grid-overlay"'+(immersed?' class="grid-immersed"':'')+'>'+
+        (immersed ? '<div id="grid-info"><div id="gridhud"></div>' : '')+
+        (immersed ? '<div id="grid-status" role="status"></div>'+
+          '<details id="grid-jobs"'+(window.innerWidth>900 && window.innerHeight>600?' open':'')+'>'+
+            '<summary id="grid-jobs-summary">TRABAJOS</summary><div id="grid-job-items"></div>'+
+          '</details><div id="adjlist"></div></div>' : '')+
+        '<div id="grid-actions">'+btn+'</div>'+
       '</div>'+
     '</div>';
   // Re-adquirir referencia del canvas tras reconstruir el DOM.
@@ -1255,6 +1257,9 @@ function renderGridHud(){
     canvas.addEventListener("touchstart", onGridTouch, {passive:false});
   }
   if(immersed) updateGridHud();
+  var jobsEl=document.getElementById("grid-jobs");
+  if(jobsEl) jobsEl.addEventListener("toggle",resizeGridCanvas);
+  watchGridLayout(); resizeGridCanvas();
 }
 function gridJobHudHtml(j){
   var value=jobProgressValue(j), target=j.type==="vault"?1:j.n;
@@ -1337,6 +1342,8 @@ function updateGridHud(){
     /* El reloj refresca calor/trabajos, no debe reemplazar un vecino bajo el dedo. */
     if(adj._hudHTML!==html){ adj.innerHTML=html; adj._hudHTML=html; }
   }
+  /* Fallback para navegadores sin ResizeObserver, sin añadir otro bucle. */
+  if(!_gridLayoutObserver) resizeGridCanvas();
 }
 
 ACTIONS.doSuperficie = superficializar;

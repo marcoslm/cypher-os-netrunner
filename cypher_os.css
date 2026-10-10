@@ -206,12 +206,11 @@ html.motion-off .cyber-click,html.motion-off .cyber-click-cyan,html.motion-off .
   overflow:hidden;display:flex;flex-direction:column;
 }
 #panel-scroll{
-  flex:1 1 auto;overflow-y:auto;padding:18px 20px;
+  flex:1 1 auto;min-height:0;overflow-y:auto;padding:18px 20px;
 }
-/* vista RED: el canvas del grid ocupa todo el alto posible; su HUD se
-   superpone al propio canvas, así que el panel se deja casi sin padding */
+/* RED reserva zonas independientes: mapa y HUD, sin superponer objetivos. */
 #panel-scroll.grid-mode{padding:8px 10px;display:flex;flex-direction:column;
-  justify-content:center;align-items:center;}
+  overflow:hidden;align-items:stretch;}
 
 /* ---- línea de mensajes / estado ---- */
 #msgbar{
@@ -345,12 +344,13 @@ button.btn{
 .quick{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0;}
 
 /* ---- GRID / CANVAS ---- */
-/* el canvas ocupa TODO el alto disponible del panel; el HUD, la lista de
-   nodos y los botones se superponen a su borde inferior como capa flotante
-   (degradado) en vez de restar espacio al grid.
-   #gridwrap fija el tamaño base en em del HUD: JS lo escala con el canvas. */
-#gridwrap{position:relative;width:-webkit-fit-content;width:-moz-fit-content;
-  width:fit-content;margin:0 auto;font-size:13px;}
+/* El mapa conserva 16:9 en su zona. El HUD usa espacio propio y permite
+   desplazar su información auxiliar antes que ocultar nodos del canvas. */
+#gridwrap{display:flex;flex-direction:column;flex:1 1 0;min-height:0;min-width:0;
+  width:100%;gap:.5rem;font-size:1rem;}
+#grid-stage{position:relative;display:flex;align-items:center;justify-content:center;
+  flex:1 1 0;min-height:0;min-width:0;overflow:hidden;}
+#grid-map{position:relative;flex:0 0 auto;max-width:100%;}
 #grid-tooltip{position:absolute;z-index:100;pointer-events:none;
   background:rgba(3,10,8,.88);border:1px solid var(--verde);border-radius:3px;
   padding:4px 8px;font-size:11px;color:var(--verde);white-space:nowrap;
@@ -358,15 +358,18 @@ button.btn{
 #grid-tooltip.show{opacity:1;}
 #gridcanvas{display:block;background:#020907;border-radius:4px;
   border:1px solid var(--borde);touch-action:none;}
-/* capa HUD superpuesta: deja pasar los clics al canvas salvo en sus controles */
-#grid-overlay{position:absolute;left:0;right:0;bottom:0;z-index:10;
-  display:flex;flex-direction:column;gap:.3em;
-  padding:1.5em .8em .45em;pointer-events:none;
-  background:linear-gradient(180deg,rgba(2,9,7,0) 0%,rgba(2,9,7,.72) 38%,rgba(2,9,7,.94) 100%);}
-#grid-overlay button,#grid-overlay .adj-node,#grid-jobs{pointer-events:auto;}
-#grid-bar{display:flex;align-items:center;gap:1em;flex-wrap:wrap;}
-#grid-actions{margin-left:auto;display:flex;gap:.5em;}
-#grid-actions .btn{font-size:.92em;padding:.35em .9em;}
+/* HUD fuera del mapa: mantiene texto legible y nunca invade los nodos. */
+#grid-overlay{display:flex;flex-direction:column;flex:0 0 auto;min-height:0;
+  max-height:45%;overflow:hidden;gap:.3em;
+  padding:.5em .8em;border:1px solid var(--borde);border-radius:4px;
+  background:var(--fondo-panel);}
+/* En ventanas muy bajas, reservar al menos una línea auxiliar legible y acciones. */
+#grid-overlay.grid-immersed{min-height:5.5em;}
+#grid-info{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;
+  overflow-y:auto;overscroll-behavior:contain;gap:.3em;}
+#grid-actions{display:flex;flex:0 0 auto;justify-content:flex-end;gap:.5em;max-width:100%;}
+#grid-actions .btn{flex:0 1 auto;min-width:0;font-size:.92em;padding:.35em .9em;min-height:2.5em;max-width:100%;}
+#grid-actions .btn.small{flex:0 0 auto;}
 #gridhud{display:flex;gap:.25em 1em;flex-wrap:wrap;font-size:.92em;color:var(--gris);}
 #grid-status{font-size:.85em;line-height:1.3;}
 .hud-partial{font-size:.85em;color:var(--ambar);}
@@ -374,7 +377,8 @@ button.btn{
 #grid-jobs summary{cursor:pointer;color:var(--cyan);width:fit-content;min-height:1.5em;}
 #grid-job-items{max-height:7.5em;overflow-y:auto;overscroll-behavior:contain;background:rgba(2,9,7,.9);border-radius:3px;}
 .grid-job{display:flex;align-items:center;gap:.3em .7em;flex-wrap:wrap;padding:.15em .4em;}
-.grid-job-title{max-width:18em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--cyan);}
+.grid-job-title{min-width:0;max-width:18em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--cyan);}
+.grid-job-progress,.grid-job-note{min-width:0;max-width:100%;overflow-wrap:break-word;}
 .grid-job-note{font-size:.9em;}
 .grid-job .hud-bar{flex-shrink:0;width:4em;}
 @media(max-width:900px),(max-height:600px){

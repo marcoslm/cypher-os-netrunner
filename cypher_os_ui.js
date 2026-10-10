@@ -435,7 +435,7 @@ if(_confirmOverlay) _confirmOverlay.addEventListener("click", function(e){
 function showView(v, skipLog){
   if(combatActive || (S && S.player.cpu<=0 && v!=="inicio")) return;
   currentView = v;
-  if(v !== "red" && inImmersion) stopGridRender();
+  if(v !== "red") stopGridRender();
   document.querySelectorAll(".navbtn[data-view]").forEach(function(b){
     b.classList.toggle("active", b.getAttribute("data-view")===v);
   });
@@ -443,7 +443,7 @@ function showView(v, skipLog){
   /* transición de fade en el panel */
   var ps = document.getElementById("panel-scroll");
   if(ps){
-    /* vista RED: panel casi sin padding (el HUD del grid se superpone) */
+    /* RED reserva zonas independientes para mapa y HUD, con padding mínimo. */
     ps.classList.toggle("grid-mode", v==="red");
     if(v!=="red") window.removeEventListener("resize", resizeGridCanvas);
     if(!skipLog){
