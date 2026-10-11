@@ -121,7 +121,7 @@ test('INFORMES avisa de lo archivado: punto, marca NUEVO y cartel discreto', asy
   await expect(page.locator('#banner-sub')).toHaveText('revisa INFORMES');
   await expect(dot).toHaveClass(/show/);
   await page.screenshot({path:'test-results/informe-aviso.png'});
-  await page.clock.runFor(3000);
+  await page.clock.runFor(4000);
   await expect(banner).not.toHaveClass(/show/);
   await expect(banner).toHaveCSS('opacity','0');
   await nav(page,'informes').click();

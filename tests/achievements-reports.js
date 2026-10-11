@@ -84,20 +84,22 @@ async function run(options={}) {
     assert.equal(subtitulo(g),'revisa INFORMES');
     assert.equal(g.sb.document.getElementById('banner-icon').textContent,'▤');
     assert.equal(g.run('window.__fx'),0,'el aviso de informes no usa el sonido de logros/niveles');
-    assert.equal(g.ids(2400).length,1,'una sola ventana de tiempo');
-    assert.equal(g.ids(3400).length,0,'sin la duración del cartel llamativo');
-    g.advance(3000);
+    assert.equal(g.ids(3400).length,1,'una sola ventana de tiempo');
+    assert.equal(g.ids(4400).length,0,'sin la duración del cartel llamativo');
+    assert.equal(g.run('bannerMs("nivel")'),3400,'la subida de nivel conserva su duración');
+    g.advance(4000);
     assert.equal(bannerEl(g).classList.contains('show'),false,'el cartel se retira solo');
   });
   await check('un informe suelto lleva su título y no se mezcla con logros ni niveles',g=>{
     g.run('showBanner("logro","★ PRUEBA","desc");');
     g.run('unlock("anatomia");');
     assert.equal(texto(g),'★ PRUEBA','el logro conserva su tarjeta');
-    g.advance(3400);
+    assert.equal(g.ids(4400).length,1,'el logro dura un segundo más');
+    g.advance(4400);
     assert.equal(texto(g),'ANATOMÍA DEL CABLE');
     assert.equal(subtitulo(g),'revisa INFORMES');
     assert.ok(bannerEl(g).classList.contains('banner-informe'));
-    assert.equal(g.ids(2400).length,1);
+    assert.equal(g.ids(3400).length,1);
   });
   await check('cargar una partida no anuncia informes ni finge novedad',g=>{
     /* Partida anterior al campo: ya tenía sus informes y el panel abierto.
@@ -159,7 +161,7 @@ async function run(options={}) {
     assert.ok(bannerEl(g).classList.contains('banner-informe'));
     assert.equal(texto(g),'3 INFORMES ARCHIVADOS','expediente e informes de KURO en una sola tarjeta');
     assert.match(g.sb.document.getElementById('msg').getAttribute('aria-label'),/Expediente disponible en INFORMES/);
-    g.advance(3000);
+    g.advance(4000);
     assert.equal(bannerEl(g).classList.contains('show'),false);
     /* FRAGMENTO: el evento cuenta el hallazgo por la línea y el cartel lo archiva */
     g.run('GRID_EVENTS.filter(function(e){return e.id==="fragmento";})[0].effect();');

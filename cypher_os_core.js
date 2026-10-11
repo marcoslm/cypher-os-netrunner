@@ -93,7 +93,7 @@ function showSaveIndicator(){
    una sola tarjeta por ráfaga, sin sonido y menos tiempo en pantalla, para no
    competir con logros ni subidas de nivel. */
 var _bannerQueue=[], _bannerTimer=null, _bannerActual=null;
-function bannerMs(kind){ return kind==="informe" ? 2400 : 3400; }
+function bannerMs(kind){ return kind==="logro" ? 4400 : 3400; }
 function bannerClass(kind){
   if(kind==="logro") return "banner-logro";
   if(kind==="informe") return "banner-informe";
