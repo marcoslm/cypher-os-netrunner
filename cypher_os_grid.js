@@ -12,6 +12,38 @@
    7. GRID / CIBERESPACIO
    ============================================================ */
 
+/* Preferencias del HUD de este dispositivo, nunca dentro de S ni del snapshot. */
+var GRID_HUD_PREFS_KEY="cypher_os_grid_hud_v1";
+function loadGridHudPrefs(){
+  try{
+    var raw=localStorage.getItem(GRID_HUD_PREFS_KEY), data=raw?JSON.parse(raw):null;
+    if(data && typeof data==="object" && !Array.isArray(data) &&
+       typeof data.explorationOpen==="boolean" && typeof data.jobsOpen==="boolean"){
+      return {explorationOpen:data.explorationOpen,jobsOpen:data.jobsOpen};
+    }
+  }catch(e){ /* Storage no disponible o clave dañada: ambos bloques abiertos. */ }
+  return {explorationOpen:true,jobsOpen:true};
+}
+var _gridHudPrefs=loadGridHudPrefs();
+function captureGridHudPrefs(){
+  var ids=["grid-exploration","grid-jobs"], keys=["explorationOpen","jobsOpen"], changed=false;
+  for(var i=0;i<ids.length;i++){
+    var el=document.getElementById(ids[i]); if(!el) continue;
+    var open=el.hasAttribute("open");
+    if(_gridHudPrefs[keys[i]]!==open){ _gridHudPrefs[keys[i]]=open; changed=true; }
+  }
+  if(changed){
+    try{ localStorage.setItem(GRID_HUD_PREFS_KEY,JSON.stringify(_gridHudPrefs)); }
+    catch(e){ /* La elección sigue funcionando en memoria durante esta sesión. */ }
+  }
+}
+function onGridHudToggle(e){
+  var el=e.currentTarget;
+  /* Ignorar el toggle nativo pendiente de un HUD ya sustituido. */
+  if(!el || document.getElementById(el.id)!==el) return;
+  captureGridHudPrefs(); resizeGridCanvas();
+}
+
 var inImmersion = null;
 var combatActive = false;
 var gridRender = false, gridRAF=null, gridHoverNode=null, particles=[];
@@ -868,6 +900,8 @@ function startGridRender(){
   gridRender=true; loopGrid();
 }
 function stopGridRender(){
+  /* Capturar también un cierre rápido antes de que llegue su toggle nativo. */
+  captureGridHudPrefs();
   gridRender=false;
   if(_gridLayoutObserver){ _gridLayoutObserver.disconnect(); _gridLayoutObserver=null; }
   window.removeEventListener("resize", resizeGridCanvas);
@@ -1269,6 +1303,8 @@ function renderGridHud(){
   var btn = immersed
     ? '<button class="btn ambar" data-action="doSuperficie" aria-label="Superficializar y volver a la calle">SUPERFICIE</button><button class="btn small" id="helpToggle" data-action="toggleHelp" aria-label="Ayuda del Grid" title="Ayuda del Grid">?</button>'
     : '<button class="btn cyan" data-action="dipGrid">◈ DIP AL GRID</button>';
+  /* Conservar cualquier toggle pendiente antes de sustituir el DOM del HUD. */
+  captureGridHudPrefs();
   /* El HUD ocupa su propio espacio. Mapa y tooltip comparten origen,
      incluso cuando el canvas queda centrado en una zona más grande. */
   adm.innerHTML =
@@ -1280,9 +1316,9 @@ function renderGridHud(){
       '<div id="grid-overlay"'+(immersed?' class="grid-immersed"':'')+'>'+
         (immersed ? '<div id="grid-context"><div id="gridhud"></div><span id="grid-completion"></span><div id="grid-current"></div></div>'+
           '<div id="grid-navigation"><div id="adjlist" role="group" aria-label="Nodos vecinos"></div></div>'+
-          '<div id="grid-info"><details id="grid-exploration">'+
+          '<div id="grid-info"><details id="grid-exploration"'+(_gridHudPrefs.explorationOpen?' open':'')+'>'+
             '<summary title="Movimientos, enemigos, visitas y objetivos pendientes"><span class="grid-summary-label">EXPLORACIÓN</span></summary><div id="grid-location"></div><div id="grid-stats"></div><div id="grid-status" role="status"></div>'+
-          '</details><details id="grid-jobs">'+
+          '</details><details id="grid-jobs"'+(_gridHudPrefs.jobsOpen?' open':'')+'>'+
             '<summary id="grid-jobs-summary"><span class="grid-summary-label">TRABAJOS</span> <b id="grid-job-ready">0</b></summary><div id="grid-job-items"></div>'+
           '</details></div>' : '')+
         '<div id="grid-actions">'+btn+'</div>'+
@@ -1305,8 +1341,10 @@ function renderGridHud(){
     canvas.addEventListener("touchstart", onGridTouch, {passive:false});
   }
   if(immersed) updateGridHud();
-  var jobsEl=document.getElementById("grid-jobs");
-  if(jobsEl) jobsEl.addEventListener("toggle",resizeGridCanvas);
+  ["grid-exploration","grid-jobs"].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.addEventListener("toggle",onGridHudToggle);
+  });
   watchGridLayout(); resizeGridCanvas();
 }
 function gridJobHudHtml(j){

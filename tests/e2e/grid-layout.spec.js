@@ -128,13 +128,16 @@ for(const viewport of [{width:1280,height:900,side:false},{width:1600,height:650
     await game.setup({immersion:lowerImmersion(),player:{sigilo:20,_gridEventCooldown:10000},state:{offers:[],jobs}});
     await assertLayout(page);
     await expect(page.locator('#gridwrap')).toHaveClass(viewport.side?/grid-side/:/^(?!.*grid-side)/);
-    for(const id of ['grid-exploration','grid-jobs']) await expect(page.locator('#'+id)).not.toHaveAttribute('open','');
+    for(const id of ['grid-exploration','grid-jobs']) await expect(page.locator('#'+id)).toHaveAttribute('open','');
     const canvas=await page.locator('#gridcanvas').elementHandle(),before=await page.locator('#gridcanvas').boundingBox();
     for(const selector of ['#grid-exploration summary','#grid-jobs-summary']) {
-      await page.locator(selector).focus();await page.keyboard.press('Enter');
-      await assertLayout(page);
-      const size=await page.locator('#gridcanvas').boundingBox();
-      expect(size.width).toBeCloseTo(before.width,2);expect(size.height).toBeCloseTo(before.height,2);
+      for(const open of [false,true]){
+        await page.locator(selector).focus();await page.keyboard.press('Enter');
+        await expect(page.locator(selector).locator('..')).toHaveJSProperty('open',open);
+        await assertLayout(page);
+        const size=await page.locator('#gridcanvas').boundingBox();
+        expect(size.width).toBeCloseTo(before.width,2);expect(size.height).toBeCloseTo(before.height,2);
+      }
     }
     await expect(page.locator('#grid-location')).toContainText('PUERTO DE CALLE');
     const info=page.locator('#grid-info');

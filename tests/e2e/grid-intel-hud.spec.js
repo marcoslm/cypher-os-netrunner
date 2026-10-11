@@ -157,6 +157,8 @@ for(const viewport of [{width:768,height:1024},{width:1024,height:600}]) {
   test(`tablet ${viewport.width}x${viewport.height}: HUD plegable y memoria sin caja redundante`, async ({page,game}) => {
     await page.setViewportSize(viewport);
     await game.setup({immersion:trackedImmersion(),state:{offers:[],jobs:[job('recoleta',1),job('carrera',1),job('rompehielas',1)]}});
+    await expect(page.locator('#grid-jobs')).toHaveAttribute('open','');
+    await page.locator('#grid-jobs-summary').click();
     await expect(page.locator('#grid-jobs')).not.toHaveAttribute('open','');
     await page.locator('#grid-jobs-summary').click();
     await expect(page.locator('#grid-jobs')).toHaveAttribute('open','');
