@@ -21,7 +21,7 @@ async function run(options={}){
  await check('POST completo conserva registro y revela menú sin arrancar partida',g=>{
   g.advance(5000);assert.equal(g.run('entryMode()'),'intro');assert.equal(lines(g).length,g.run('BOOT_LINES.length'));
   assert.deepEqual(lines(g).map(n=>n.textContent),Array.from(g.run('BOOT_LINES.map(function(l){return l[0];})')));
-   assert.match(lines(g)[1].textContent,/^FIRMWARE v1\.0 · BUILD [1-9]\d*$/);
+   assert.match(lines(g)[1].textContent,/^FIRMWARE v1\.0 alpha · BUILD [1-9]\d*$/);
   assert.equal(g.sb.document.activeElement.id,'intro-start');assert.equal(g.run('_introBootTimer'),null);
   assert.equal(g.run('S'),null);assert.equal(g.saved(),null);assert.equal(g.run('loopId'),null);
  });

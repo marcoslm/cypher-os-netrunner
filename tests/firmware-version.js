@@ -22,9 +22,9 @@ function update(count) {
   if (!/^[1-9]\d*$/.test(String(count))) throw new Error('Build inválida');
   var file = path.join(root, 'cypher_os_data.js');
   var text = fs.readFileSync(file, 'utf8');
-  var pattern = /\["FIRMWARE v1\.0 · BUILD \d+", "dim"\]/g;
+  var pattern = /\["FIRMWARE v1\.0 alpha · BUILD \d+", "dim"\]/g;
   if ((text.match(pattern) || []).length !== 1) throw new Error('Línea de firmware ausente o duplicada');
-  var next = text.replace(pattern, '["FIRMWARE v1.0 · BUILD ' + count + '", "dim"]');
+  var next = text.replace(pattern, '["FIRMWARE v1.0 alpha · BUILD ' + count + '", "dim"]');
   if (next !== text) fs.writeFileSync(file, next);
 }
 if (require.main === module) {
@@ -38,7 +38,7 @@ if (require.main === module) {
     var count = Number(git(['rev-list', '--count'].concat(refs)));
     update(count + (hook ? 1 : 0));
     if (hook) git(['add', '--', 'cypher_os_data.js']);
-    console.log('Firmware v1.0 · build ' + (count + (hook ? 1 : 0)));
+    console.log('Firmware v1.0 alpha · build ' + (count + (hook ? 1 : 0)));
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
 module.exports = {update: update};
