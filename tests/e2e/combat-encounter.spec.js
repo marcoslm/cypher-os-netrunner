@@ -6,6 +6,9 @@ for(const enemy of [{type:'ice',tier:1,mode:'claves'},{type:'ice',tier:3,mode:'s
     await game.setup({player:{heat:60,virus:1}});
     await game.startCombat({...enemy,encounter:true});
     await expect(page.locator('#combat-enter')).toBeVisible();
+    await expect(page.locator('#encounter-detail')).toHaveText(enemy.type==='daemon'?'HAS ENTRADO EN UN NODO DAEMON':'HAS ENTRADO EN UN NODO ICE');
+    await expect(page.locator('.encounter-facts dd').nth(1)).toHaveText({claves:'CLAVES HEX',memoria:'MEMORIA HEX',scanner:'ESCÁNER'}[enemy.mode]);
+    await expect(page.locator('.encounter-card')).not.toContainText(/Memoriza|Introduce|Toca la zona|daño por fallo|s por fase|El reloj/);
     await expect(page.locator('#os')).toHaveJSProperty('inert',true);
     const before=await game.snapshot();
     await page.clock.runFor(30000);
@@ -58,12 +61,41 @@ for(const width of [320,768]){
     const box=await card.boundingBox();
     expect(box.x).toBeGreaterThanOrEqual(0);expect(box.x+box.width).toBeLessThanOrEqual(width);
     expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThanOrEqual(600);
-    await page.locator('#combat-enter').scrollIntoViewIfNeeded();
+    expect(await card.evaluate(el=>el.scrollHeight<=el.clientHeight+1)).toBe(true);
     await page.screenshot({path:testInfo.outputPath('encounter.png')});
     await page.locator('#combat-enter').click();
     await expect(page.locator('#memSeq')).not.toBeEmpty();
   });
 }
+
+test('rastreador: contexto de detección y ficha técnica, sin instrucciones',async({page,game})=>{
+  await game.setup();
+  await page.evaluate(()=>startCombat({node:{type:'ice',tier:2,scavenger:true,name:'RASTREADOR · PERRO'}}));
+  await expect(page.locator('#encounter-detail')).toHaveText('TE HA DETECTADO UN RASTREADOR');
+  await expect(page.locator('#encounter-title')).toHaveText('RASTREADOR · PERRO');
+  await expect(page.locator('.encounter-facts dd').first()).toHaveText('RASTREADOR · ICE · T2');
+  await expect(page.locator('.encounter-gear')).toHaveCount(0);
+  await expect(page.locator('.encounter-card p')).toHaveCount(0);
+});
+
+test('equipo: lista solo existencias útiles sin consumirlas al leer',async({page,game},testInfo)=>{
+  await game.setup({player:{decoys:2,virus:1,breakerUp:1,fwUp:1}});
+  await game.startCombat({tier:2,encounter:true});
+  await expect(page.locator('.encounter-gear li')).toHaveText(['DECOY ×2','VIRUS ×1','ROMPEHIELOS +1','FIREWALL +10']);
+  await page.screenshot({path:testInfo.outputPath('encounter-equipment.png')});
+  expect((await game.snapshot()).state.player).toMatchObject({decoys:2,virus:1,breakerUp:1,fwUp:1});
+  await page.locator('#combat-enter').click();
+  expect((await game.snapshot()).state.player.virus).toBe(0);
+});
+
+test('equipo: omite rompehielos en memoria y VIRUS sin fases reducibles',async({page,game})=>{
+  await game.setup({player:{breakerUp:2,virus:1}});
+  await game.startCombat({type:'daemon',tier:3,encounter:true});
+  await expect(page.locator('.encounter-gear li')).toHaveText(['VIRUS ×1']);
+  await page.evaluate(()=>cancelActiveCombat());
+  await game.startCombat({tier:1,encounter:true});
+  await expect(page.locator('.encounter-gear li')).toHaveText(['ROMPEHIELOS +2']);
+});
 
 test('Núcleo informa que no permite huir',async({page,game})=>{
   await game.setup();

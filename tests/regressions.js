@@ -40,6 +40,26 @@ async function run(options = {}){
       assert.ok(g.run('combatTimer!==null || COM.memRevealTimer!=null'));
     }
   });
+  await check("ficha breve distingue el evento y conserva nombre literal, tipo y modo sin instrucciones",()=>{
+    const g=game();g.run('S=nuevoEstado();ensureStateIntegrity();startCombat({node:{type:"ice",tier:2,scavenger:true,name:"<b>PERRO</b>"}});');
+    assert.equal(g.sb.document.getElementById('encounter-detail').textContent,'TE HA DETECTADO UN RASTREADOR');
+    assert.equal(g.sb.document.getElementById('encounter-title').textContent,'<b>PERRO</b>');
+    assert.equal(g.sb.document.querySelector('#encounter-title b'),null);
+    const card=g.sb.document.querySelector('.encounter-card');
+    assert.match(card.textContent,/RASTREADOR · ICE · T2/);assert.match(card.textContent,/CLAVES HEX/);
+    assert.doesNotMatch(card.textContent,/Memoriza|Introduce|por fase|daño por fallo/);
+    assert.equal(g.sb.document.querySelector('.encounter-gear'),null);
+  });
+  await check("equipo de la ficha muestra solo recursos existentes y aplicables sin consumirlos",()=>{
+    const g=game();g.run('S=nuevoEstado();ensureStateIntegrity();S.player.decoys=2;S.player.virus=1;S.player.breakerUp=1;S.player.fwUp=1;startCombat({node:{type:"ice",tier:2}});');
+    const items=()=>Array.from(g.sb.document.querySelectorAll('.encounter-gear li'),el=>el.textContent);
+    assert.deepEqual(items(),['DECOY ×2','VIRUS ×1','ROMPEHIELOS +1','FIREWALL +10']);
+    assert.equal(g.run('S.player.decoys'),2);assert.equal(g.run('S.player.virus'),1);
+    g.run('cancelActiveCombat();startCombat({node:{type:"daemon",tier:3}});');
+    assert.deepEqual(items(),['DECOY ×2','VIRUS ×1','FIREWALL +10']);
+    g.run('cancelActiveCombat();S.player.decoys=0;S.player.fwUp=0;S.player.hack=5;startCombat({node:{type:"ice",tier:1}});');
+    assert.equal(g.sb.document.querySelector('.encounter-gear'),null);
+  });
   await check("huida inicial exitosa aplica calor una vez sin consumir VIRUS ni premiar",()=>{
     const g=game();g.run('S=nuevoEstado();ensureStateIntegrity();S.player.virus=1;Math.random=function(){return 0;};startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:function(){S.player.credits+=1000;}});doEscape();doEscape();');
     assert.equal(g.run('S.player.heat'),5);assert.equal(g.run('S.player.virus'),1);

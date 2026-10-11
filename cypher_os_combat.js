@@ -59,25 +59,26 @@ function renderCombatEncounter(){
   var el=document.getElementById("combat");
   if(!el || !COM) return;
   var n=COM.node, boss=n.boss || n.type==="nucleo";
-  var kind=boss ? "NÚCLEO" : n.scavenger ? "RASTREADOR CORPORATIVO · ICE" : n.type==="daemon" ? "DAEMON" : "ICE";
-  var detail=boss ? "Objetivo final · cuatro fases de defensa. No permite huir." : n.scavenger ? "Emboscada móvil: intercepta tu trazo en el Grid." : n.type==="daemon" ? "Habitante del cable: protege sus archivos con secuencias de memoria." : "Defensa del nodo: bloquea el paso hasta que la neutralices.";
+  var kind=boss ? "NÚCLEO" : n.scavenger ? "RASTREADOR · ICE" : n.type==="daemon" ? "DAEMON" : "ICE";
+  var event=boss ? "HAS LLEGADO AL NÚCLEO" : n.scavenger ? "TE HA DETECTADO UN RASTREADOR" : n.type==="daemon" ? "HAS ENTRADO EN UN NODO DAEMON" : "HAS ENTRADO EN UN NODO ICE";
   var mode=COM.mode;
   var label=mode==="memoria" ? "MEMORIA HEX" : mode==="scanner" ? "ESCÁNER" : "CLAVES HEX";
-  var instruction=mode==="memoria" ? "Memoriza la secuencia que aparecerá y repítela cuando se oculte." : mode==="scanner" ? "Toca la zona cuando la línea pase por un hueco; completa todos los huecos." : "Introduce la clave hexadecimal visible antes de que termine el tiempo.";
-  var damage=combatDamage(), chance=clamp(55+S.player.sigilo*5,0,100);
+  /* Solo recursos disponibles y aplicables; las habilidades no son inventario. */
+  var p=S.player, gear=[];
+  if(p.decoys>0) gear.push("DECOY ×"+p.decoys);
+  if(COM.useVirus) gear.push("VIRUS ×"+p.virus);
+  if(mode==="claves" && p.breakerUp>0 && COM.length<Math.max(3,codeLenBase(COM.tier)-p.hack)) gear.push("ROMPEHIELOS +"+p.breakerUp);
+  if(p.fwUp>0) gear.push("FIREWALL +"+(p.fwUp*10));
   el.classList.add("show");
   el.innerHTML='<div class="combat-card encounter-card" role="dialog" aria-modal="true" aria-labelledby="encounter-title" aria-describedby="encounter-detail">'+
-    '<div class="combat-sub">ENCUENTRO · EN PAUSA</div>'+
+    '<div class="combat-sub encounter-event" id="encounter-detail">'+event+'</div>'+
     '<h2 class="combat-title" id="encounter-title">'+escapeHtml(n.name||kind)+'</h2>'+
-    '<div class="combat-sub">'+kind+' · T'+COM.tier+'</div>'+
-    '<p id="encounter-detail">'+detail+'</p>'+
-    '<section class="encounter-mechanics"><h3>'+label+'</h3><p>'+instruction+'</p>'+
-    '<p>'+COM.phases+' fases · '+(COM.time/1000).toFixed(1)+' s por fase de respuesta · daño por fallo: '+damage+' CPU (DECOY absorbe el golpe).</p>'+
-    (COM.useVirus ? '<p class="cyan">VIRUS disponible: elimina una fase al entrar (ya descontada).</p>' : '')+'</section>'+
-    '<p class="combat-help">El reloj y el calor están detenidos. El combate comienza cuando tú decidas.</p>'+
-    (boss ? '<p class="ambar">Del Núcleo no se huye.</p>' : '<p class="combat-help">Huida: '+chance+'% de éxito · calor +5 al escapar. Si falla: '+damage+' CPU y comienza el combate. DECOY absorbe el golpe.</p>')+
+    '<dl class="encounter-facts"><div><dt>TIPO</dt><dd>'+kind+' · T'+COM.tier+'</dd></div>'+
+    '<div><dt>COMBATE</dt><dd>'+label+'</dd></div></dl>'+
+    (gear.length ? '<div class="encounter-gear"><div class="encounter-label">EQUIPO DISPONIBLE</div><ul>'+gear.map(function(item){return '<li>'+item+'</li>';}).join('')+'</ul></div>' : '')+
+    (boss ? '<div class="encounter-note ambar">SIN HUIDA</div>' : '')+
     '<div class="encounter-actions"><button class="btn" id="combat-enter">ENTRAR AL COMBATE</button>'+
-    (boss ? '' : '<button class="btn ambar" id="escapeBtn">HUIR [ESC]</button>')+'</div><div class="combat-log" id="combatLog"></div></div>';
+    (boss ? '' : '<button class="btn ambar" id="escapeBtn" title="Si escapas: calor +5. Si falla: golpe y combate.">HUIR [ESC]</button>')+'</div></div>';
   document.getElementById("combat-enter").addEventListener("click", beginCombat);
   var flee=document.getElementById("escapeBtn");
   if(flee) flee.addEventListener("click",doEscape);
