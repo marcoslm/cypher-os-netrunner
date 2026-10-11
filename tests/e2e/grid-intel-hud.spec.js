@@ -39,6 +39,11 @@ test('VESPER recuperado: expediente inmediato, sin cinco daemons, conserva expor
   await expect(page.locator('.vp-sequence')).toBeVisible();
   expect((await game.snapshot()).state.intel).not.toContain('exp_vesper');
   await solveVault(page);
+  // El expediente es un informe nuevo: se anuncia con el cartel discreto.
+  await expect(page.locator('#banner')).toHaveClass(/banner-informe/);
+  await expect(page.locator('#banner-title')).toHaveText('3 INFORMES ARCHIVADOS');
+  await expect(page.locator('#banner-sub')).toHaveText('revisa INFORMES');
+  await page.screenshot({path:'test-results/informe-vault.png'});
   const won=await game.snapshot();
   expect(won.state.intel).toContain('exp_vesper');
   expect(won.state.intel).not.toContain('vesper');

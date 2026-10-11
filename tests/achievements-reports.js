@@ -148,17 +148,23 @@ async function run(options={}) {
     assert.equal(dotShown(g),false);
     g.run('clearInterval(loopId);');
   });
-  await check('FRAGMENTO y vault recuperado anuncian por la línea inferior, sin cartel duplicado',g=>{
+  await check('el vault recuperado y FRAGMENTO anuncian el informe con el cartel discreto',g=>{
     g.run('msgEl=document.getElementById("msg");startImmersion(4);S.intel=[];'+
       'var n=inImmersion.grid.nodes.filter(function(x){return x.layer>0 && !x.done;})[0];'+
       'n.type="vault";n.tier=3;n.proj="KURO";window.__n=n;onNodeDefeated({node:window.__n});');
     assert.ok(g.run('S.intel').indexOf('exp_kuro')>=0,'el expediente se archiva igual');
-    assert.equal(bannerEl(g).classList.contains('show'),false,'el vault no duplica el aviso');
+    assert.ok(bannerEl(g).classList.contains('show'),'recuperar el vault sí anuncia');
+    assert.ok(bannerEl(g).classList.contains('banner-informe'));
+    assert.equal(texto(g),'3 INFORMES ARCHIVADOS','expediente e informes de KURO en una sola tarjeta');
     assert.match(g.sb.document.getElementById('msg').getAttribute('aria-label'),/Expediente disponible en INFORMES/);
+    g.advance(3000);
+    assert.equal(bannerEl(g).classList.contains('show'),false);
+    /* FRAGMENTO: el evento cuenta el hallazgo por la línea y el cartel lo archiva */
     g.run('GRID_EVENTS.filter(function(e){return e.id==="fragmento";})[0].effect();');
-    assert.equal(bannerEl(g).classList.contains('show'),false,'FRAGMENTO tampoco duplica el aviso');
+    assert.ok(bannerEl(g).classList.contains('banner-informe'),'FRAGMENTO también anuncia');
+    assert.equal(texto(g),g.run('intelTitle(S.intel[S.intel.length-1])'));
     assert.match(g.sb.document.getElementById('msg').getAttribute('aria-label'),/informe desbloqueado/);
-    assert.ok(g.run('intelNuevosCount()')>0,'el punto sí avisa de todo lo archivado');
+    assert.ok(g.run('intelNuevosCount()')>0,'el punto avisa de todo lo archivado');
   });
   console.log(`Logros/informes: ${passes} correctas · ${fails} fallos`);
   return options.summary?{passes,fails,total:passes+fails}:fails;
