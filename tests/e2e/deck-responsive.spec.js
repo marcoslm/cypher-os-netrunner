@@ -79,6 +79,9 @@ test('indicadores: fondos y halos comunes, etiquetas verdes y señales conservad
     await expect(chip.locator('.deck-label')).toHaveCSS('color','rgb(77, 255, 166)');
     await expect(chip).toHaveCSS('background-color',id==='ram-indicator'?'rgba(77, 216, 255, 0.22)':'rgba(255, 93, 106, 0.28)');
   }
-  await expect(page.locator('#ram-indicator .deck-mark')).toHaveText('LLENA');
+  for(const id of ['cpu-indicator','heat-indicator','ram-indicator']){
+    await expect(page.locator('#'+id)).not.toContainText(/[!‼]/);
+    await expect(page.locator('#'+id+' .deck-mark')).toHaveCount(0);
+  }
   await page.screenshot({path:testInfo.outputPath('indicators-effects-off.png')});
 });

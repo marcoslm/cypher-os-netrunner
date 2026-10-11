@@ -109,27 +109,30 @@ async function run(options={}) {
   });
   await check('indicadores del deck usan umbrales reales, CPU relativa y RAM llena sin alarma de daño',g=>{
     const d=g.sb.document;
+    const noMarks=()=>{
+      for(const id of ['cpu-indicator','heat-indicator','ram-indicator']){
+        const el=d.getElementById(id);
+        assert.equal(el.querySelector('.deck-mark'),null,'sin insignias');
+        assert.ok(!/[!‼]/.test(el.textContent),'sin signos de admiración en '+id);
+      }
+    };
     for(const [cpu,heat,cpuState,heatState] of [[81,39,'normal','normal'],[80,40,'warning','warning'],[40,70,'critical','warning'],[39,70.1,'critical','danger'],[200,80,'normal','critical']]) {
       g.sb.__cpu=cpu;g.sb.__heat=heat;
       g.run('S.player.maxCpu=200;S.player.cpu=window.__cpu;S.player.heat=window.__heat;updateTopbar();');
       assert.equal(d.getElementById('cpu-indicator').getAttribute('data-state'),cpuState);
       assert.equal(d.getElementById('heat-indicator').getAttribute('data-state'),heatState);
-      assert.equal(d.getElementById('heat-indicator').querySelector('.deck-mark'),null);
-      assert.ok(!/[!‼]/.test(d.getElementById('heat-indicator').textContent));
+      noMarks();
     }
     g.run('startImmersion(4);inImmersion.dataUsed=ramCap()-1;updateTopbar();');
-    assert.equal(d.getElementById('ram-indicator').getAttribute('data-state'),'warning');
+    assert.equal(d.getElementById('ram-indicator').getAttribute('data-state'),'warning');noMarks();
     g.run('inImmersion.dataUsed=ramCap();updateTopbar();');
     const ram=d.getElementById('ram-indicator');
-    assert.equal(ram.getAttribute('data-state'),'full');assert.match(ram.getAttribute('aria-label'),/llena/);
-    assert.equal(ram.querySelector('.deck-mark').textContent,'LLENA');
+    assert.equal(ram.getAttribute('data-state'),'full');assert.match(ram.getAttribute('aria-label'),/llena/);noMarks();
     g.run('inImmersion.dataUsed=0;S.player.cpu=200;S.player.heat=0;updateTopbar();');
     for(const id of ['cpu-indicator','heat-indicator','ram-indicator']) {
       assert.equal(d.getElementById(id).getAttribute('data-state'),'normal');
-      const badge=d.getElementById(id).querySelector('.deck-mark');
-      if(id==='heat-indicator')assert.equal(badge,null);
-      else assert.equal(badge.textContent,'');
     }
+    noMarks();
   });
   await check('preferencia del HUD valida ambos booleanos y usa abierto ante clave dañada/storage bloqueado',()=>{
     const defaults={explorationOpen:true,jobsOpen:true};

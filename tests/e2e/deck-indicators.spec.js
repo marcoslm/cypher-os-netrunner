@@ -14,8 +14,10 @@ for(const width of [320,375,720,1024,1280]) {
     await expect(page.locator('#cpu-indicator')).toHaveAttribute('data-state','critical');
     await expect(page.locator('#heat-indicator')).toHaveAttribute('data-state','critical');
     await expect(page.getByRole('group',{name:'CPU 40 de 200 · integridad crítica',exact:true})).toBeVisible();
-    await expect(page.locator('#cpu-indicator .deck-mark')).toHaveText('‼');
-    await expect(page.locator('#heat-indicator .deck-mark')).toHaveCount(0);
+    for(const id of ids){
+      await expect(page.locator('#'+id+' .deck-mark')).toHaveCount(0);
+      await expect(page.locator('#'+id)).not.toContainText(/[!‼]/);
+    }
     await expect(page.locator('#heat-indicator')).toHaveText('CALOR 80');
     const heatStyle=await page.locator('#heat-indicator').evaluate(el=>{
       const s=getComputedStyle(el);return {border:s.borderTopColor,background:s.backgroundColor,box:s.boxShadow,glow:s.textShadow,animation:s.animationName};
@@ -24,7 +26,7 @@ for(const width of [320,375,720,1024,1280]) {
     expect(heatStyle.box).not.toBe('none');expect(heatStyle.box).not.toContain('inset');
     expect(heatStyle.glow).toBe('none');expect(heatStyle.animation).toBe('none');
     await expect(page.locator('#ram-indicator')).toHaveAttribute('data-state','full');
-    await expect(page.locator('#ram-indicator .deck-mark')).toHaveText('LLENA');
+    await expect(page.getByRole('group',{name:'RAM 6 de 6 · llena',exact:true})).toBeVisible();
     const after=await page.locator('#topbar').boundingBox();
     expect(after.height).toBeCloseTo(before.height,2);
     const layout=await page.evaluate(()=>({

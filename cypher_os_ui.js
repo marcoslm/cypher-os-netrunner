@@ -624,14 +624,12 @@ function showView(v, skipLog){
 }
 
 /* Señales de estado: nombre accesible sin una región viva que se repita por tick. */
-function updateDeckIndicator(id,state,label,mark){
+function updateDeckIndicator(id,state,label){
   var el=document.getElementById(id); if(!el) return;
   if(el.getAttribute("data-state")!==state) el.setAttribute("data-state",state);
   if(el.getAttribute("aria-label")!==label){
     el.setAttribute("aria-label",label); el.setAttribute("title",label);
   }
-  var badge=el.querySelector(".deck-mark");
-  if(badge && badge.textContent!==mark) badge.textContent=mark;
 }
 function updateTopbar(){
   if(!S) return;
@@ -648,11 +646,11 @@ function updateTopbar(){
   var heatState=p.heat>=80?"critical":(p.heat>70?"danger":(p.heat>=40?"warning":"normal"));
   var ramState=used>=cap?"full":(used===cap-1?"warning":"normal");
   updateDeckIndicator("cpu-indicator",cpuState,"CPU "+Math.round(Math.max(0,p.cpu))+" de "+p.maxCpu+
-    (cpuState==="critical"?" · integridad crítica":(cpuState==="warning"?" · integridad baja":" · integridad estable")),cpuState==="critical"?"‼":(cpuState==="normal"?"":"!"));
+    (cpuState==="critical"?" · integridad crítica":(cpuState==="warning"?" · integridad baja":" · integridad estable")));
   updateDeckIndicator("heat-indicator",heatState,"Calor "+Math.round(Math.max(0,p.heat))+" de 100"+
-    (heatState==="critical"?" · crítico":(heatState==="danger"?" · peligro":(heatState==="warning"?" · elevado":" · bajo"))),"");
+    (heatState==="critical"?" · crítico":(heatState==="danger"?" · peligro":(heatState==="warning"?" · elevado":" · bajo"))));
   updateDeckIndicator("ram-indicator",ramState,"RAM "+used+" de "+cap+
-    (ramState==="full"?" · llena":(ramState==="warning"?" · queda un hueco":" · capacidad disponible")),ramState==="full"?"LLENA":(ramState==="warning"?"!":""));
+    (ramState==="full"?" · llena":(ramState==="warning"?" · queda un hueco":" · capacidad disponible")));
   var l = document.getElementById("h-lvl"); if(l) l.textContent = p.level;
   /* XP bar en topbar */
   var xpFill = document.getElementById("h-xp-fill");
