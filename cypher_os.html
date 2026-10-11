@@ -63,7 +63,10 @@
     <!-- Operaciones de partida: popover-diálogo anclado al botón PARTIDA.
          Vive fuera del flujo del lateral para no desbordar pantallas bajas. -->
     <div id="save-tools" class="save-tools" role="dialog" aria-label="Opciones de partida" hidden>
-      <div class="save-tools-title" aria-hidden="true">PARTIDA ▸ OPERACIONES</div>
+      <div class="save-tools-head">
+        <div class="save-tools-title" aria-hidden="true">PARTIDA ▸ OPERACIONES</div>
+        <button type="button" class="btn save-tools-close" id="save-tools-close" data-action="closeSaveTools" aria-label="Cerrar opciones de partida" title="Cerrar">✕</button>
+      </div>
       <div id="save-tools-buttons">
         <button class="navbtn" id="btn-save" aria-label="Guardar partida" title="Guardar partida"><span class="ic">◰</span><span class="lbl">GUARDAR</span></button>
         <button class="navbtn" id="btn-export" aria-label="Exportar partida" title="Exportar partida"><span class="ic">⇗</span><span class="lbl">EXPORTAR</span></button>

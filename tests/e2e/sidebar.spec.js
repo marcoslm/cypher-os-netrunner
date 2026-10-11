@@ -57,6 +57,7 @@ test('lateral F05B: combate y confirmación bloquean el botón del fondo',async(
   // El clic alcanza el fondo de la confirmación y la cancela, no el botón oculto.
   await expect(sidebar(page)).toBeVisible();await expect(button(page)).toHaveAttribute('aria-expanded','true');
   await expect(page.locator('#confirm-overlay')).toBeHidden();
+  await game.openSaveTools();
   await page.locator('#btn-reset').click();await page.locator('#confirm-overlay [data-action="confirmNo"]').click();
 });
 

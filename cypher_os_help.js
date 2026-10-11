@@ -198,13 +198,13 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 /* ⑭ GUARDAR Y PARTIDAS */
 '<div class="panel-h">⑭ GUARDAR Y PARTIDAS</div><div class="box helpbox">'+
 '<p class="help-p">El botón de menú de la barra superior <b>muestra u oculta el lateral</b> y siempre permite recuperarlo. La elección se guarda en este dispositivo, no en la partida; importar, RESET y NUEVO REGISTRO no la cambian. Ocultarlo libera espacio para el panel y ajusta el Grid sin regenerarlo ni detener el reloj. Vuelve a mostrarlo para acceder a PARTIDA.</p>'+
-'<p class="help-p">Abre <b>PARTIDA</b> en el menú lateral para GUARDAR, EXPORTAR, IMPORTAR, RESET o VOLVER A INTRO. Sus opciones aparecen en un panel unido al botón por una traza verde, como un cable de datos: se cierra pulsando <b>PARTIDA</b> de nuevo, con <b>Escape</b> o tocando cualquier zona fuera, y ese clic además ejecuta lo que pulses. Está cerrado al cargar la página y puedes abrirlo con clic/toque o con Tab y Enter/Espacio. <b>Ctrl+S</b> guarda aunque esté cerrado. Abrirlo y cerrarlo no cambia tu progreso ni detiene el reloj.</p>'+
+'<p class="help-p">Abre <b>PARTIDA</b> en el menú lateral para GUARDAR, EXPORTAR, IMPORTAR, RESET o VOLVER A INTRO. Sus opciones aparecen en un panel unido al botón por una traza verde, como un cable de datos. Pulsar una opción lo cierra al instante; también lo cierran el <b>✕</b> de su cabecera, <b>PARTIDA</b> de nuevo, <b>Escape</b> o cualquier zona fuera, y ese clic además ejecuta lo que pulses. Está cerrado al cargar la página y puedes abrirlo con clic/toque o con Tab y Enter/Espacio. <b>Ctrl+S</b> guarda aunque esté cerrado. Abrirlo y cerrarlo no cambia tu progreso ni detiene el reloj.</p>'+
 '<div class="helprow">'+
 '<div class="helprow-item"><span class="kbd">GUARDAR</span><span class="muted">guarda a mano (también hay autoguardado)</span></div>'+
 '<div class="helprow-item"><span class="kbd">EXPORTAR</span><span class="muted">descarga tu partida como archivo .json</span></div>'+
 '<div class="helprow-item"><span class="kbd">IMPORTAR</span><span class="muted">restaura una partida desde un .json</span></div>'+
 '<div class="helprow-item"><span class="kbd">RESET</span><span class="muted">borra todo (con confirmación) · conserva tu mejor registro</span></div>'+
-'<div class="helprow-item"><span class="kbd">VOLVER A INTRO</span><span class="muted">guarda y vuelve a la intro para cambiar la dificultad sin recargar; COMENZAR reanuda tu partida intacta</span></div>'+
+'<div class="helprow-item"><span class="kbd">VOLVER A INTRO</span><span class="muted">guarda y vuelve a la intro para cambiar la dificultad sin recargar; solo en la calle —desde el Grid, superficializa primero— y COMENZAR reanuda tu partida intacta</span></div>'+
 '</div>'+
 '<div class="callout ambar">⚠ <b>FLATLINE</b> (CPU a 0): <b>RECONEXIÓN</b> recupera la última partida —pierdes los datos de la inmersión, CPU al ~50% y el calor baja— o <b>NUEVO REGISTRO</b> empieza desde cero (tu mejor registro se conserva aparte). En <b>HARDCORE</b> solo hay NUEVO REGISTRO.</div>'+
 '</div>'+

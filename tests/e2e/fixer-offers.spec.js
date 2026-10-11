@@ -23,6 +23,7 @@ test('fixers F03: ofertas estables entre vistas, exportar/importar y recarga; re
   expect((await game.snapshot()).state.offers).toEqual(expected);
   await game.openSaveTools();
   await page.locator('#btn-save').click();
+  await game.openSaveTools();
   const download=page.waitForEvent('download');await page.locator('#btn-export').click();
   const exported=await downloadJSON(await download);expect(exported.offers).toEqual(expected);
   await game.importFile(exported,'ofertas-f03.json');await game.expectMessage('de vuelta en la calle');

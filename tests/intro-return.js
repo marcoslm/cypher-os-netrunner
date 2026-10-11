@@ -71,6 +71,12 @@ async function run(options={}) {
     const player=clone(g.run('S.player'));
     assert.deepEqual({...player,cpu:before.player.cpu},before.player);
   });
+  await check('el retorno bloqueado por inmersión avisa en vez de fallar en silencio',g=>{
+    g.run('startImmersion(4);');
+    clickAction(g,'backToIntro');
+    assert.equal(confirmOpen(g),false);assert.equal(introVisible(g),false);
+    assert.match(g.sb.document.getElementById('msg').getAttribute('aria-label'),/superficializa antes de volver a la intro/);
+  });
   console.log(`Intro: ${passes} correctas · ${fails} fallos`);
   return options.summary?{passes,fails,total:passes+fails}:fails;
 }

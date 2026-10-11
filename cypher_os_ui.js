@@ -254,14 +254,27 @@ function toggleSaveTools(){
   if(!_saveTools || !_saveToolsToggle) return;
   if(_saveTools.hidden) openSaveTools(); else closeSaveTools(true);
 }
+/* El ✕ del diálogo cierra y devuelve el foco al botón PARTIDA. */
+ACTIONS.closeSaveTools=function(){ closeSaveTools(true); };
 if(_saveToolsToggle) _saveToolsToggle.addEventListener("click",toggleSaveTools);
 /* Captura: se decide antes de que el clic resuelva su acción, para que una
    confirmación que se destruye al responder no descarte el menú por sorpresa. */
 document.addEventListener("click",function(e){
   if(!saveToolsOpen() || !e.target || e.target.nodeType!==1) return;
   if(_saveToolsInnerClick>0) return; /* clic interno del juego, no un gesto fuera */
-  if(_saveTools.contains(e.target) || _saveToolsToggle.contains(e.target)) return;
+  if(_saveToolsToggle.contains(e.target)) return;
   if(saveToolsFrozen()) return; /* capa activa: el diálogo se congela con el fondo */
+  if(_saveTools.contains(e.target)){
+    /* Activar una opción lo cierra al instante, como un menú; su acción sigue
+       corriendo y el foco vuelve al botón salvo que abra una capa propia. */
+    var options=document.getElementById("save-tools-buttons");
+    if(options && options.contains(e.target)){
+      var focusInside=!!(document.activeElement && _saveTools.contains(document.activeElement));
+      closeSaveTools(false);
+      if(focusInside && !modalOpen() && _saveToolsToggle.focus) _saveToolsToggle.focus();
+    }
+    return;
+  }
   closeSaveTools(false);
 },true);
 window.addEventListener("resize",function(){ if(saveToolsOpen()) positionSaveTools(); });
@@ -1356,7 +1369,14 @@ ACTIONS.setDifficulty = function(btn){
    afterBoot la prioriza: COMENZAR nunca descarta el progreso de la sesión. */
 var _resumeAfterIntro=null;
 ACTIONS.backToIntro = function(){
-  if(!livingInteraction() || inImmersion || combatActive || modalOpen()) return;
+  /* Dentro del Grid la única guardia alcanzable con el panel activo es la
+     inmersión: se avisa, nunca se falla en silencio. Combate/FLATLINE dejan el
+     fondo inerte y ni siquiera llega el clic. */
+  if(inImmersion){
+    msg("estás dentro del grid. superficializa antes de volver a la intro.","ambar");
+    return;
+  }
+  if(!livingInteraction() || combatActive || modalOpen()) return;
   confirmModal({
     title:"VOLVER A LA INTRO",
     body:"¿Guardar la partida y volver a la intro? Podrás cambiar la dificultad antes de continuar. Tu progreso se conserva en este dispositivo.",

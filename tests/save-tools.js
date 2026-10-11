@@ -25,13 +25,21 @@ async function run(options={}) {
     assert.equal(toggle.getAttribute('aria-expanded'),'false');
     for(const id of ['btn-save','btn-export','btn-import','btn-reset','btn-intro'])
       assert.equal(d.getElementById(id).parentNode.id,'save-tools-buttons');
+    const close=d.getElementById('save-tools-close');
+    assert.equal(close.getAttribute('data-action'),'closeSaveTools');
+    assert.equal(close.getAttribute('aria-label'),'Cerrar opciones de partida');
+    assert.equal(d.getElementById('save-tools-buttons').contains(close),false);
     assert.equal(d.querySelectorAll('.navbtn[data-view]').length,11);
   });
-  await check('PARTIDA abre y cierra el diálogo; el segundo pulso devuelve el foco al botón',g=>{
+  await check('PARTIDA abre y cierra el diálogo; el segundo pulso y el ✕ devuelven el foco al botón',g=>{
     const d=g.sb.document,dialog=d.getElementById('save-tools'),toggle=d.getElementById('save-tools-toggle');
     g.emitElement('save-tools-toggle','click');
     assert.equal(dialog.hidden,false);assert.equal(toggle.getAttribute('aria-expanded'),'true');
     g.emitElement('save-tools-toggle','click');
+    assert.equal(dialog.hidden,true);assert.equal(toggle.getAttribute('aria-expanded'),'false');
+    assert.equal(d.activeElement,toggle);
+    g.emitElement('save-tools-toggle','click');
+    g.emitElement('save-tools-close','click');
     assert.equal(dialog.hidden,true);assert.equal(toggle.getAttribute('aria-expanded'),'false');
     assert.equal(d.activeElement,toggle);
   });
@@ -60,16 +68,20 @@ async function run(options={}) {
     assert.equal(g.sb.document.getElementById('save-tools-toggle').getAttribute('aria-expanded'),'false');
     assert.match(g.sb.document.getElementById('msg').getAttribute('aria-label'),/partida guardada/);
   });
-  await check('guardar/exportar/importar no descartan el diálogo ni mezclan su estado en el snapshot',g=>{
+  await check('activar una opción cierra el diálogo, conserva el snapshot y devuelve el foco',g=>{
     g.run('startImmersion(4);');const expected=clone(g.run('inImmersion'));
+    const d=g.sb.document,toggle=d.getElementById('save-tools-toggle');
     g.emitElement('save-tools-toggle','click');
+    d.getElementById('btn-save').focus();
     g.emitElement('btn-save','click');assert.deepEqual(g.saved()._inImmersion,expected);
-    assert.equal(g.run('saveToolsOpen()'),true);
+    assert.equal(g.run('saveToolsOpen()'),false);assert.equal(d.activeElement,toggle);
+    g.emitElement('save-tools-toggle','click');
     g.emitElement('btn-export','click');const exported=JSON.parse(g.sb.__blobs.at(-1).parts.join(''));
     assert.deepEqual(exported._inImmersion,expected);
     assert.equal(Object.prototype.hasOwnProperty.call(exported,'saveTools'),false);
-    assert.equal(g.run('saveToolsOpen()'),true);
-    g.emitElement('btn-import','click');assert.equal(g.run('saveToolsOpen()'),true);
+    assert.equal(g.run('saveToolsOpen()'),false);
+    g.emitElement('save-tools-toggle','click');
+    g.emitElement('btn-import','click');assert.equal(g.run('saveToolsOpen()'),false);
     g.sb.__candidate=exported;assert.equal(g.run('importGameState(window.__candidate)'),true);
     assert.deepEqual(clone(g.run('inImmersion')),expected);
   });
@@ -82,7 +94,7 @@ async function run(options={}) {
     assert.equal(g.run('confirmOpen()'),false);assert.equal(g.run('combatActive'),true);
     assert.equal(g.run('S'),state);assert.equal(g.run('inImmersion'),inm);
     assert.equal(g.sb.localStorage.getItem('cypher_os_save_v9'),raw);
-    /* Sus operaciones no cierran el diálogo: solo lo cierran sus tres gestos. */
+    /* Congelado bajo una capa activa, una operación rechazada no lo descarta. */
     assert.equal(g.run('saveToolsOpen()'),true);
     assert.equal(g.run('importGameState(nuevoEstado())'),false);
     assert.equal(g.run('S'),state);

@@ -299,6 +299,7 @@ test('inmersión: recoger con input, GUARDAR/exportar, recargar y vender datos u
   await game.expectMessage('guardada a mano');
   const saved = (await game.snapshot()).saved;
   expect(saved._inImmersion).toMatchObject({ current: '1_0', dataUsed: 1, data: [{ value: 77 }] });
+  await game.openSaveTools();
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#btn-export').click();
   const download = await downloadPromise;
