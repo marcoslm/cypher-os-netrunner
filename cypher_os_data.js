@@ -733,6 +733,7 @@ var MUSIC_TRACKS = {
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],
+  ["FIRMWARE v1.0 · BUILD 55", "dim"],
   ["memoria ................. 64K OK", "ok"],
   ["bus neural .............. OK", "ok"],
   ["interfaz del deck ....... OK", "ok"],

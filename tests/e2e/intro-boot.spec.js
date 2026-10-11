@@ -18,7 +18,8 @@ test('ciberdeck: BIOS vertical anclada, menú final y entrada directa',async({pa
  await page.screenshot({path:testInfo.outputPath('deck-boot.png')});
  await page.clock.runFor(4000);
  await expect(page.locator('#intro-start')).toBeVisible();await expect(page.locator('#intro-start')).toBeFocused();
- await expect(page.locator('#boot-body .line')).toHaveCount(11);
+ await expect(page.locator('#boot-body .line')).toHaveCount(12);
+ await expect(page.locator('#boot-body .line').nth(1)).toHaveText(/^FIRMWARE v1\.0 · BUILD [1-9]\d*$/);
  expect((await first.boundingBox()).y).toBe(anchor.y);
  expect((await game.snapshot()).state).toBeNull();
  await expect(page.locator('#os')).toHaveJSProperty('inert',true);
@@ -41,20 +42,20 @@ test('ciberdeck: atajos y clic de fondo no saltan BIOS; omitir solo abre opcione
  await expect(page.locator('#intro-start')).toBeVisible();
  expect((await game.snapshot()).state).toBeNull();
  await expect(page.locator('#os')).toHaveJSProperty('inert',true);
- await page.clock.runFor(5000);await expect(page.locator('#boot-body .line')).toHaveCount(11);
+ await page.clock.runFor(5000);await expect(page.locator('#boot-body .line')).toHaveCount(12);
 });
 test('ciberdeck: movimiento reducido en curso termina POST sin cursor ni timers',async({page,game})=>{
  await pauseBoot(page);await page.emulateMedia({reducedMotion:'reduce'});
  await expect(page.locator('#intro-start')).toBeVisible();
- await expect(page.locator('#boot-body .line')).toHaveCount(11);
+ await expect(page.locator('#boot-body .line')).toHaveCount(12);
  await expect(page.locator('html')).toHaveClass(/motion-off/);
  expect(await page.evaluate(()=>_introBootTimer)).toBeNull();expect((await game.snapshot()).state).toBeNull();
- await page.clock.runFor(5000);await expect(page.locator('#boot-body .line')).toHaveCount(11);
+ await page.clock.runFor(5000);await expect(page.locator('#boot-body .line')).toHaveCount(12);
 });
 test('ciberdeck: preferencia reducida al recargar muestra menú inmediatamente',async({page,game})=>{
  await page.emulateMedia({reducedMotion:'reduce'});await page.reload();
  await expect(page.locator('#intro-start')).toBeVisible();await expect(page.locator('#intro-skip')).toBeHidden();
- await expect(page.locator('#boot-body .line')).toHaveCount(11);
+ await expect(page.locator('#boot-body .line')).toHaveCount(12);
  expect(await page.evaluate(()=>_introBootTimer)).toBeNull();expect((await game.snapshot()).state).toBeNull();
 });
 for(const width of [320,375,768]){

@@ -773,7 +773,7 @@ button.btn{
 .intro-ready .deck-power{color:var(--verde);}
 .deck-screen{padding:24px 28px 20px;}
 .bios-heading{display:flex;justify-content:space-between;gap:12px;color:var(--cyan);font-size:11px;letter-spacing:1px;margin-bottom:16px;}
-#boot{height:252px;overflow:auto;font-size:13px;line-height:1.75;color:var(--verde);scrollbar-width:thin;
+#boot{height:276px;overflow:auto;font-size:13px;line-height:1.75;color:var(--verde);scrollbar-width:thin;
   text-shadow:0 0 5px rgba(77,255,166,.25);}
 #boot .line{white-space:pre-wrap;overflow-wrap:anywhere;}
 #boot .brand{color:var(--cyan);}
@@ -821,7 +821,7 @@ html.motion-off .intro-booting #boot-body::after{animation:none;}
   .deck-id span{display:none;}
   .deck-screen{padding:18px 14px;}
   .bios-heading{font-size:9px;letter-spacing:0;flex-wrap:wrap;}
-  #boot{height:208px;font-size:11px;line-height:1.7;}
+  #boot{height:228px;font-size:11px;line-height:1.7;}
   #intro-menu{grid-template-columns:1fr;gap:20px;margin-top:18px;padding-top:20px;}
   #intro .intro-logo{font-size:30px;}
   .intro-settings{gap:8px;}

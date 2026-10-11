@@ -4,6 +4,8 @@
   "private": true,
   "description": "Herramientas de desarrollo y pruebas de CYPHER://OS; no forman parte del juego offline.",
   "scripts": {
+    "firmware:sync": "node tests/firmware-version.js",
+    "firmware:install": "git config --local core.hooksPath .githooks",
     "test": "node tests/smoke.js",
     "test:regressions": "node tests/regressions.js",
     "test:harness": "node tests/harness.test.js",
