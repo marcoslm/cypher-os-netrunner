@@ -217,12 +217,12 @@ const test = base.extend({
       },
       async openSaveTools({ touch = false } = {}) {
         await game.openSidebar({ touch });
-        const group = page.locator('#save-tools');
-        if (!(await group.evaluate(element => element.open))) {
+        const dialog = page.locator('#save-tools');
+        if (!(await dialog.isVisible())) {
           if (touch) await page.locator('#save-tools-toggle').tap();
           else await page.locator('#save-tools-toggle').click();
         }
-        await expect(group).toHaveAttribute('open', '');
+        await expect(dialog).toBeVisible();
       },
       async importFile(value, name) {
         await game.openSaveTools();

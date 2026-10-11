@@ -226,14 +226,37 @@ html.sidebar-collapsed #sidebar{display:none;}
 }
 .navbtn .ic{color:var(--cyan);width:18px;display:inline-block;}
 .navbtn:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px;}
-/* Operaciones de partida: cerradas por defecto, separadas de las vistas. */
-.save-tools{flex:0 0 auto;margin-top:auto;padding-top:8px;}
-.save-tools summary{display:block;list-style:none;padding-right:22px;}
-.save-tools summary::-webkit-details-marker{display:none;}
-.save-tools summary::after{content:"▸";position:absolute;right:4px;top:8px;color:var(--cyan);}
-.save-tools[open] summary::after{content:"▾";}
-#save-tools-buttons{display:flex;flex-direction:column;gap:2px;padding-top:4px;}
+/* Operaciones de partida (F05A v2): popover-diálogo anclado al botón PARTIDA.
+   Vive fuera del flujo del lateral para no comer scroll en pantallas bajas y se
+   une al botón con una traza verde, como un cable de datos entre ambos. */
+#save-tools-toggle{margin-top:auto;padding-right:22px;}
+#save-tools-toggle::after{content:"▸";position:absolute;right:4px;top:8px;color:var(--cyan);}
+#save-tools-toggle[aria-expanded="true"]::after{content:"▾";}
+#save-tools{
+  position:fixed;z-index:45;display:flex;flex-direction:column;
+  width:min(260px,calc(100vw - 76px));
+  padding:10px 12px 12px;border:1px solid var(--verde);border-radius:4px;
+  background:linear-gradient(180deg,#071611,#040c09);
+  box-shadow:0 0 26px rgba(77,255,166,.22),0 12px 32px rgba(0,0,0,.55);
+}
+#save-tools[hidden]{display:none;}
+.save-tools-title{color:var(--cyan);font-size:10px;letter-spacing:2px;margin:0 0 6px;}
+#save-tools-buttons{display:flex;flex-direction:column;gap:2px;
+  max-height:calc(100vh - 96px);max-height:calc(100dvh - 96px);overflow-y:auto;}
 #save-tools-buttons .navbtn{width:100%;}
+/* Traza de unión con PARTIDA: nodo sobre el borde del lateral y cable al panel. */
+#save-tools::before{content:"";position:absolute;left:-14px;top:var(--link-y,24px);
+  width:14px;height:2px;background:var(--verde);transform-origin:left center;
+  box-shadow:0 0 8px rgba(77,255,166,.55);}
+#save-tools::after{content:"";position:absolute;left:-17px;top:calc(var(--link-y,24px) - 2px);
+  width:6px;height:6px;background:var(--verde);box-shadow:0 0 8px rgba(77,255,166,.7);}
+#save-tools.save-tools--nolink::before,#save-tools.save-tools--nolink::after{display:none;}
+#save-tools.save-tools--anim{animation:popIn .18s ease-out;}
+#save-tools.save-tools--anim::before{animation:traceIn .22s ease-out;}
+@keyframes traceIn{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+@media(prefers-reduced-motion:reduce){
+  #save-tools.save-tools--anim,#save-tools.save-tools--anim::before{animation:none;}
+}
 .notif-dot{display:none;width:6px;height:6px;border-radius:50%;background:var(--rojo);
   position:absolute;top:6px;right:6px;box-shadow:0 0 6px rgba(255,93,106,.8);}
 .notif-dot.show{display:block;}
@@ -1075,9 +1098,9 @@ body.glitch-random{animation:glitchRandom .2s ease-out;}
 /* ---- responsivo ---- */
 @media(max-width:720px){
   #sidebar{flex-basis:60px;}
-  .navbtn span.lbl{display:none;}
-  .navbtn{text-align:center;padding:8px 4px;}
-  .navbtn .ic{display:block;}
+  #sidebar .navbtn span.lbl{display:none;}
+  #sidebar .navbtn{text-align:center;padding:8px 4px;}
+  #sidebar .navbtn .ic{display:block;}
   .logo{font-size:34px;}
   #topbar .stat-mini{display:flex;gap:3px;letter-spacing:0;}
   #topbar .stat-secondary{display:none;}

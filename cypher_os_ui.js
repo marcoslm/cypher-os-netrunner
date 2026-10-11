@@ -177,6 +177,7 @@ function setSidebarCollapsed(value){
   if(typeof value!=="boolean") return;
   var sidebar=document.getElementById("sidebar"), button=document.getElementById("h-sidebar");
   if(value && sidebar && sidebar.contains(document.activeElement) && button) button.focus();
+  closeSaveTools(false); /* el ancla del popover desaparece con el lateral */
   _sidebarCollapsed=value; applySidebarPref();
   try{ localStorage.setItem(SIDEBAR_PREFS_KEY,JSON.stringify({sidebarCollapsed:value})); }catch(e){ /* Elección funcional en memoria. */ }
   if(currentView==="red") resizeGridCanvas();
@@ -185,6 +186,85 @@ ACTIONS.toggleSidebar=function(){
   if(!livingInteraction() || modalOpen()) return;
   setSidebarCollapsed(!_sidebarCollapsed);
 };
+
+/* ---- Operaciones de partida (F05A v2): popover-diálogo anclado a PARTIDA ----
+   El bloque vive FUERA del flujo del lateral (panel fijo) para no desbordar
+   pantallas bajas ni comer scroll del menú. No es modal: no pausa el reloj, no
+   bloquea el juego y nunca toca la partida ni sus preferencias; su estado vive
+   solo en el DOM. Lo cierran tres gestos: la segunda pulsación de PARTIDA,
+   Escape y cualquier clic fuera mientras el juego está desbloqueado (ese clic
+   además ejecuta su propia acción, como en un menú). Una capa activa —
+   confirmación, panel de control, intro, FLATLINE o combate— lo congela junto
+   con el fondo inerte. También se cierra al cambiar de vista, plegar el lateral
+   o sustituir la sesión. Se ancla al botón con una traza verde de unión. */
+var _saveTools=document.getElementById("save-tools");
+var _saveToolsToggle=document.getElementById("save-tools-toggle");
+/* Clics programáticos del juego (descarga de EXPORTAR, selector de IMPORTAR):
+   burbujean como clic real pero no son un gesto del usuario sobre el menú. */
+var _saveToolsInnerClick=0;
+function saveToolsInnerClick(el){
+  _saveToolsInnerClick++;
+  try{ el.click(); } finally { _saveToolsInnerClick--; }
+}
+function saveToolsOpen(){ return !!(_saveTools && _saveToolsToggle && !_saveTools.hidden); }
+function saveToolsFrozen(){
+  return !!(modalOpen() || entryMode() || combatActive || (S && S.player.cpu<=0));
+}
+function positionSaveTools(){
+  if(!saveToolsOpen()) return;
+  var anchor=_saveToolsToggle.getBoundingClientRect();
+  /* Tamaño de layout, inmune al transform de la animación de entrada. */
+  var width=_saveTools.offsetWidth||0, height=_saveTools.offsetHeight||0;
+  var vw=window.innerWidth||0, vh=window.innerHeight||0;
+  var gap=14, margin=8;
+  /* Junto al botón; si no cabe a la derecha o abajo, se recoloca dentro del
+     viewport y la traza se omite: solo une puntos realmente alineados. */
+  var left=anchor.right+gap, top=anchor.top-12, linked=true;
+  if(width && left+width>vw-margin){ left=Math.max(margin,vw-margin-width); linked=false; }
+  if(left<margin){ left=margin; linked=false; }
+  if(height && top+height>vh-margin) top=Math.max(margin,vh-margin-height);
+  if(top<margin) top=margin;
+  left=Math.round(left); top=Math.round(top);
+  _saveTools.style.setProperty("left",left+"px");
+  _saveTools.style.setProperty("top",top+"px");
+  var linkY=Math.round(anchor.top+anchor.height/2-top);
+  if(linked && height && linkY>=10 && linkY<=height-10){
+    _saveTools.classList.remove("save-tools--nolink");
+    _saveTools.style.setProperty("--link-y",linkY+"px");
+  } else _saveTools.classList.add("save-tools--nolink");
+}
+function openSaveTools(){
+  if(!_saveTools || !_saveToolsToggle) return;
+  _saveTools.hidden=false;
+  _saveToolsToggle.setAttribute("aria-expanded","true");
+  _saveTools.classList.toggle("save-tools--anim",!!decorativeMotion());
+  positionSaveTools();
+}
+function closeSaveTools(returnFocus){
+  if(!_saveTools || !_saveToolsToggle) return;
+  var wasOpen=!_saveTools.hidden;
+  _saveTools.hidden=true;
+  _saveToolsToggle.setAttribute("aria-expanded","false");
+  _saveTools.classList.remove("save-tools--anim");
+  _saveTools.classList.remove("save-tools--nolink");
+  _saveTools.style.removeProperty("--link-y");
+  if(returnFocus && wasOpen && _saveToolsToggle.focus) _saveToolsToggle.focus();
+}
+function toggleSaveTools(){
+  if(!_saveTools || !_saveToolsToggle) return;
+  if(_saveTools.hidden) openSaveTools(); else closeSaveTools(true);
+}
+if(_saveToolsToggle) _saveToolsToggle.addEventListener("click",toggleSaveTools);
+/* Captura: se decide antes de que el clic resuelva su acción, para que una
+   confirmación que se destruye al responder no descarte el menú por sorpresa. */
+document.addEventListener("click",function(e){
+  if(!saveToolsOpen() || !e.target || e.target.nodeType!==1) return;
+  if(_saveToolsInnerClick>0) return; /* clic interno del juego, no un gesto fuera */
+  if(_saveTools.contains(e.target) || _saveToolsToggle.contains(e.target)) return;
+  if(saveToolsFrozen()) return; /* capa activa: el diálogo se congela con el fondo */
+  closeSaveTools(false);
+},true);
+window.addEventListener("resize",function(){ if(saveToolsOpen()) positionSaveTools(); });
 
 /* Panel de control: DOM estable para no perder el foco al mover sliders. */
 var _controlReturnFocus=null;
@@ -502,6 +582,7 @@ if(_confirmOverlay) _confirmOverlay.addEventListener("click", function(e){
 });
 
 function showView(v, skipLog){
+  closeSaveTools(false); /* navegación: el menú de partida no sigue a otra vista */
   if(!S || entryMode() || combatActive || (S.player.cpu<=0 && v!=="inicio")) return;
   currentView = v;
   if(v !== "red") stopGridRender();
@@ -1689,7 +1770,7 @@ function clearSessionRuntime(){
   stopGridRender(); inImmersion=null;
   clearInterval(loopId); loopId=null;
   stopGlitchLoop();
-  closeOverlay(); closeControlPanel(false);
+  closeOverlay(); closeControlPanel(false); closeSaveTools(false);
   var tree=document.getElementById("skilltree-overlay");
   if(tree){ tree.classList.remove("show"); tree.classList.add("hidden"); }
   ACTIONS.closeSkillTree=null;
@@ -1832,7 +1913,7 @@ if(_btnExport) _btnExport.addEventListener("click", function(){
     var a = document.createElement("a");
     a.href = url; a.download = "cypher_os_save.json";
     document.body.appendChild(a);
-    a.click();
+    saveToolsInnerClick(a);
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     msg("partida exportada. archivo descargado.","verde");
@@ -2126,7 +2207,7 @@ var _btnImport=document.getElementById("btn-import");
 if(_btnImport) _btnImport.addEventListener("click", function(){
   if(!livingInteraction()) return;
   var f=document.getElementById("import-file");
-  if(f) f.click();
+  if(f) saveToolsInnerClick(f);
 });
 var _importFile=document.getElementById("import-file");
 if(_importFile) _importFile.addEventListener("change", function(e){
@@ -2147,7 +2228,7 @@ if(_btnReset) _btnReset.addEventListener("click", function(){
   confirmModal({
     title: "⚠ RESET",
     body: "¿Reiniciar <b>TODO</b> el progreso (incluida la partida actual)?"+
-      "<br><br>Si quieres conservar tu partida, cancela, despliega PARTIDA en el menú lateral y usa EXPORTAR.",
+      "<br><br>Si quieres conservar tu partida, cancela, abre PARTIDA en el menú lateral y usa EXPORTAR.",
     yes: "REINICIAR",
     no: "CANCELAR",
     danger: true,
@@ -2429,13 +2510,15 @@ document.addEventListener("keydown", function(e){
     var cmd=document.getElementById("cmd"); if(cmd) cmd.focus();
     return;
   }
-  /* Escape → cerrar overlay / árbol de habilidades (siempre funciona) */
+  /* Escape → cerrar overlay / árbol de habilidades / menú de partida (siempre funciona) */
   if(e.key==="Escape"){
     /* diálogo de confirmación abierto → Escape equivale a CANCELAR */
     if(confirmOpen()){ resolveConfirm(false); e.preventDefault(); return; }
     if(ACTIONS.closeSkillTree){ ACTIONS.closeSkillTree(); e.preventDefault(); return; }
     var ov=document.getElementById("overlay");
-    if(ov && ov.classList.contains("show")){ closeOverlay(); e.preventDefault(); }
+    if(ov && ov.classList.contains("show")){ closeOverlay(); e.preventDefault(); return; }
+    /* menú PARTIDA abierto → Escape lo cierra y el foco vuelve al botón */
+    if(saveToolsOpen() && !saveToolsFrozen()){ closeSaveTools(true); e.preventDefault(); }
   }
   /* FLATLINE solo acepta guardar y el diálogo NUEVO REGISTRO; no hay DIP
      secreto por Ctrl+G aunque se cambie el radio de dificultad en el intro. */
