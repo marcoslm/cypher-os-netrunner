@@ -1,0 +1,3 @@
+#!/bin/sh
+# Actualiza el índice antes de que Git construya el árbol del commit.
+node tests/firmware-version.js --commit

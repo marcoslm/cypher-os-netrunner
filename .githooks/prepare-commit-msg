@@ -1,3 +1,0 @@
-#!/bin/sh
-# Incluye la build del commit nuevo, sin modificar archivos parcialmente preparados.
-node tests/firmware-version.js --commit "$2" "$3"

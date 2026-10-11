@@ -36,11 +36,9 @@ if (require.main === module) {
     var refs = ['HEAD'];
     if (fs.existsSync(path.join(root, git(['rev-parse', '--git-path', 'MERGE_HEAD'])))) refs.push('MERGE_HEAD');
     var count = Number(git(['rev-list', '--count'].concat(refs)));
-    // prepare-commit-msg: --amend indica source=commit sin una referencia de reutilización.
-    var amend = hook && process.argv[3] === 'commit' && !process.argv[4];
-    update(count + (hook && !amend ? 1 : 0));
+    update(count + (hook ? 1 : 0));
     if (hook) git(['add', '--', 'cypher_os_data.js']);
-    console.log('Firmware v1.0 · build ' + (count + (hook && !amend ? 1 : 0)));
+    console.log('Firmware v1.0 · build ' + (count + (hook ? 1 : 0)));
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }
 module.exports = {update: update};
