@@ -72,7 +72,7 @@ test('rastreador: huir refresca el nodo y los vecinos del HUD antes de otra elec
     player: { level: 6, sigilo: 5, decoys: 5, _gridEventCooldown: 3 },
     state: { offers: [] }, immersion: ambushImmersion()
   });
-  await expect(page.locator('#adjlist')).toContainText('SUBESTACIÓN');
+  await expect(page.locator('#grid-current')).toContainText('SUBESTACIÓN');
   await expect(page.locator('#adjlist .adj-node[data-idx="1"]')).toContainText('DATOS');
   // Arrange a real in-progress ambush after a movement, preserving the preceding
   // HUD as moveToNode does before tryScavenger's early return. No RNG or handler is
@@ -89,7 +89,7 @@ test('rastreador: huir refresca el nodo y los vecinos del HUD antes de otra elec
   await expect(page.locator('#combat')).toBeHidden();
   await page.clock.runFor(1000); // normal frames/clock must not leave a stale HUD
   const afterEscape = await game.snapshot();
-  const header = await page.locator('#adjlist').innerText();
+  const header = await page.locator('#grid-current').innerText();
   const visible = await page.locator('#adjlist .adj-node').allTextContents();
   const current = afterEscape.immersion.grid.nodes.find(n => n.id === afterEscape.immersion.current);
   const neighbors = afterEscape.immersion.grid.adj[current.id].map(id => afterEscape.immersion.grid.nodes.find(n => n.id === id));

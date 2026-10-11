@@ -528,6 +528,16 @@ function showView(v, skipLog){
   updateAmbient();
 }
 
+/* Señales estáticas: nombre accesible sin una región viva que se repita por tick. */
+function updateDeckIndicator(id,state,label,mark){
+  var el=document.getElementById(id); if(!el) return;
+  if(el.getAttribute("data-state")!==state) el.setAttribute("data-state",state);
+  if(el.getAttribute("aria-label")!==label){
+    el.setAttribute("aria-label",label); el.setAttribute("title",label);
+  }
+  var badge=el.querySelector(".deck-mark");
+  if(badge && badge.textContent!==mark) badge.textContent=mark;
+}
 function updateTopbar(){
   if(!S) return;
   var p = S.player;
@@ -536,7 +546,18 @@ function updateTopbar(){
   var h = document.getElementById("h-heat"); if(h) h.textContent = Math.round(Math.max(0,p.heat));
   var c = document.getElementById("h-cc"); if(c) c.textContent = Math.floor(p.credits);
   var used = inImmersion ? inImmersion.dataUsed : 0;
-  var r = document.getElementById("h-ram"); if(r) r.textContent = used+"/"+ramCap();
+  var cap=ramCap();
+  var r = document.getElementById("h-ram"); if(r) r.textContent = used+"/"+cap;
+  var cpuRatio=p.maxCpu>0?p.cpu/p.maxCpu:0;
+  var cpuState=cpuRatio<=.2?"critical":(cpuRatio<=.4?"warning":"normal");
+  var heatState=p.heat>=80?"critical":(p.heat>70?"danger":(p.heat>=40?"warning":"normal"));
+  var ramState=used>=cap?"full":(used===cap-1?"warning":"normal");
+  updateDeckIndicator("cpu-indicator",cpuState,"CPU "+Math.round(Math.max(0,p.cpu))+" de "+p.maxCpu+
+    (cpuState==="critical"?" · integridad crítica":(cpuState==="warning"?" · integridad baja":" · integridad estable")),cpuState==="critical"?"‼":(cpuState==="normal"?"":"!"));
+  updateDeckIndicator("heat-indicator",heatState,"Calor "+Math.round(Math.max(0,p.heat))+" de 100"+
+    (heatState==="critical"?" · crítico":(heatState==="danger"?" · peligro":(heatState==="warning"?" · elevado":" · bajo"))),heatState==="critical"?"‼":(heatState==="normal"?"":"!"));
+  updateDeckIndicator("ram-indicator",ramState,"RAM "+used+" de "+cap+
+    (ramState==="full"?" · llena":(ramState==="warning"?" · queda un hueco":" · capacidad disponible")),ramState==="full"?"LLENA":(ramState==="warning"?"!":""));
   var l = document.getElementById("h-lvl"); if(l) l.textContent = p.level;
   /* XP bar en topbar */
   var xpFill = document.getElementById("h-xp-fill");
@@ -549,12 +570,7 @@ function updateTopbar(){
   if(xpLabel) xpLabel.textContent = "XP "+p.xp+"/"+xpParaNivel();
   var clk = document.getElementById("h-clock"); if(clk) clk.textContent = timeStr(S.clock);
   syncControlPanel();
-  /* pulso visual de topbar cuando el calor supera 70 */
-  var topbar = document.getElementById("topbar");
-  if(topbar){
-    if(p.heat > 70) topbar.classList.add("heat-alert");
-    else topbar.classList.remove("heat-alert");
-  }
+  /* El peligro se señala en cada indicador sin animar toda la barra. */
   /* visual de body cuando calor >= 80 */
   if(p.heat >= 80) document.body.classList.add("heat-critical");
   else document.body.classList.remove("heat-critical");

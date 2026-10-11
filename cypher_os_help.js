@@ -66,7 +66,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 /* ④ MOVERSE */
 '<div class="panel-h">④ MOVERSE POR EL GRID</div><div class="box helpbox">'+
 '<p class="help-p">Solo puedes moverte a nodos <b>conectados</b> a tu posición actual. <b>Clic</b> en el nodo al que quieres ir. También puedes pulsar las <b>teclas 1-9</b> (según el orden en que aparecen en el HUD).</p>'+
-'<p class="help-p">El HUD está separado del mapa: no tapa los nodos. Puedes plegar TRABAJOS y desplazar la información auxiliar si no cabe; los botones SUPERFICIE y AYUDA permanecen accesibles. Girar la pantalla o redimensionar ajusta el canvas sin cambiar tu red ni el progreso.</p>'+
+'<p class="help-p">El HUD está separado del mapa: no tapa los nodos y se coloca abajo o al lado para dejar más espacio al Grid. CPU, calor y RAM están en la barra superior. EXPLORACIÓN y TRABAJOS empiezan plegados; puedes abrirlos y desplazar sus detalles sin encoger el mapa. Nodo actual, vecinos, SUPERFICIE y AYUDA permanecen accesibles. Girar la pantalla o redimensionar ajusta el canvas sin cambiar tu red ni el progreso.</p>'+
 '<p class="help-p">El HUD cuenta ICE (incluidos rastreadores), daemons y nodos <b>visitados en esta inmersión</b>. Revelar un mapa no cuenta como visitarlo. <b>GRID EXPLORADO</b> significa que has visitado todos los nodos; <b>GRID AGOTADO</b>, que tampoco quedan objetivos fijos por resolver. La RAM llena y los vaults bloqueados siguen siendo pendientes. Los eventos y rastreadores no desaparecen: superficializa cuando te convenga. Los guardados antiguos indican <b>parcial</b> si falta historial.</p>'+
 '<div class="helprow">'+
 '<div class="helprow-item"><span class="kbd">Clic en nodo</span><span class="muted">moverse a un nodo vecino conectado</span></div>'+
@@ -133,6 +133,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="helprow-item"><span class="lg-key">RAM</span><span class="muted">guardas los datos recogidos. Cuando está llena, superficializa para <b>venderlos</b> (los datos se convierten en ₡; su valor escala con la capa y con HACK).</span></div>'+
 '<div class="helprow-item"><span class="lg-key">CPU</span><span class="muted">tu integridad neural. Al superficializar recuperas +8. Si llega a 0 → FLATLINE (ver ⑭).</span></div>'+
 '</div>'+
+'<p class="help-p">La barra superior conserva CPU, calor y RAM también en pantallas estrechas. CPU avisa con ≤40% de integridad y marca crítico con ≤20%. El calor se destaca desde 40, señala peligro con &gt;70 y crítico con ≥80. Los símbolos <b>!</b> y <b>‼</b> distinguen aviso y estado crítico; <b>RAM LLENA</b> indica falta de capacidad, no daño. Son señales visuales: no cambian las reglas del juego.</p>'+
 '<p class="help-p">Estrategia: cumple el objetivo del contrato, <b>superficializa</b> para vender los datos y cobrar, y vuelve a bajar. No profundices demasiado si el calor sube. El reloj de calle avanza <b>1 min por segundo real</b>.</p>'+
 '</div>'+
 

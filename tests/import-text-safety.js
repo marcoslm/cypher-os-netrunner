@@ -82,7 +82,7 @@ async function run(options={}){
   assert.equal(doc.getElementById('audit-modal'),null,'el título inyectado del modal no existe');
   assert.equal(doc.getElementById('audit-node'),null,'el nombre de nodo inyectado no existe');
   assert.ok(doc.getElementById('overlay-inner').innerHTML.indexOf('&lt;b')>=0,'el modal muestra el título escapado');
-  assert.ok(doc.getElementById('adjlist').innerHTML.indexOf('&lt;img')>=0,'el HUD muestra el nombre escapado');
+  assert.ok(doc.getElementById('grid-current').innerHTML.indexOf('&lt;img')>=0,'el HUD muestra el nombre escapado');
  });
  await check('el lore y los textos internos siguen renderizándose normales',g=>{
   g.run('generateOffers();showView("contactos");');

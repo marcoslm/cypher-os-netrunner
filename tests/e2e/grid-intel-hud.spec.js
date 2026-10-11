@@ -106,15 +106,15 @@ test('HUD: visitas, ICE, tres contratos y avisos persistentes de exploración y 
   Object.assign(inm.grid.nodes[4],{type:'data',data:88,name:'DATOS PROFUNDOS'});
   await game.setup({immersion:inm,player:{heat:50,sigilo:20,_gridEventCooldown:10000},
     state:{offers:[],jobs:[job('recoleta',1),job('carrera',1),job('rompehielas',1)]}});
-  await expect(page.locator('#gridhud')).toContainText('EXPLORADOS 1/5');
+  await expect(page.locator('#grid-stats')).toContainText('EXPLORADOS 1/5');
   await expect(page.locator('#grid-job-items .grid-job')).toHaveCount(3);
   const canvas=await page.locator('#gridcanvas').elementHandle();
   const neighbor=await page.locator('#adjlist .adj-node').first().elementHandle();
   await page.clock.runFor(1000);
   expect(await neighbor.evaluate(el=>el.isConnected)).toBe(true);
   for(const id of ['1_0','2_0','3_0','4_0']) await move(page,game,id);
-  await expect(page.locator('#gridhud')).toContainText('EXPLORADOS 5/5');
-  await expect(page.locator('#gridhud')).toContainText('DAEMONS 0');
+  await expect(page.locator('#grid-stats')).toContainText('EXPLORADOS 5/5');
+  await expect(page.locator('#grid-stats')).toContainText('DAEMONS 0');
   await expect(page.locator('#grid-status')).toContainText('GRID AGOTADO');
   const carrera=page.locator('.grid-job').filter({hasText:'carrera'});
   await expect(carrera).toContainText('baja el calor para cobrar');
@@ -148,7 +148,7 @@ test('GRID explorado con RAM llena no se anuncia como agotado; legacy muestra da
   await expect(page.locator('#grid-status')).toContainText('GRID EXPLORADO');
   await expect(page.locator('#grid-status')).toContainText('1 objetivos fijos pendientes');
   expect((await game.snapshot()).immersion.exhaustedNotified).toBe(false);
-  await expect(page.locator('#gridhud')).toContainText('(parcial)');
+  await expect(page.locator('#grid-stats')).toContainText('(parcial)');
   await move(page,game,'3_0');await move(page,game,'2_0');await move(page,game,'1_0');
   await expect(page.locator('#grid-status')).not.toContainText('GRID AGOTADO');
   expect((await game.snapshot()).immersion.grid.nodes[1].done).toBe(false);

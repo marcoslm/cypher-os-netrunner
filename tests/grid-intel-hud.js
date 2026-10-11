@@ -190,7 +190,7 @@ async function run(options = {}) {
     assert.equal(g.run('inImmersion.enemyCounts.trackers'),0);
     assert.equal(g.run('inImmersion.visitsPartial'),true);
     assert.equal(g.run('inImmersion.enemyCountsPartial'),true);
-    assert.match(g.sb.document.getElementById('gridhud').innerHTML,/parcial/);
+    assert.match(g.sb.document.getElementById('grid-stats').innerHTML,/parcial/);
     const expected=clone(g.run('inImmersion')); g.run('save();'); g.sb.__legacy=g.saved();
     assert.equal(g.run('importGameState(window.__legacy)'),true);
     assert.deepEqual(clone(g.run('inImmersion')),expected);

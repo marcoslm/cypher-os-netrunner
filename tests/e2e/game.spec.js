@@ -293,7 +293,7 @@ test('inmersión: recoger con input, GUARDAR/exportar, recargar y vender datos u
   // A legitimate random ambush remains possible: resolve it through actual code input.
   if ((await game.snapshot()).combatActive) await solveCodeCombat(page);
   await expect(page.locator('#h-ram')).toHaveText('1/6');
-  await expect(page.locator('#adjlist')).toContainText('NODO DE DATOS');
+  await expect(page.locator('#grid-current')).toContainText('NODO DE DATOS');
   await game.openSaveTools();
   await page.locator('#btn-save').click();
   await game.expectMessage('guardada a mano');

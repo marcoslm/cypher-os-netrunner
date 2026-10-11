@@ -25,7 +25,10 @@ async function run(options={}) {
     const info=d.getElementById('grid-info'),actions=d.getElementById('grid-actions');
     assert.equal(info.parentNode,hud);assert.equal(actions.parentNode,hud);
     assert.ok(!info.contains(actions),'controles críticos fuera de la información desplazable');
-    assert.ok(info.contains(d.getElementById('grid-jobs')));assert.ok(info.contains(d.getElementById('adjlist')));
+    assert.ok(info.contains(d.getElementById('grid-jobs')));assert.ok(info.contains(d.getElementById('grid-exploration')));
+    assert.ok(!info.contains(d.getElementById('adjlist')));assert.ok(!info.contains(d.getElementById('grid-current')));
+    assert.equal(d.getElementById('grid-jobs').hasAttribute('open'),false);assert.equal(d.getElementById('grid-exploration').hasAttribute('open'),false);
+    assert.ok(!/CALOR|DATOS|CPU/.test(d.getElementById('gridhud').textContent));
   });
   await check('resize usa solo el espacio reservado y mantiene 960×540 sin cambiar el grafo',g=>{
     g.run('startImmersion(4);');const stage=g.sb.document.getElementById('grid-stage'),canvas=g.sb.document.getElementById('gridcanvas');
@@ -77,6 +80,46 @@ async function run(options={}) {
     canvas.__rect={left:70,top:90,width:320,height:180};
     const smaller=g.run('gridToLogical(230,255)');
     assert.equal(smaller.x,480);assert.equal(smaller.y,495);
+  });
+  await check('el presupuesto geométrico elige el mapa mayor, sin depender de trabajos ni detalles',g=>{
+    g.run('startImmersion(4);');const wrap=g.sb.document.getElementById('gridwrap');
+    for(const [w,h,font,side] of [[1400,600,16,true],[450,900,16,false],[560,220,24,true],[240,460,16,false]]) {
+      g.sb.__w=w;g.sb.__h=h;g.sb.__font=font;
+      const m=g.run('gridLayoutMetrics(window.__w,window.__h,window.__font,8,true,false)');
+      assert.equal(m.side,side);assert.ok((side?m.sideScale:m.bottomScale)>0);
+      wrap.clientWidth=w;wrap.clientHeight=h;wrap.style.fontSize=font+'px';g.run('layoutGrid();');
+      assert.equal(wrap.classList.contains('grid-side'),side);
+      const height=wrap.style.getPropertyValue('--grid-hud-height'),width=wrap.style.getPropertyValue('--grid-hud-width');
+      const before=clone(g.run('inImmersion'));
+      g.sb.document.getElementById('grid-jobs').setAttribute('open','');
+      g.sb.document.getElementById('grid-exploration').setAttribute('open','');
+      g.run('updateGridHud();layoutGrid();');
+      assert.equal(wrap.style.getPropertyValue('--grid-hud-height'),height);assert.equal(wrap.style.getPropertyValue('--grid-hud-width'),width);
+      assert.deepEqual(clone(g.run('inImmersion')),before);
+    }
+    const idle=g.run('gridLayoutMetrics(1400,600,16,8,false,false)');assert.equal(idle.side,false);assert.equal(idle.hudHeight,56);
+    const near=g.run('gridLayoutMetrics(1000,500,16,8,true,true)');
+    if(near.side) assert.ok(near.sideScale>=near.bottomScale*.98);
+  });
+  await check('indicadores del deck usan umbrales reales, CPU relativa y RAM llena sin alarma de daño',g=>{
+    const d=g.sb.document;
+    for(const [cpu,heat,cpuState,heatState] of [[81,39,'normal','normal'],[80,40,'warning','warning'],[40,70,'critical','warning'],[39,70.1,'critical','danger'],[200,80,'normal','critical']]) {
+      g.sb.__cpu=cpu;g.sb.__heat=heat;
+      g.run('S.player.maxCpu=200;S.player.cpu=window.__cpu;S.player.heat=window.__heat;updateTopbar();');
+      assert.equal(d.getElementById('cpu-indicator').getAttribute('data-state'),cpuState);
+      assert.equal(d.getElementById('heat-indicator').getAttribute('data-state'),heatState);
+    }
+    g.run('startImmersion(4);inImmersion.dataUsed=ramCap()-1;updateTopbar();');
+    assert.equal(d.getElementById('ram-indicator').getAttribute('data-state'),'warning');
+    g.run('inImmersion.dataUsed=ramCap();updateTopbar();');
+    const ram=d.getElementById('ram-indicator');
+    assert.equal(ram.getAttribute('data-state'),'full');assert.match(ram.getAttribute('aria-label'),/llena/);
+    assert.equal(ram.querySelector('.deck-mark').textContent,'LLENA');
+    g.run('inImmersion.dataUsed=0;S.player.cpu=200;S.player.heat=0;updateTopbar();');
+    for(const id of ['cpu-indicator','heat-indicator','ram-indicator']) {
+      assert.equal(d.getElementById(id).getAttribute('data-state'),'normal');
+      assert.equal(d.getElementById(id).querySelector('.deck-mark').textContent,'');
+    }
   });
   console.log(`Grid/layout: ${passes} correctas · ${fails} fallos`);
   return options.summary?{passes,fails,total:passes+fails}:fails;

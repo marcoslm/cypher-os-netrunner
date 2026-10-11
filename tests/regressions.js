@@ -444,12 +444,12 @@ async function run(options = {}){
     click('.adj-node[data-idx="0"]');
     assert.equal(g.run('COM.node.scavenger'),true);
     assert.equal(g.run('inImmersion.current'),"0_0");
-    assert.ok(g.sb.document.getElementById("adjlist").textContent.includes("PUERTO DE CALLE"),"HUD actualizado ya bajo la emboscada");
+    assert.ok(g.sb.document.getElementById("grid-current").textContent.includes("PUERTO DE CALLE"),"HUD actualizado ya bajo la emboscada");
     g.run('Math.random=function(){return .99;};');click("#escapeBtn");
     g.run('Math.random=function(){return 0;};');click("#escapeBtn");g.advance(1000);
     assert.equal(g.run("combatActive"),false);
     assert.equal(g.run("inImmersion.current"),"0_0");
-    assert.ok(g.sb.document.getElementById("adjlist").textContent.includes("PUERTO DE CALLE"));
+    assert.ok(g.sb.document.getElementById("grid-current").textContent.includes("PUERTO DE CALLE"));
     const neighbor=g.sb.document.querySelector('.adj-node[data-idx="1"]');
     assert.match(neighbor.textContent,/ICE T1/);
     assert.equal(g.run('currentNeighbors()[1].name'),"GRIFO");
@@ -472,7 +472,7 @@ async function run(options = {}){
     g.emitElement("codeInput","input");
     assert.equal(g.run("combatActive"),false);
     assert.equal(g.run("inImmersion.current"),target);
-    assert.ok(g.sb.document.getElementById("adjlist").textContent.includes("NODO DE DATOS"));
+    assert.ok(g.sb.document.getElementById("grid-current").textContent.includes("NODO DE DATOS"));
     assert.equal(g.run("inImmersion.dataUsed"),6);
     assert.equal(g.run("S.player.stats.data"),6);
     assert.equal(g.run('nodeById(inImmersion.current).done'),false);

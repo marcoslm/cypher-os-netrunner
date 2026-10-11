@@ -877,16 +877,48 @@ function stopGridRender(){
   particles=[]; particleGrid=[];
   gridFx=[]; _fxLast=0; gridHoverNode=null;
 }
+/* Presupuesto independiente del contenido: compara el tamaño 16:9 real.
+   Una pequeña histéresis evita cambiar de orientación por redondeos de píxel. */
+function gridLayoutMetrics(width,height,font,gap,immersed,wasSide){
+  var hudHeight=Math.min(font*(immersed?10.5:3.5),height*.75);
+  /* El lateral solo se ensancha con el margen que sobra al mapa limitado por alto. */
+  var hudWidth=Math.min(font*19,Math.max(font*11,width-height*960/540-gap));
+  var bottomScale=Math.max(0,Math.min(width/960,(height-hudHeight-gap)/540));
+  var sideScale=Math.max(0,Math.min((width-hudWidth-gap)/960,height/540));
+  var sideAllowed=immersed && width-hudWidth-gap>=font*6 && height>=font*8.5;
+  var side=sideAllowed && (wasSide?sideScale>=bottomScale*.98:sideScale>bottomScale*1.02);
+  return {side:!!side,hudHeight:hudHeight,hudWidth:hudWidth,bottomScale:bottomScale,sideScale:sideScale};
+}
+function layoutGrid(){
+  var wrap=document.getElementById("gridwrap"); if(!wrap) return;
+  var width=wrap.clientWidth,height=wrap.clientHeight;
+  if(width<1 || height<1) return;
+  var styles=window.getComputedStyle(wrap);
+  var font=parseFloat(styles.fontSize)||16, gap=parseFloat(styles.rowGap)||8;
+  var metrics=gridLayoutMetrics(width,height,font,gap,!!inImmersion,wrap.classList.contains("grid-side"));
+  var cssHeight=metrics.hudHeight+"px",cssWidth=metrics.hudWidth+"px";
+  if(wrap.style.getPropertyValue("--grid-hud-height")!==cssHeight) wrap.style.setProperty("--grid-hud-height",cssHeight);
+  if(wrap.style.getPropertyValue("--grid-hud-width")!==cssWidth) wrap.style.setProperty("--grid-hud-width",cssWidth);
+  wrap.classList.toggle("grid-side",metrics.side);
+  wrap.classList.toggle("grid-tight",height<font*12);
+}
 function watchGridLayout(){
   if(_gridLayoutObserver){ _gridLayoutObserver.disconnect(); _gridLayoutObserver=null; }
   var stage=document.getElementById("grid-stage");
   if(stage && window.ResizeObserver){
     _gridLayoutObserver=new window.ResizeObserver(function(){ resizeGridCanvas(); });
+    var wrap=document.getElementById("gridwrap");
+    if(wrap) _gridLayoutObserver.observe(wrap);
+    var context=document.getElementById("grid-context");
+    if(context) _gridLayoutObserver.observe(context);
+    var actions=document.getElementById("grid-actions");
+    if(actions) _gridLayoutObserver.observe(actions);
     _gridLayoutObserver.observe(stage);
   }
 }
 function resizeGridCanvas(){
   if(!canvas || currentView!=="red") return;
+  layoutGrid();
   var stage=document.getElementById("grid-stage"); if(!stage) return;
   /* Mantener el bitmap lógico: un refresco del HUD no debe borrarlo. */
   var bitmapChanged=canvas.width!==960 || canvas.height!==540;
@@ -1235,7 +1267,7 @@ function renderGridHud(){
     return;
   }
   var btn = immersed
-    ? '<button class="btn ambar" data-action="doSuperficie">SUPERFICIE (volver)</button><button class="btn small" id="helpToggle" data-action="toggleHelp">?</button>'
+    ? '<button class="btn ambar" data-action="doSuperficie" aria-label="Superficializar y volver a la calle">SUPERFICIE</button><button class="btn small" id="helpToggle" data-action="toggleHelp" aria-label="Ayuda del Grid" title="Ayuda del Grid">?</button>'
     : '<button class="btn cyan" data-action="dipGrid">◈ DIP AL GRID</button>';
   /* El HUD ocupa su propio espacio. Mapa y tooltip comparten origen,
      incluso cuando el canvas queda centrado en una zona más grande. */
@@ -1246,11 +1278,13 @@ function renderGridHud(){
         '<div id="grid-tooltip" class="hidden"></div>'+
       '</div></div>'+
       '<div id="grid-overlay"'+(immersed?' class="grid-immersed"':'')+'>'+
-        (immersed ? '<div id="grid-info"><div id="gridhud"></div>' : '')+
-        (immersed ? '<div id="grid-status" role="status"></div>'+
-          '<details id="grid-jobs"'+(window.innerWidth>900 && window.innerHeight>600?' open':'')+'>'+
-            '<summary id="grid-jobs-summary">TRABAJOS</summary><div id="grid-job-items"></div>'+
-          '</details><div id="adjlist"></div></div>' : '')+
+        (immersed ? '<div id="grid-context"><div id="gridhud"></div><span id="grid-completion"></span><div id="grid-current"></div></div>'+
+          '<div id="grid-navigation"><div id="adjlist" role="group" aria-label="Nodos vecinos"></div></div>'+
+          '<div id="grid-info"><details id="grid-exploration">'+
+            '<summary title="Movimientos, enemigos, visitas y objetivos pendientes"><span class="grid-summary-label">EXPLORACIÓN</span></summary><div id="grid-location"></div><div id="grid-stats"></div><div id="grid-status" role="status"></div>'+
+          '</details><details id="grid-jobs">'+
+            '<summary id="grid-jobs-summary"><span class="grid-summary-label">TRABAJOS</span> <b id="grid-job-ready">0</b></summary><div id="grid-job-items"></div>'+
+          '</details></div>' : '')+
         '<div id="grid-actions">'+btn+'</div>'+
       '</div>'+
     '</div>';
@@ -1297,31 +1331,17 @@ function updateGridHud(){
   var status=gridCompletion(inm), counts=inm.enemyCounts;
   announceGridCompletion(inm,status);
   var hud=document.getElementById("gridhud");
-  if(hud){
-    /* barra de calor visual */
-    var heat=Math.round(Math.max(0,S.player.heat));
-    var heatPct=clamp(heat,0,100);
-    var heatCls=heat<40?"hud-bar-green":(heat<=70?"hud-bar-amber":"hud-bar-red");
-    var heatBar='<div class="hud-bar '+heatCls+'"><i style="width:'+heatPct+'%"></i></div>';
-    /* RAM slots visuales */
-    var used=inm.dataUsed, cap=ramCap();
-    var ramSlots='<span class="ram-slots">';
-    for(var i=0;i<cap;i++) ramSlots+='<span class="ram-slot '+(i<used?"used":"empty")+'"></span>';
-    ramSlots+='</span>';
-    hud.innerHTML =
-      '<div>PROFUNDIDAD <b>'+inm.maxDepthReached+'/'+inm.depth+'</b></div>'+
+  if(hud) hud.innerHTML='PROFUNDIDAD <b>'+inm.maxDepthReached+'/'+inm.depth+'</b>';
+  var stats=document.getElementById("grid-stats");
+  if(stats){
+    stats.innerHTML =
       '<div>MOVIMIENTOS <b>'+inm.moves+'</b></div>'+
-      '<div>DATOS <b>'+used+'/'+cap+'</b> '+ramSlots+'</div>'+
-      '<div>CALOR <b class="'+(heat>70?'rojo':'ambar')+'">'+heat+'/100</b> '+heatBar+'</div>'+
       '<div>ICE <b>'+counts.ice+'</b> · DAEMONS <b>'+counts.daemons+'</b>'+
         (counts.trackers?' · RASTREADORES <b>'+counts.trackers+'</b>':'')+
         (counts.nucleo?' · NÚCLEO <b>'+counts.nucleo+'</b>':'')+
         (inm.enemyCountsPartial?' <span class="hud-partial" title="El guardado antiguo no conserva todas las emboscadas">(parcial)</span>':'')+'</div>'+
       '<div>EXPLORADOS <b>'+status.visited+'/'+status.total+'</b>'+
         (inm.visitsPartial?' <span class="hud-partial" title="Visitas demostrables del guardado antiguo">(parcial)</span>':'')+'</div>';
-    /* clase heat-critical cuando calor > 80 */
-    if(heat>80) hud.classList.add("heat-critical");
-    else hud.classList.remove("heat-critical");
   }
   var statusEl=document.getElementById("grid-status");
   if(statusEl){
@@ -1330,16 +1350,36 @@ function updateGridHud(){
       (status.explored?"GRID EXPLORADO · "+status.pending+" objetivos fijos pendientes":
       "Objetivos fijos pendientes: "+status.pending);
     if(statusEl.textContent!==statusText) statusEl.textContent=statusText;
+    var completion=document.getElementById("grid-completion");
+    if(completion){
+      var completionText=status.exhausted?"AGOTADO":(status.explored?"EXPLORADO":"");
+      if(completion.textContent!==completionText) completion.textContent=completionText;
+      completion.className=status.exhausted?"verde":"cyan";
+      completion.title=statusText;
+    }
   }
   var jobs=S.jobs.filter(function(j){ return !j.done; });
   var jobItems=document.getElementById("grid-job-items"), jobSummary=document.getElementById("grid-jobs-summary");
   if(jobItems) jobItems.innerHTML=jobs.length?jobs.map(gridJobHudHtml).join(""):'<div class="muted">Sin contratos activos.</div>';
-  if(jobSummary) jobSummary.textContent=jobs.length?"TRABAJOS "+jobs.filter(jobComplete).length+"/"+jobs.length+" listos para cobrar · al superficializar":"TRABAJOS · sin contratos activos";
+  if(jobSummary){
+    var ready=jobs.filter(jobComplete).length;
+    var summaryText=jobs.length?"TRABAJOS "+ready+"/"+jobs.length+" listos para cobrar al superficializar":"TRABAJOS · sin contratos activos";
+    var counter=document.getElementById("grid-job-ready"),counterText=jobs.length?ready+"/"+jobs.length:"0";
+    if(counter && counter.textContent!==counterText) counter.textContent=counterText;
+    if(jobSummary.getAttribute("aria-label")!==summaryText){
+      jobSummary.setAttribute("aria-label",summaryText); jobSummary.title=summaryText;
+    }
+  }
   var adj=document.getElementById("adjlist");
   if(adj){
     var list=currentNeighbors();
     var cur=nodeById(inImmersion.current);
-    var html='<b>EN EL NODO:</b> '+(cur?(SIM[cur.type]+' '+escapeHtml(cur.name||'')):'·')+' &nbsp; ';
+    var currentEl=document.getElementById("grid-current");
+    var currentText='EN EL NODO: '+(cur?(SIM[cur.type]+' '+(cur.name||'')):'·');
+    if(currentEl && currentEl.textContent!==currentText){ currentEl.textContent=currentText; currentEl.title=currentText; }
+    var locationEl=document.getElementById("grid-location");
+    if(locationEl && locationEl.textContent!==currentText) locationEl.textContent=currentText;
+    var html='';
     list.forEach(function(n,i){
       var s=SIM[n.type]||"·";
       var label=(n.type==="data")?("DATOS") :
@@ -1350,7 +1390,7 @@ function updateGridHud(){
         (n.type==="nucleo")?("NÚCLEO") :
         (SIM[n.type]||"·");
       if(n.done||n._done||n._used) label+=" · LIMPIO";
-      html+='<span class="adj-node" data-idx="'+i+'">'+s+' <span class="kbd">'+(i+1)+'</span> '+label+'</span>';
+      html+='<button type="button" class="adj-node" data-idx="'+i+'">'+s+' <span class="kbd">'+(i+1)+'</span> '+label+'</button>';
     });
     if(!list.length) html+='<span>(sin salidas directas)</span>';
     /* El reloj refresca calor/trabajos, no debe reemplazar un vecino bajo el dedo. */

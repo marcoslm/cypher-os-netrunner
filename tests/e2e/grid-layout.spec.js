@@ -16,6 +16,8 @@ function lowerImmersion() {
 }
 const scenarios=[
   {width:1280,height:900,jobs:0,label:'escritorio sin contratos'},
+  {width:1600,height:650,jobs:3,label:'panorámica con HUD lateral'},
+  {width:320,height:600,jobs:3,label:'móvil mínimo',touch:true},
   {width:1024,height:600,jobs:3,label:'tablet horizontal'},
   {width:768,height:1024,jobs:3,label:'tablet vertical'},
   {width:375,height:700,jobs:3,label:'táctil estrecho',touch:true},
@@ -28,7 +30,12 @@ async function assertLayout(page) {
   // Esperar al reflow real sin llamar al resizer ni sustituir callbacks del juego.
   await expect.poll(()=>page.locator('#gridcanvas').evaluate(el=>{
     const c=el.getBoundingClientRect(),s=document.getElementById('grid-stage').getBoundingClientRect();
-    return c.y>=s.y-1&&c.bottom<=s.bottom+1&&c.x>=s.x-1&&c.right<=s.right+1;
+    const wrap=document.getElementById('gridwrap'),style=getComputedStyle(wrap),font=parseFloat(style.fontSize);
+    const expectedHeight=Math.min(font*10.5,wrap.clientHeight*.75);
+    const expectedWidth=Math.min(font*19,Math.max(font*11,wrap.clientWidth-wrap.clientHeight*960/540-parseFloat(style.rowGap)));
+    return Math.abs(parseFloat(style.getPropertyValue('--grid-hud-height'))-expectedHeight)<.1 &&
+      Math.abs(parseFloat(style.getPropertyValue('--grid-hud-width'))-expectedWidth)<.1 &&
+      c.y>=s.y-1&&c.bottom<=s.bottom+1&&c.x>=s.x-1&&c.right<=s.right+1;
   })).toBe(true);
   const boxes=await page.locator('body').evaluate(()=>{
     const rect=id=>{const r=document.getElementById(id).getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom};};
@@ -36,11 +43,20 @@ async function assertLayout(page) {
     const nodes=inImmersion.grid.nodes.map(n=>({x:c.x+n.x*c.w/960,y:c.y+n.y*c.h/540}));
     const r=document.querySelector('[data-action="doSuperficie"]').getBoundingClientRect();
     const info=document.getElementById('grid-info'),font=parseFloat(getComputedStyle(document.getElementById('gridhud')).fontSize);
-    return {c,hud,panel,nodes,infoHeight:info.clientHeight,font,surface:{x:r.x,y:r.y,right:r.right,bottom:r.bottom}};
+    const wrap=document.getElementById('gridwrap'),style=getComputedStyle(wrap);
+    return {c,hud,panel,nodes,infoHeight:info.clientHeight,font,surface:{x:r.x,y:r.y,right:r.right,bottom:r.bottom},
+      side:wrap.classList.contains('grid-side'),stage:rect('grid-stage'),wrap:rect('gridwrap'),counter:rect('grid-job-ready'),summary:rect('grid-jobs-summary'),
+      gap:parseFloat(style.rowGap),hudHeight:parseFloat(style.getPropertyValue('--grid-hud-height')),hudWidth:parseFloat(style.getPropertyValue('--grid-hud-width'))};
   });
   expect(boxes.c.w).toBeGreaterThan(0);expect(boxes.c.h).toBeGreaterThan(0);
   expect(boxes.c.w/boxes.c.h).toBeCloseTo(960/540,1);
-  expect(boxes.c.bottom).toBeLessThanOrEqual(boxes.hud.y);
+  if(boxes.side) expect(boxes.c.right).toBeLessThanOrEqual(boxes.hud.x+1);
+  else expect(boxes.c.bottom).toBeLessThanOrEqual(boxes.hud.y+1);
+  const bottomScale=Math.min(boxes.wrap.w/960,(boxes.wrap.h-boxes.hudHeight-boxes.gap)/540);
+  const sideScale=Math.min((boxes.wrap.w-boxes.hudWidth-boxes.gap)/960,boxes.wrap.h/540);
+  const chosen=boxes.side?sideScale:bottomScale;
+  expect(Math.abs(boxes.c.w-chosen*960)).toBeLessThanOrEqual(1);
+  expect(Math.abs(boxes.c.h-chosen*540)).toBeLessThanOrEqual(1);
   expect(boxes.c.x).toBeGreaterThanOrEqual(boxes.panel.x);
   expect(boxes.c.right).toBeLessThanOrEqual(boxes.panel.right+1);
   expect(boxes.c.y).toBeGreaterThanOrEqual(boxes.panel.y);
@@ -50,14 +66,19 @@ async function assertLayout(page) {
   expect(boxes.surface.x).toBeGreaterThanOrEqual(boxes.hud.x);
   expect(boxes.surface.right).toBeLessThanOrEqual(boxes.hud.right);
   expect(boxes.infoHeight).toBeGreaterThanOrEqual(boxes.font*1.15);
+  expect(boxes.counter.x).toBeGreaterThanOrEqual(boxes.summary.x);
+  expect(boxes.counter.right).toBeLessThanOrEqual(boxes.summary.right+1);
+  expect(boxes.counter.right).toBeLessThanOrEqual(boxes.hud.right);
+  expect(boxes.counter.bottom).toBeLessThanOrEqual(boxes.summary.bottom+1);
   for(const n of boxes.nodes) {
-    expect(n.y).toBeLessThan(boxes.hud.y);
+    expect(n.x<boxes.hud.x || n.x>boxes.hud.right || n.y<boxes.hud.y || n.y>boxes.hud.bottom).toBe(true);
     expect(n.x).toBeGreaterThanOrEqual(boxes.panel.x);expect(n.x).toBeLessThanOrEqual(boxes.panel.right);
     expect(n.y).toBeGreaterThanOrEqual(boxes.panel.y);expect(n.y).toBeLessThanOrEqual(boxes.panel.bottom);
   }
 }
 for(const scenario of scenarios) {
   test(`grid F04: ${scenario.label}, nodos libres y entrada inferior real`,async({page,game})=>{
+    await page.emulateMedia({reducedMotion:'reduce'});
     await page.setViewportSize({width:scenario.width,height:scenario.height});
     await game.setup({immersion:lowerImmersion(),player:{sigilo:20,_gridEventCooldown:10000},
       state:{offers:[],jobs:scenario.jobs?['recoleta','carrera','rompehielas'].map(job):[]}});
@@ -67,10 +88,13 @@ for(const scenario of scenarios) {
     }
     const before=await game.snapshot(),canvas=await page.locator('#gridcanvas').elementHandle();
     await assertLayout(page);
+    const originalSize=await page.locator('#gridcanvas').boundingBox();
     for(const open of [true,false,true]) {
       const isOpen=await page.locator('#grid-jobs').evaluate(el=>el.open);
       if(isOpen!==open) await page.locator('#grid-jobs-summary').click();
       await assertLayout(page);
+      const size=await page.locator('#gridcanvas').boundingBox();
+      expect(size.width).toBeCloseTo(originalSize.width,2);expect(size.height).toBeCloseTo(originalSize.height,2);
       expect((await game.snapshot()).immersion).toEqual(before.immersion);
       expect((await game.snapshot()).state.jobs).toEqual(before.state.jobs);
       expect(await canvas.evaluate(el=>el===document.getElementById('gridcanvas'))).toBe(true);
@@ -96,6 +120,61 @@ for(const scenario of scenarios) {
     } else expect((await game.snapshot()).immersion).toBeNull();
   });
 }
+
+for(const viewport of [{width:1280,height:900,side:false},{width:1600,height:650,side:true}]) {
+  test(`grid adaptativo: detalles largos, teclado y controles independientes (${viewport.side?'lateral':'inferior'})`,async({page,game})=>{
+    await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize(viewport);
+    const jobs=['recoleta','carrera','rompehielas'].map(type=>({...job(type),title:'CONTRATO '+type+' CON INFORMACIÓN COMPLETA Y UN TÍTULO LARGO QUE NO DEBE ENCOGER EL MAPA'}));
+    await game.setup({immersion:lowerImmersion(),player:{sigilo:20,_gridEventCooldown:10000},state:{offers:[],jobs}});
+    await assertLayout(page);
+    await expect(page.locator('#gridwrap')).toHaveClass(viewport.side?/grid-side/:/^(?!.*grid-side)/);
+    for(const id of ['grid-exploration','grid-jobs']) await expect(page.locator('#'+id)).not.toHaveAttribute('open','');
+    const canvas=await page.locator('#gridcanvas').elementHandle(),before=await page.locator('#gridcanvas').boundingBox();
+    for(const selector of ['#grid-exploration summary','#grid-jobs-summary']) {
+      await page.locator(selector).focus();await page.keyboard.press('Enter');
+      await assertLayout(page);
+      const size=await page.locator('#gridcanvas').boundingBox();
+      expect(size.width).toBeCloseTo(before.width,2);expect(size.height).toBeCloseTo(before.height,2);
+    }
+    await expect(page.locator('#grid-location')).toContainText('PUERTO DE CALLE');
+    const info=page.locator('#grid-info');
+    expect(await info.evaluate(el=>el.scrollWidth<=el.clientWidth+1)).toBe(true);
+    await page.evaluate(()=>{S.jobs[0].title+=' · DATOS ADICIONALES';});await page.clock.runFor(1000);
+    const later=await page.locator('#gridcanvas').boundingBox();expect(later.width).toBeCloseTo(before.width,2);expect(later.height).toBeCloseTo(before.height,2);
+    expect(await canvas.evaluate(el=>el===document.getElementById('gridcanvas'))).toBe(true);
+    const button=page.locator('#adjlist .adj-node').first();await button.focus();await page.keyboard.press('Enter');
+    if(await page.locator('#codeInput').isVisible())await solveCodeCombat(page);
+    expect((await game.snapshot()).immersion.current).toBe('1_0');
+    await expect(page.locator('#grid-current')).toContainText('NODO DE DATOS');
+    await page.screenshot({path:`test-results/grid-details-${viewport.side?'side':'bottom'}.png`});
+  });
+}
+
+test('grid adaptativo: fallback sin ResizeObserver responde al lateral y al reloj existente',async({page,game})=>{
+  await page.addInitScript(()=>{window.ResizeObserver=undefined;});
+  await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:1024,height:600});
+  await game.setup({immersion:lowerImmersion(),state:{offers:[],jobs:[job('recoleta')]}});
+  const expected=await game.snapshot();await assertLayout(page);
+  await page.locator('#h-sidebar').click();await assertLayout(page);
+  await page.locator('#h-sidebar').click();await assertLayout(page);
+  await page.addStyleTag({content:'#gridwrap{font-size:20px;}'});await page.clock.runFor(1000);await assertLayout(page);
+  expect((await game.snapshot()).immersion).toEqual(expected.immersion);
+});
+
+test('grid en calle: ampliar texto reajusta la franja DIP sin inmersión ni reloj nuevo',async({page,game})=>{
+  await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:1024,height:600});
+  await game.setup({state:{offers:[]}});await page.locator('.navbtn[data-view="red"]').click();
+  const before=await game.snapshot();
+  await page.addStyleTag({content:'#gridwrap{font-size:24px;}'});
+  await expect.poll(()=>page.locator('#gridwrap').evaluate(el=>parseFloat(el.style.getPropertyValue('--grid-hud-height')))).toBe(84);
+  const layout=await page.locator('[data-action="dipGrid"]').evaluate(el=>{
+    const r=el.getBoundingClientRect(),hud=document.getElementById('grid-overlay').getBoundingClientRect();
+    return {top:r.top,bottom:r.bottom,hudTop:hud.top,hudBottom:hud.bottom};
+  });
+  expect(layout.top).toBeGreaterThanOrEqual(layout.hudTop);expect(layout.bottom).toBeLessThanOrEqual(layout.hudBottom);
+  expect((await game.snapshot()).immersion).toBeNull();expect((await game.snapshot()).state.player).toEqual(before.state.player);
+  await page.locator('[data-action="dipGrid"]').click();await assertLayout(page);
+});
 
 test('grid F04: redimensionar y cambiar Fullscreen conserva grafo, contratos y tamaño lógico',async({page,game})=>{
   await game.setup({immersion:lowerImmersion(),state:{offers:[],jobs:[job('recoleta')]}});
