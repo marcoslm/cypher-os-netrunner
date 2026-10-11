@@ -125,7 +125,18 @@ test('INFORMES avisa de lo archivado: punto, marca NUEVO y cartel discreto', asy
   await expect(banner).not.toHaveClass(/show/);
   await expect(banner).toHaveCSS('opacity','0');
   await nav(page,'informes').click();
-  await expect(page.locator('.intel').filter({hasText:'LOS FIXERS'})).toContainText('NUEVO');
+  const nueva=page.locator('.intel').filter({hasText:'LOS FIXERS'});
+  await expect(nueva).toContainText('NUEVO');
+  await expect(nueva).toHaveClass(/intel-nueva/);
+  // Chromium cuantiza el alfa del color; comprobar la señal, no su redondeo textual.
+  const colores=await nueva.evaluate(el=>{
+    const style=getComputedStyle(el);
+    return {fondo:style.backgroundColor,borde:style.borderTopColor};
+  });
+  expect(colores.fondo).toMatch(/^rgba\(77, 255, 166, /);
+  expect(parseFloat(colores.fondo.split(',')[3])).toBeCloseTo(0.045,2);
+  expect(colores.borde).toMatch(/^rgba\(77, 255, 166, /);
+  expect(parseFloat(colores.borde.split(',')[3])).toBeCloseTo(0.55,2);
   await expect(page.locator('#panel-scroll .sub')).toContainText('1 nuevo');
   await page.screenshot({path:'test-results/informe-nuevo.png'});
   await expect(dot).not.toHaveClass(/show/);

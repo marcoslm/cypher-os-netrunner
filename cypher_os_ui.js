@@ -1116,7 +1116,7 @@ function renderInformes(){
     '</div>'+
     '<div class="intel-grid">';
   INTEL.forEach(function(it){
-    if(has(it.id)) html+='<div class="intel"><b class="cyan">'+it.t+'</b> '+
+    if(has(it.id)) html+='<div class="intel'+(nuevos.indexOf(it.id)>=0?' intel-nueva':'')+'"><b class="cyan">'+it.t+'</b> '+
       (nuevos.indexOf(it.id)>=0?'<span class="tag nuevo">NUEVO</span>':'')+
       '<span class="tag '+it.r+'">'+RISK_TXT[it.r]+'</span>'+
       (it.k?'<div class="intel-k">▸ '+it.k+'</div>':'')+

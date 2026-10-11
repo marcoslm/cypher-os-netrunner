@@ -67,9 +67,11 @@ async function run(options={}) {
     const first=g.sb.document.getElementById('panel-scroll').innerHTML;
     assert.equal((first.match(/NUEVO/g)||[]).length,2,'una marca por informe nuevo');
     assert.match(first,/2 nuevos/,'el encabezado cuenta los nuevos');
+    assert.equal((first.match(/class="intel intel-nueva"/g)||[]).length,2,'solo las tarjetas nuevas se resaltan');
     g.run('renderInformes();');
     const second=g.sb.document.getElementById('panel-scroll').innerHTML;
     assert.ok(!/NUEVO/.test(second) && !/nuevos/.test(second),'sin marcas ni contador tras la visita');
+    assert.ok(!/intel-nueva/.test(second),'el resaltado también desaparece tras la visita');
     assert.match(second,/2\/43 desbloqueado/,'el progreso del índice se conserva');
   });
   await check('el cartel de INFORMES agrupa la ráfaga, no suena y dura menos que un logro',g=>{
