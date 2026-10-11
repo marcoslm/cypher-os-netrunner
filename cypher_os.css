@@ -174,13 +174,15 @@ html.motion-off .cyber-click,html.motion-off .cyber-click-cyan,html.motion-off .
 .deck-stat[data-state="critical"]{box-shadow:inset 0 -2px var(--rojo);}
 .deck-stat[data-state="full"]{border-color:var(--cyan);background:rgba(77,216,255,.1);color:var(--cyan);}
 .stat-mini .deck-stat:not([data-state="normal"]) b{color:inherit;}
-/* Calor sin insignias ni caja: el texto conserva color/glow y nunca se apaga. */
-#heat-indicator{border-color:transparent;background:transparent;box-shadow:none;}
-#heat-indicator[data-state]:not([data-state="normal"]){text-shadow:0 0 4px currentColor,0 0 9px currentColor;}
-#heat-indicator[data-state="danger"],#heat-indicator[data-state="critical"]{animation:heatGlowPulse 1.6s ease-in-out infinite;}
+/* Calor: fondo y halo exterior, sin insignias ni doble borde; texto estable. */
+#heat-indicator{border-color:transparent;background:transparent;box-shadow:none;color:#eafff4;text-shadow:none;}
+#heat-indicator b{color:inherit;}
+#heat-indicator[data-state="warning"]{background:rgba(255,196,77,.22);box-shadow:0 0 7px rgba(255,196,77,.35);}
+#heat-indicator[data-state="danger"],#heat-indicator[data-state="critical"]{
+  background:rgba(255,93,106,.28);box-shadow:0 0 9px rgba(255,93,106,.5);animation:heatGlowPulse 1.1s ease-in-out infinite;}
 @keyframes heatGlowPulse{
-  0%,100%{text-shadow:0 0 2px currentColor,0 0 5px currentColor;}
-  50%{text-shadow:0 0 5px currentColor,0 0 12px currentColor;}
+  0%,100%{background-color:rgba(255,93,106,.22);box-shadow:0 0 5px rgba(255,93,106,.3);}
+  50%{background-color:rgba(255,93,106,.4);box-shadow:0 0 12px rgba(255,93,106,.65);}
 }
 html.glow-off #heat-indicator{animation:none;}
 @media(prefers-reduced-motion:reduce){#heat-indicator{animation:none;}}
