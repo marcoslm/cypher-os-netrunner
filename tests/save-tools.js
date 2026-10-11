@@ -28,6 +28,10 @@ async function run(options={}) {
     const close=d.getElementById('save-tools-close');
     assert.equal(close.getAttribute('data-action'),'closeSaveTools');
     assert.equal(close.getAttribute('aria-label'),'Cerrar opciones de partida');
+    /* Mismo botón de cierre que el panel de control: clase y glifo idénticos. */
+    const panelClose=d.querySelector('#controls-overlay .control-close');
+    assert.equal(close.className,panelClose.className);
+    assert.equal(close.textContent,panelClose.textContent);
     assert.equal(d.getElementById('save-tools-buttons').contains(close),false);
     assert.equal(d.querySelectorAll('.navbtn[data-view]').length,11);
   });
