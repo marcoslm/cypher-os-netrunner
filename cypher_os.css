@@ -796,20 +796,18 @@ button.btn{
 .deck-header,.deck-footer{flex:0 0 auto;}
 .deck-screen{display:flex;flex-direction:column;min-height:0;padding:24px 28px 20px;}
 .deck-screen>*{flex:0 0 auto;}
-.deck-screen #boot{flex:0 1 276px;min-height:72px;}
+.deck-screen #boot{flex:0 1 252px;min-height:72px;}
 .bios-heading{display:flex;justify-content:space-between;gap:12px;color:var(--cyan);font-size:11px;letter-spacing:1px;margin-bottom:16px;}
-#boot{height:276px;overflow:auto;font-size:13px;line-height:1.75;color:var(--verde);scrollbar-width:thin;
+#boot{height:252px;overflow:auto;font-size:13px;line-height:1.75;color:var(--verde);scrollbar-width:thin;
   text-shadow:0 0 5px rgba(77,255,166,.25);}
 #boot .line{white-space:pre-wrap;overflow-wrap:anywhere;}
-#boot .brand,#boot .ok,#boot .sig,#boot .end{color:var(--verde);}
+#boot .brand,#boot .ok,#boot .sig{color:var(--verde);}
 #boot .dim{color:#43df92;}
 #boot .line:last-child::after{content:"▌";color:var(--verde);animation:deckCursor 1s steps(1) infinite;}
 @keyframes deckCursor{50%{opacity:0;}}
-.boot-footer{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid rgba(77,255,166,.12);padding-top:10px;}
-#intro-boot-status{font-size:11px;color:var(--ambar);margin:0;}
-.intro-ready #intro-boot-status{color:var(--verde);}
-.intro-memory #intro-boot-status{color:var(--ambar);}
-#intro-skip{font-size:10px;letter-spacing:1px;white-space:nowrap;min-height:36px;}
+#intro-memory-status{font-size:11px;line-height:1.5;color:var(--ambar);margin:10px 0 0;}
+#intro-memory-status:empty{display:none;}
+#intro-skip{align-self:flex-end;margin-top:10px;font-size:10px;letter-spacing:1px;white-space:nowrap;min-height:36px;}
 #intro-menu{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.85fr);gap:24px 30px;margin-top:24px;
   padding-top:24px;border-top:1px solid rgba(77,216,255,.25);animation:deckMenu .35s ease-out;}
 #intro-menu.hidden{display:none;}
@@ -854,19 +852,19 @@ html.motion-off #boot .line:last-child::after{animation:none;}
 @media(max-width:620px){
   #intro{padding:16px 12px;}
   #intro-body{max-height:none;}
-  .deck-screen #boot{flex-basis:228px;}
+  .deck-screen #boot{flex-basis:210px;}
   .deck-header,.deck-footer{padding:12px 14px;gap:8px;}
   .deck-id{font-size:11px;letter-spacing:1px;}
   .deck-id span{display:none;}
   .deck-screen{padding:18px 14px;}
   .bios-heading{font-size:9px;letter-spacing:0;flex-wrap:wrap;}
-  #boot{height:228px;font-size:11px;line-height:1.7;}
+  #boot{height:210px;font-size:11px;line-height:1.7;}
   #intro-menu{grid-template-columns:1fr;gap:20px;margin-top:18px;padding-top:20px;}
   #intro .intro-logo{font-size:30px;}
   .intro-settings{gap:8px;}
   #intro .intro-controls{font-size:9px;flex:1 1 auto;justify-content:center;}
   .deck-footer{flex-wrap:wrap;font-size:8px;}
-  #intro-boot-status{font-size:10px;}
+  #intro-memory-status{font-size:10px;}
 }
 
 /* ---- FLATLINE ---- */

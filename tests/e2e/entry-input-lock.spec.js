@@ -37,7 +37,7 @@ test('entrada: retornar bloquea gameplay y conserva Ctrl+S, controles y foco',as
 test('entrada: retorno usa el deck encendido y COMENZAR libera la sesión directamente',async({page,game})=>{
  await game.setup({state:{offers:[]},player:{credits:4321}});await backToIntro(page,game);
  await expect(page.locator('#intro-skip')).toBeHidden();
- await expect(page.locator('#boot-body .line')).toHaveCount(12);
+ await expect(page.locator('#boot-body .line')).toHaveCount(11);
  await page.locator('#intro-start').click();
  await expect(page.locator('#intro')).toBeHidden();await expect(page.locator('#boot')).toBeHidden();
  expect(await page.locator('#os').evaluate(el=>el.inert)).toBe(false);

@@ -13,7 +13,12 @@ for(const viewport of [{width:1024,height:600},{width:768,height:1024},{width:76
       const cursor=await page.locator('#boot-body .line:last-child').evaluate(el=>{const s=getComputedStyle(el,'::after');return {content:s.content,color:s.color};});
       expect(cursor.content).toBe('"▌"');expect(cursor.color).toBe('rgb(77, 255, 166)');
       const colors=await page.locator('#boot-body .line').evaluateAll(els=>els.map(el=>getComputedStyle(el).color));
-      expect(colors.length).toBe(12);
+      expect(colors.length).toBe(11);
+      await expect(page.locator('#intro-boot-status,.boot-footer')).toHaveCount(0);
+      await expect(page.locator('#intro-memory-status')).toBeHidden();
+      await expect(page.locator('#boot-body .line').last()).toHaveText('señal adquirida ......... ENLACE DISPONIBLE');
+      await expect(page.locator('#boot-body')).toContainText('canal de datos');
+      await expect(page.locator('#boot-body')).not.toContainText('alcantarilla');
       expect(colors.filter(color=>color==='rgb(77, 255, 166)').length).toBeGreaterThan(colors.length/2);
       for(const color of colors)expect(['rgb(77, 255, 166)','rgb(67, 223, 146)']).toContain(color);
       await page.screenshot({path:testInfo.outputPath('intro-tablet.png')});

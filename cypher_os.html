@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>CYPHER://OS  ·  v9.2.7</title>
-<link rel="stylesheet" href="cypher_os.css?v=38">
+<link rel="stylesheet" href="cypher_os.css?v=39">
 </head>
 <body>
 
@@ -104,15 +104,12 @@
   <section id="intro-body" aria-label="Consola CORVO-7">
     <header class="deck-header">
       <span class="deck-id">◈ CORVO-7 <span>/ CIBERDECK</span></span>
-      <span id="intro-power" class="deck-power">ENCENDIENDO</span>
+      <span id="intro-power" class="deck-power" role="status" aria-live="polite" aria-atomic="true">ENCENDIENDO</span>
     </header>
     <div class="deck-screen">
       <div class="bios-heading"><span>CYPHER BIOS v9.2.7</span><span>NEON DYNAMICS</span></div>
       <div id="boot" role="region" aria-label="Registro de arranque" tabindex="0"><div id="boot-body"></div></div>
-      <div class="boot-footer">
-        <p id="intro-boot-status" role="status" aria-live="polite" aria-atomic="true">Encendiendo el ciberdeck…</p>
-        <button type="button" id="intro-skip" class="btn">OMITIR ARRANQUE</button>
-      </div>
+      <button type="button" id="intro-skip" class="btn">OMITIR ARRANQUE</button>
       <div id="intro-menu" class="hidden" inert>
         <div class="intro-identity">
           <div class="intro-sub">SISTEMA CLANDESTINO / v9.2.7</div>
@@ -129,6 +126,7 @@
           </fieldset>
           <button type="button" id="intro-start" data-action="startIntro">▶ COMENZAR</button>
           <p class="intro-hint">abrir sesión en el cable · corvo-7</p>
+          <p id="intro-memory-status" role="status" aria-live="polite" aria-atomic="true"></p>
         </div>
         <div class="intro-settings">
           <button type="button" class="btn intro-controls" data-action="openControls"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6"/></svg> PANEL DE CONTROL</button>
@@ -205,11 +203,11 @@
 <div id="skilltree-overlay" class="hidden"></div>
 
 <script src="cypher_os_help.js?v=38"></script>
-<script src="cypher_os_data.js?v=5"></script>
+<script src="cypher_os_data.js?v=6"></script>
 <script src="cypher_os_core.js?v=6"></script>
 <script src="cypher_os_audio.js?v=6"></script>
 <script src="cypher_os_grid.js?v=8"></script>
 <script src="cypher_os_combat.js?v=4"></script>
-<script src="cypher_os_ui.js?v=18"></script>
+<script src="cypher_os_ui.js?v=19"></script>
 </body>
 </html>

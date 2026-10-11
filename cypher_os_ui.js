@@ -99,9 +99,8 @@ function finishIntroBoot(){
   if(menu){ menu.classList.remove("hidden"); menu.inert=false; menu.removeAttribute("inert"); }
   if(skip){ skip.classList.add("hidden"); skip.disabled=true; }
   if(log){ log.scrollTop=log.scrollHeight; log.setAttribute("tabindex","0"); }
-  var power=document.getElementById("intro-power"), status=document.getElementById("intro-boot-status");
+  var power=document.getElementById("intro-power");
   if(power) power.textContent="EN LÍNEA";
-  if(status) status.textContent="Arranque completo. Esperando al operador.";
   _entryMode=S ? "intro" : null;
   if(AC && AC.state==="running") sound.bootEnd();
   syncGameInputLock();
@@ -121,9 +120,10 @@ function runBoot(){
   if(skip){ skip.classList.remove("hidden"); skip.disabled=false; }
   var log=document.getElementById("boot");
   if(log){ log.scrollTop=0; log.setAttribute("tabindex","-1"); }
-  var power=document.getElementById("intro-power"), status=document.getElementById("intro-boot-status");
+  var power=document.getElementById("intro-power");
   if(power) power.textContent="ENCENDIENDO";
-  if(status) status.textContent="Encendiendo el ciberdeck…";
+  var memoryStatus=document.getElementById("intro-memory-status");
+  if(memoryStatus) memoryStatus.textContent="";
   syncGameInputLock();
   if(skip && skip.focus) skip.focus({preventScroll:true});
   if(!decorativeMotion()){ finishIntroBoot(); return; }
@@ -1404,8 +1404,8 @@ ACTIONS.backToIntro = function(){
       _bootStarted=false; _entryMode="boot"; finishIntroBoot();
       updateLegendaryOption(); initDifficultySelect();
       if(introEl) introEl.classList.toggle("intro-memory",!persisted);
-      var introStatus=document.getElementById("intro-boot-status");
-      if(!persisted && introStatus) introStatus.textContent="Sesión en memoria. No se pudo guardar: recargar puede perder tu progreso.";
+      var introStatus=document.getElementById("intro-memory-status");
+      if(introStatus) introStatus.textContent=persisted?"":"Sesión en memoria. No se pudo guardar: recargar puede perder tu progreso.";
       if(persisted) msg("partida guardada. intro lista para continuar.","verde");
       else msg("no se pudo guardar en este dispositivo. tu partida sigue viva en memoria hasta que recargues la página.","ambar");
     }

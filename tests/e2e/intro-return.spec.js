@@ -35,7 +35,8 @@ test('intro F02: guardado fallido al volver conserva la partida en memoria',asyn
   await confirm(page).locator('[data-action="confirmYes"]').click();
   await expect(page.locator('#intro')).toBeVisible();
   await game.expectMessage('sigue viva en memoria');
-  await expect(page.locator('#intro-boot-status')).toContainText('recargar puede perder tu progreso');
+  await expect(page.locator('#intro-memory-status')).toContainText('recargar puede perder tu progreso');
+  await expect(page.locator('#intro-memory-status')).toBeVisible();
   await game.resume();
   await page.locator('#intro-start').click();
   await game.skipBoot();

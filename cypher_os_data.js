@@ -733,7 +733,7 @@ var MUSIC_TRACKS = {
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],
-  ["FIRMWARE v1.0 alpha · BUILD 62", "dim"],
+  ["FIRMWARE v1.0 alpha · BUILD 63", "dim"],
   ["memoria ................. 64K OK", "ok"],
   ["bus neural .............. OK", "ok"],
   ["interfaz del deck ....... OK", "ok"],
@@ -741,9 +741,8 @@ var BOOT_LINES = [
   ["explorando el cable ..... BUSCANDO SEÑAL", "dim"],
   ["  torre corporativa ..... 51%", "sig"],
   ["  bar-club ÓCTAVA ........ 87%", "sig"],
-  ["  alcantarilla de datos .. 100%", "ok"],
-  ["señal adquirida ......... ENLACE DISPONIBLE", "ok"],
-  ["CYPHER://OS ............. LISTO PARA INICIAR SESIÓN", "end"]
+  ["  canal de datos ........ 100%", "ok"],
+  ["señal adquirida ......... ENLACE DISPONIBLE", "ok"]
 ];
 
 /* ---- combate: fases por tier (las consume cypher_os_combat.js) ---- */

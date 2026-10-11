@@ -28,7 +28,7 @@ async function run(options={}){
   returnIntro(g);
   assert.ok(g.run('_resumeAfterIntro'),'la continuación queda en memoria de runtime');
   assert.match(g.sb.document.getElementById('msg').getAttribute('aria-label'),/sigue viva en memoria/);
-   assert.match(g.sb.document.getElementById('intro-boot-status').textContent,/recargar puede perder tu progreso/);
+   assert.match(g.sb.document.getElementById('intro-memory-status').textContent,/recargar puede perder tu progreso/);
    assert.equal(g.sb.document.getElementById('intro').classList.contains('hidden'),false);
   continueGame(g);
   assert.equal(g.run('S.player.credits'),4321,'no el archivo viejo (900) ni una partida nueva (500)');
@@ -40,6 +40,7 @@ async function run(options={}){
   g.run('S.player.credits=4321;');returnIntro(g);
   assert.equal(g.run('_resumeAfterIntro'),null);
   assert.equal(g.saved().player.credits,4321);
+   assert.equal(g.sb.document.getElementById('intro-memory-status').textContent,'');
   continueGame(g);
   assert.equal(g.run('S.player.credits'),4321);
   assert.ok(g.run('S.log.some(function(e){return e.text.indexOf("partida restaurada")>=0;})'));

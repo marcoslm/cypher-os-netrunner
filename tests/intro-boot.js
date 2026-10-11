@@ -22,7 +22,15 @@ async function run(options={}){
   g.advance(5000);assert.equal(g.run('entryMode()'),'intro');assert.equal(lines(g).length,g.run('BOOT_LINES.length'));
   assert.deepEqual(lines(g).map(n=>n.textContent),Array.from(g.run('BOOT_LINES.map(function(l){return l[0];})')));
    assert.match(lines(g)[1].textContent,/^FIRMWARE v1\.0 alpha · BUILD [1-9]\d*$/);
-  assert.equal(g.sb.document.activeElement.id,'intro-start');assert.equal(g.run('_introBootTimer'),null);
+  assert.equal(g.sb.document.getElementById('intro-boot-status'),null);
+   assert.equal(g.sb.document.querySelector('.boot-footer'),null);
+   assert.equal(g.sb.document.getElementById('intro-memory-status').textContent,'');
+   assert.equal(lines(g).length,11);
+   assert.equal(lines(g)[10].textContent,'señal adquirida ......... ENLACE DISPONIBLE');
+   assert.match(lines(g)[9].textContent,/canal de datos/);
+   assert.ok(!lines(g).some(n=>/LISTO PARA INICIAR SESIÓN|alcantarilla|Esperando al operador/.test(n.textContent)));
+   assert.equal(g.sb.document.getElementById('intro-power').getAttribute('role'),'status');
+   assert.equal(g.sb.document.activeElement.id,'intro-start');assert.equal(g.run('_introBootTimer'),null);
   assert.equal(g.run('S'),null);assert.equal(g.saved(),null);assert.equal(g.run('loopId'),null);
  });
  await check('solo OMITIR termina el POST; clic en registro y Enter genérico no lo saltan',g=>{
