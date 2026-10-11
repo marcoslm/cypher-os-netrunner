@@ -24,6 +24,42 @@ async function run(options = {}){
   }
   console.log("\nREGRESIONES · estado, grid, combate e interfaz…");
 
+  await check("ficha permanente pausa reloj/calor y no inicia ninguno de los tres minijuegos",()=>{
+    for(const enemy of [{type:"ice",tier:1},{type:"ice",tier:3},{type:"daemon",tier:3}]){
+      const g=game();g.sb.__enemy=enemy;
+      g.run('S=nuevoEstado();ensureStateIntegrity();S.player.heat=60;S.player.virus=1;startCombat({node:window.__enemy});');
+      const before=g.run('JSON.stringify(S.player)');const clock=g.run('S.clock');
+      for(let i=0;i<30;i++)g.run('gameLoop();');
+      g.advance(30000);
+      assert.equal(g.run('COM.stage'),'encounter');assert.equal(g.run('combatTimer'),null);
+      assert.equal(g.run('JSON.stringify(S.player)'),before);assert.equal(g.run('S.clock'),clock);
+      assert.equal(g.sb.document.getElementById('os').inert,true);
+      g.sb.document.getElementById('combat-enter').click();
+      assert.equal(g.run('COM.stage'),'combat');
+      const virus=g.run('S.player.virus');g.run('beginCombat();');assert.equal(g.run('S.player.virus'),virus);
+      assert.ok(g.run('combatTimer!==null || COM.memRevealTimer!=null'));
+    }
+  });
+  await check("huida inicial exitosa aplica calor una vez sin consumir VIRUS ni premiar",()=>{
+    const g=game();g.run('S=nuevoEstado();ensureStateIntegrity();S.player.virus=1;Math.random=function(){return 0;};startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:function(){S.player.credits+=1000;}});doEscape();doEscape();');
+    assert.equal(g.run('S.player.heat'),5);assert.equal(g.run('S.player.virus'),1);
+    assert.equal(g.run('S.player.credits'),500);assert.equal(g.run('combatActive'),false);
+  });
+  await check("huida inicial fallida aplica un golpe e inicia combate; DECOY conserva su efecto",()=>{
+    for(const decoys of [0,1]){
+      const g=game();g.run('S=nuevoEstado();ensureStateIntegrity();Math.random=function(){return .99;};');
+      g.sb.__decoys=decoys;g.run('S.player.decoys=window.__decoys;startCombat({node:{type:"ice",tier:1,name:"TEST"}});window.__dmg=combatDamage();doEscape();');
+      assert.equal(g.run('COM.stage'),'combat');assert.equal(g.run('S.player.cpu'),100-(decoys?0:g.run('window.__dmg')));
+      assert.equal(g.run('S.player.decoys'),0);assert.equal(g.run('S.player.heat'),0);
+    }
+  });
+  await check("Núcleo bloquea huida inicial y cancelar ficha no deja timers ni recompensas",()=>{
+    const g=game();g.run('S=nuevoEstado();ensureStateIntegrity();startCombat({node:{type:"nucleo",tier:4,name:"TEST"},onWin:function(){S.player.credits+=1000;}});doEscape();');
+    assert.equal(g.run('COM.stage'),'encounter');assert.equal(g.sb.document.getElementById('escapeBtn'),null);
+    g.run('cancelActiveCombat();');assert.equal(g.run('COM'),null);assert.equal(g.run('combatTimer'),null);
+    assert.equal(g.run('S.player.credits'),500);
+  });
+
   await check("el logro de fixers exige los cuatro indicadores llenos, incluido Kairos", () => {
     const g = game();
     g.run('S=nuevoEstado();ensureStateIntegrity();');
@@ -167,9 +203,9 @@ async function run(options = {}){
 
   await check("un timeout del daemon anterior no inicia el siguiente combate", () => {
     const g = game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.player.sigilo=10;startCombat({node:{type:"daemon",tier:3,name:"A"},onWin:function(){}});');
+    g.run('S=nuevoEstado();ensureStateIntegrity();S.player.sigilo=10;startCombat({node:{type:"daemon",tier:3,name:"A"},onWin:function(){}});beginCombat();');
     const old = g.ids(3500)[0]; assert.ok(old);
-    g.run('doEscape();startCombat({node:{type:"daemon",tier:3,name:"B"},onWin:function(){}});');
+    g.run('doEscape();startCombat({node:{type:"daemon",tier:3,name:"B"},onWin:function(){}});beginCombat();');
     g.fire(old);
     for(const id of g.ids(600)) g.fire(id);
     assert.equal(g.run("COM.memPhase"), "reveal");
@@ -300,7 +336,7 @@ async function run(options = {}){
     for(const mode of ["memoria","vault"]){
       const g=game({timers:true});
       g.run('S=nuevoEstado();ensureStateIntegrity();');
-      if(mode==="memoria")g.run('startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:function(){S.player.credits+=1000;}});');
+      if(mode==="memoria")g.run('startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:function(){S.player.credits+=1000;}});beginCombat();');
       else g.run('startVaultPuzzle({type:"vault",tier:3,proj:"TEST"});');
       const id=g.ids(mode==="memoria"?3500:3000)[0];assert.ok(id);
       g.run('cancelActiveCombat();');
@@ -370,13 +406,13 @@ async function run(options = {}){
 
   await check("ESC huye en revelación de memoria una sola vez; no huye del boss", () => {
     const g=game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();Math.random=function(){return 0;};startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:function(){}});');
+    g.run('S=nuevoEstado();ensureStateIntegrity();Math.random=function(){return 0;};startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:function(){}});beginCombat();');
     assert.equal(g.run("COM.memPhase"),"reveal");
     g.emitDocument("keydown",{key:"Escape",target:g.sb.document.body});
     assert.equal(g.run("combatActive"),false);
     assert.equal(g.run("S.player.heat"),5);
     assert.equal(g.sb.document.getElementById("os").inert,false);
-    g.run('startCombat({node:{type:"nucleo",tier:4,boss:true,name:"TEST"},onWin:function(){}});');
+    g.run('startCombat({node:{type:"nucleo",tier:4,boss:true,name:"TEST"},onWin:function(){}});beginCombat();');
     g.emitDocument("keydown",{key:"Escape"});
     assert.equal(g.run("combatActive"),true);
     g.run('cancelActiveCombat();');
@@ -384,7 +420,7 @@ async function run(options = {}){
 
   await check("bloquear fondo del combate no roba el foco del input de claves", () => {
     const g=game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();startCombat({node:{type:"ice",tier:1,name:"TEST"},onWin:function(){}});');
+    g.run('S=nuevoEstado();ensureStateIntegrity();startCombat({node:{type:"ice",tier:1,name:"TEST"},onWin:function(){}});beginCombat();');
     const input=g.sb.document.getElementById("codeInput");
     assert.equal(g.sb.document.activeElement,input);
     assert.equal(g.sb.document.getElementById("os").inert,true);
@@ -467,6 +503,7 @@ async function run(options = {}){
     assert.equal(target,"1_2");
     g.sb.document.querySelector('.adj-node[data-idx="2"]').click();
     assert.equal(g.run('COM.node.scavenger'),true);
+    g.sb.document.getElementById('combat-enter').click();
     const input=g.sb.document.getElementById("codeInput");
     input.value=g.sb.document.getElementById("codeTarget").textContent.replace(/\s/g,"").toLowerCase();
     g.emitElement("codeInput","input");

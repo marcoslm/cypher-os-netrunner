@@ -16,6 +16,7 @@ async function move(page, game, id) {
   const index=inm.grid.adj[inm.current].indexOf(id);
   expect(index).toBeGreaterThanOrEqual(0);
   await page.locator(`#adjlist .adj-node[data-idx="${index}"]`).click();
+  if(await page.locator('#combat-enter').isVisible()) await page.locator('#combat-enter').click();
   if(await page.locator('#codeInput').isVisible()) await solveCodeCombat(page);
 }
 async function solveVault(page) {

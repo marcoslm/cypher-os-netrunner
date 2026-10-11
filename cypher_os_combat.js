@@ -37,7 +37,8 @@ function startCombat(ctx){
   if(inImmersion) inImmersion.combatOccurred=true;
   var n=ctx.node, tier=n.tier||1, def=COMBAT_TYPES[tier]||COMBAT_TYPES[1];
   var phases=def.phases;
-  if(S.player.virus>0 && phases>1){ S.player.virus--; phases--; addLog("PAQUETE VIRUS ▸ una fase eliminada."); }
+  var useVirus=S.player.virus>0 && phases>1;
+  if(useVirus) phases--;
   /* modo de combate: memoria para daemons, scanner para ICE T3, claves para el resto */
   var mode = n.type==="daemon" ? "memoria" : (n.type==="ice" && n.tier===3) ? "scanner" : "claves";
   var phaseTime=2600+tier*700+S.player.hack*500+(S.difficulty==="hardcore"?0:2000);
@@ -46,8 +47,49 @@ function startCombat(ctx){
   COM = { ctx:ctx, node:n, tier:tier, phases:phases, phase:1,
     length:codeLen(tier), time:phaseTime, remaining:0, code:"", alive:true,
     player:S.player, mode:mode,
-    memSequence:"", memPhase:"" };
+    memSequence:"", memPhase:"", stage:"encounter", useVirus:useVirus };
   document.addEventListener("keydown", onCombatKey, true);
+  renderCombatEncounter();
+  updateAmbient();
+  if(typeof syncGameInputLock==="function") syncGameInputLock();
+}
+
+/* Ficha permanente: no genera retos ni consume recursos hasta entrar. */
+function renderCombatEncounter(){
+  var el=document.getElementById("combat");
+  if(!el || !COM) return;
+  var n=COM.node, boss=n.boss || n.type==="nucleo";
+  var kind=boss ? "NÚCLEO" : n.scavenger ? "RASTREADOR CORPORATIVO · ICE" : n.type==="daemon" ? "DAEMON" : "ICE";
+  var detail=boss ? "Objetivo final · cuatro fases de defensa. No permite huir." : n.scavenger ? "Emboscada móvil: intercepta tu trazo en el Grid." : n.type==="daemon" ? "Habitante del cable: protege sus archivos con secuencias de memoria." : "Defensa del nodo: bloquea el paso hasta que la neutralices.";
+  var mode=COM.mode;
+  var label=mode==="memoria" ? "MEMORIA HEX" : mode==="scanner" ? "ESCÁNER" : "CLAVES HEX";
+  var instruction=mode==="memoria" ? "Memoriza la secuencia que aparecerá y repítela cuando se oculte." : mode==="scanner" ? "Toca la zona cuando la línea pase por un hueco; completa todos los huecos." : "Introduce la clave hexadecimal visible antes de que termine el tiempo.";
+  var damage=combatDamage(), chance=clamp(55+S.player.sigilo*5,0,100);
+  el.classList.add("show");
+  el.innerHTML='<div class="combat-card encounter-card" role="dialog" aria-modal="true" aria-labelledby="encounter-title" aria-describedby="encounter-detail">'+
+    '<div class="combat-sub">ENCUENTRO · EN PAUSA</div>'+
+    '<h2 class="combat-title" id="encounter-title">'+escapeHtml(n.name||kind)+'</h2>'+
+    '<div class="combat-sub">'+kind+' · T'+COM.tier+'</div>'+
+    '<p id="encounter-detail">'+detail+'</p>'+
+    '<section class="encounter-mechanics"><h3>'+label+'</h3><p>'+instruction+'</p>'+
+    '<p>'+COM.phases+' fases · '+(COM.time/1000).toFixed(1)+' s por fase de respuesta · daño por fallo: '+damage+' CPU (DECOY absorbe el golpe).</p>'+
+    (COM.useVirus ? '<p class="cyan">VIRUS disponible: elimina una fase al entrar (ya descontada).</p>' : '')+'</section>'+
+    '<p class="combat-help">El reloj y el calor están detenidos. El combate comienza cuando tú decidas.</p>'+
+    (boss ? '<p class="ambar">Del Núcleo no se huye.</p>' : '<p class="combat-help">Huida: '+chance+'% de éxito · calor +5 al escapar. Si falla: '+damage+' CPU y comienza el combate. DECOY absorbe el golpe.</p>')+
+    '<div class="encounter-actions"><button class="btn" id="combat-enter">ENTRAR AL COMBATE</button>'+
+    (boss ? '' : '<button class="btn ambar" id="escapeBtn">HUIR [ESC]</button>')+'</div><div class="combat-log" id="combatLog"></div></div>';
+  document.getElementById("combat-enter").addEventListener("click", beginCombat);
+  var flee=document.getElementById("escapeBtn");
+  if(flee) flee.addEventListener("click",doEscape);
+  /* Foco en la ficha, no en un botón: Enter repetido no acepta el encuentro. */
+  var card=el.querySelector(".encounter-card");
+  if(card){ card.setAttribute("tabindex","-1"); card.focus(); }
+}
+function beginCombat(){
+  if(!COM || !COM.alive || COM.stage!=="encounter") return;
+  COM.stage="combat";
+  if(COM.useVirus){ S.player.virus--; COM.useVirus=false; addLog("PAQUETE VIRUS ▸ una fase eliminada."); }
+  var mode=COM.mode;
   /* sonido de alarma de combate */
   sound.startCombat();
   updateAmbient();
@@ -208,7 +250,7 @@ function onCodeKey(e){
   }
 }
 function winPhase(){
-  if(!COM||!COM.alive) return;
+  if(!COM||!COM.alive||COM.stage==="encounter") return;
   sound.success();
   /* trackear daño infligido */
   S.player.stats.totalDamageDealt=(S.player.stats.totalDamageDealt||0)+(COM.tier*8);
@@ -218,7 +260,7 @@ function winPhase(){
   updateCombatBars(); newCode();
 }
 function failCombat(){
-  if(!COM||!COM.alive) return;
+  if(!COM||!COM.alive||COM.stage==="encounter") return;
   sound.error();
   /* resetear racha de combates */
   S.player.stats.combatStreak=0;
@@ -266,7 +308,7 @@ function applyDamageToPlayer(dmg){
 function setCombatLog(t,cls){ var e=document.getElementById("combatLog"); if(e){ e.textContent=t; e.className="combat-log "+(cls||""); } }
 
 function doEscape(){
-  if(!COM||!COM.alive||COM.node.boss) return;
+  if(!COM||!COM.alive||COM.node.boss||COM.node.type==="nucleo") return;
   var chance=55+S.player.sigilo*5;
   if(Math.random()*100<chance){
     sound.success(); COM.alive=false; clearInterval(combatTimer); closeCombat();
@@ -281,9 +323,15 @@ function doEscape(){
     save(); updateAmbient();
   } else {
     sound.error();
-    var dmg=combatDamage(); setCombatLog("huida fallida · "+dmg+" de daño.","rojo");
+    var dmg=combatDamage(), absorbed=S.player.decoys>0;
+    setCombatLog("huida fallida · "+dmg+" de daño.","rojo");
     applyDamageToPlayer(dmg);
     if(COM&&COM.alive){
+      if(COM.stage==="encounter"){
+        beginCombat();
+        setCombatLog("huida fallida · "+(absorbed ? "DECOY absorbió el golpe" : dmg+" de daño")+". Combate iniciado.",absorbed ? "cyan" : "rojo");
+        return;
+      }
       updateCombatBars();
       /* en scanner/memoria: no generar nueva clave (el timer no se resetea) */
       if(COM.mode!=="scanner" && COM.mode!=="memoria") newCode();

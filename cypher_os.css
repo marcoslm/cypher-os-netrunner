@@ -639,6 +639,15 @@ button.btn{
 .combat-card{width:min(560px,92vw);border:1px solid var(--rojo);border-radius:6px;
   background:linear-gradient(180deg,#150709,#0a0305);padding:18px 20px;
   box-shadow:0 0 40px rgba(255,93,106,.35);animation:popIn .15s;}
+.encounter-card{max-height:90vh;max-height:90dvh;overflow-y:auto;overflow-wrap:anywhere;}
+.encounter-card p{font-size:13px;line-height:1.6;margin:12px 0;}
+.encounter-card h2{font-weight:normal;}
+.encounter-card .combat-help{color:var(--texto);text-align:left;}
+.encounter-mechanics{border-block:1px solid var(--ambar);padding:10px 0;margin:16px 0;}
+.encounter-mechanics h3{font-size:13px;color:var(--ambar);margin:0;}
+.encounter-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px;}
+.encounter-actions .btn{flex:1;min-height:44px;}
+.encounter-card:focus{outline:none;}
 .combat-title{color:var(--rojo);font-size:16px;letter-spacing:2px;
   text-shadow:0 0 8px rgba(255,93,106,.7);margin-bottom:4px;}
 .combat-title.ambar{color:var(--ambar);text-shadow:0 0 8px rgba(255,196,77,.7);}

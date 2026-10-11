@@ -2317,6 +2317,7 @@ var loopId=null;
 var _gameLoopTick=0;
 function gameLoop(){
   if(!S || !S.player || S.player.cpu<=0) return;
+  if(combatActive && COM && COM.stage==="encounter") return;
   S.clock=(S.clock+1)%1440;
   S.player.stats.totalPlayTime=(S.player.stats.totalPlayTime||0)+1;
   var heatDecay=S.difficulty==="hardcore"?1/28:1/20;

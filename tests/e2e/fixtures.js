@@ -165,7 +165,7 @@ const test = base.extend({
         await page.reload();
         await game.boot(bootOptions);
       },
-      async startCombat({ type = 'ice', tier = 1, boss = false } = {}) {
+      async startCombat({ type = 'ice', tier = 1, boss = false, encounter = false } = {}) {
         await game.freeze();
         // Arrange the enemy only; code entry, damage from Enter and Escape use real input.
         await page.evaluate(({ type, tier, boss }) => {
@@ -174,6 +174,7 @@ const test = base.extend({
           startCombat({ node, onWin: onNodeDefeated });
         }, { type, tier, boss });
         await expect(page.locator('#combat')).toBeVisible();
+        if (!encounter) await page.locator('#combat-enter').click();
       },
       async fatal(unsavedPlayer = {}) {
         await game.freeze();
@@ -250,6 +251,7 @@ async function solveCodeCombat(page) {
   // Read the displayed challenge; do not assign COM.code or replace combat functions.
   for (let phase = 0; phase < 4; phase++) {
     if (!(await page.locator('#combat').isVisible())) return;
+    if (await page.locator('#combat-enter').isVisible()) await page.locator('#combat-enter').click();
     // El juego puede encadenar el efecto del nodo tras el combate (p. ej. emboscada
     // antes de un vault): la UI ya no es de claves y esta rutina termina aquí.
     if (!(await page.locator('#codeInput').isVisible())) return;

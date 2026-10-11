@@ -209,7 +209,7 @@ async function run(options = {}) {
     }
     assert.equal(g.run('S.jobs[0].prog.iceT2'),2);
     assert.equal(g.run('S.jobs[1].prog.daemons'),1);
-    g.run('S.player.heat=60;inImmersion.current=inImmersion.grid.entry;Math.random=function(){return 0;};tryScavenger();window.__oldWin=COM.ctx.onWin;');
+    g.run('S.player.heat=60;inImmersion.current=inImmersion.grid.entry;Math.random=function(){return 0;};tryScavenger();beginCombat();window.__oldWin=COM.ctx.onWin;');
     for (let i=0;i<4 && g.run('combatActive');i++) {
       const input = g.sb.document.getElementById('codeInput');
       input.value = g.run('COM.code'); g.emitElement(input,'input');

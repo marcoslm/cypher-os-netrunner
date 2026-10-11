@@ -140,6 +140,7 @@ async function reenterChallenge(page, game) {
     const index = before.immersion.grid.adj[before.immersion.current].indexOf(target);
     expect(index).toBeGreaterThanOrEqual(0);
     await page.locator(`#adjlist .adj-node[data-idx="${index}"]`).click();
+    if (await page.locator('#combat-enter').isVisible()) await page.locator('#combat-enter').click();
     const battle = (await minigames(page)).combat;
     if (battle?.scavenger) {
       expect(battle.mode).toBe('claves');
@@ -152,6 +153,7 @@ async function reenterChallenge(page, game) {
         await page.keyboard.type(code);
       }
       expect((await minigames(page)).combat?.scavenger === true).toBe(false);
+      if (await page.locator('#combat-enter').isVisible()) await page.locator('#combat-enter').click();
       ambushes++;
       ambushXp += battle.tier * 10 + 8;
       ambushDamageDealt += battle.tier * 8 * battle.phases;

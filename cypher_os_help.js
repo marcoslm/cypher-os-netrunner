@@ -93,7 +93,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 
 /* ⑥ COMBATE */
 '<div class="panel-h">⑥ COMBATE · los tres duelos</div><div class="box helpbox">'+
-'<p class="help-p">Entrar en una defensa inicia un <b>combate</b>. Hay <b>tres modos</b> según el enemigo y un puzzle especial para los vaults:</p>'+
+'<p class="help-p">Cada encuentro con ICE, rastreador, daemon o Núcleo muestra primero una <b>ficha en pausa</b>: nombre, tipo, características y modo de combate. Puedes leer sin límite; el reloj y el calor se detienen. Pulsa <b>ENTRAR AL COMBATE</b> para iniciar el reto o <b>HUIR</b>: éxito = calor +5; fallo = un golpe y comienza el combate. SIGILO mejora la huida y DECOY absorbe el golpe. Del Núcleo no se huye. Esta ficha aparece siempre, no solo al aprender. Hay <b>tres modos</b> y un puzzle especial para los vaults:</p>'+
 '<div class="legend">'+
 '<div class="legend-row"><span class="sym ambar">▣</span><span class="lg-key">CLAVES · ICE T1/T2</span><span class="lg-desc">escribe la clave hexadecimal y pulsa ENTER. Se ignoran espacios y mayúsculas.</span></div>'+
 '<div class="legend-row"><span class="sym magenta">Ω</span><span class="lg-key">MEMORIA · daemons</span><span class="lg-desc">memoriza la secuencia hex durante unos segundos y repítela cuando se oculte.</span></div>'+

@@ -104,7 +104,7 @@ async function run(options = {}) {
     assert.equal(g.run('S.intel.filter(function(id){return id.indexOf("exp_")===0;}).length'),2);
   });
   await check('memoria oculta la caja de revelación y restaura cada nueva fase y fallo', g => {
-    g.run('startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:onNodeDefeated});');
+    g.run('startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:onNodeDefeated});beginCombat();');
     assert.ok(!g.sb.document.getElementById('memZone').classList.contains('hidden'));
     assert.ok(g.sb.document.getElementById('memInputZone').classList.contains('hidden'));
     g.advance(4100);
