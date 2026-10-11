@@ -169,27 +169,38 @@ html.motion-off .cyber-click,html.motion-off .cyber-click-cyan,html.motion-off .
 #cpu-indicator b{min-width:7ch;}
 #heat-indicator b{min-width:3ch;}
 #ram-indicator b{min-width:5ch;}
-.deck-stat[data-state="warning"]{border-color:var(--ambar);background:rgba(255,196,77,.08);color:var(--ambar);}
-.deck-stat[data-state="danger"],.deck-stat[data-state="critical"]{border-color:var(--rojo);background:rgba(255,93,106,.12);color:var(--rojo);}
-.deck-stat[data-state="critical"]{box-shadow:inset 0 -2px var(--rojo);}
-.deck-stat[data-state="full"]{border-color:var(--cyan);background:rgba(77,216,255,.1);color:var(--cyan);}
-.stat-mini .deck-stat:not([data-state="normal"]) b{color:inherit;}
-/* Calor: fondo y halo exterior, sin insignias ni doble borde; texto estable. */
-#heat-indicator{border-color:transparent;background:transparent;box-shadow:none;color:#eafff4;text-shadow:none;}
-#heat-indicator b{color:inherit;}
-#heat-indicator[data-state="warning"]{background:rgba(255,196,77,.22);box-shadow:0 0 7px rgba(255,196,77,.35);}
-#heat-indicator[data-state="danger"],#heat-indicator[data-state="critical"]{
+/* Estado común: etiqueta verde, valor estable y señal por fondo/halo exterior. */
+.deck-label{color:var(--verde);}
+.deck-stat{background:transparent;box-shadow:none;text-shadow:none;}
+.deck-stat[data-state="warning"]{background:rgba(255,196,77,.22);box-shadow:0 0 7px rgba(255,196,77,.35);}
+.deck-stat[data-state="danger"],.deck-stat[data-state="critical"]{
   background:rgba(255,93,106,.28);box-shadow:0 0 9px rgba(255,93,106,.5);animation:heatGlowPulse 1.1s ease-in-out infinite;}
+.deck-stat[data-state="full"]{background:rgba(77,216,255,.22);box-shadow:0 0 7px rgba(77,216,255,.35);}
+.deck-stat[data-state="warning"] .deck-mark{color:var(--ambar);}
+.deck-stat[data-state="critical"] .deck-mark{color:var(--rojo);}
+.deck-stat[data-state="full"] .deck-mark{color:var(--cyan);}
 @keyframes heatGlowPulse{
   0%,100%{background-color:rgba(255,93,106,.22);box-shadow:0 0 5px rgba(255,93,106,.3);}
   50%{background-color:rgba(255,93,106,.4);box-shadow:0 0 12px rgba(255,93,106,.65);}
 }
-html.glow-off #heat-indicator{animation:none;}
-@media(prefers-reduced-motion:reduce){#heat-indicator{animation:none;}}
+html.glow-off .deck-stat{animation:none;}
+@media(prefers-reduced-motion:reduce){.deck-stat{animation:none;}}
 @media(max-width:1100px){
-  #topbar{flex-wrap:wrap;gap:4px 10px;}
-  #topbar .stat-mini{order:3;flex:0 0 100%;}
+  #topbar{gap:6px;padding:4px 8px;font-size:11px;letter-spacing:0;}
+  #topbar .seg{gap:3px;}
+  #topbar .stat-mini{flex-wrap:nowrap;gap:3px;}
+  #topbar .deck-stat{padding:3px;}
+  #ram-indicator .deck-mark{width:4ch;}
+  #topbar .xp-bar-wrap,#topbar .clk{display:none;}
   #topbar .quick-controls{margin-left:auto;}
+}
+@media(max-width:900px){
+  #topbar .stat-credits{display:none;}
+}
+@media(max-width:740px){
+  #topbar{flex-wrap:wrap;}
+  #topbar .stat-mini{order:3;flex:0 0 100%;}
+  #topbar .spacer{display:none;}
 }
 
 /* ---- XP bar en topbar ---- */
@@ -760,9 +771,11 @@ button.btn{
 
 /* ---- CIBERDECK: ENCENDIDO / BIOS / SESIÓN ---- */
 #intro{position:fixed;inset:0;z-index:21000;display:flex;align-items:flex-start;justify-content:center;
-  background:#010605;text-align:left;padding:6vh 24px;overflow-y:auto;isolation:isolate;}
+  background:#010605;text-align:left;padding:clamp(12px,3vh,32px) 24px;overflow-y:auto;isolation:isolate;}
 #intro.hidden{display:none;}
-#intro-body{width:100%;max-width:880px;min-width:0;border:1px solid rgba(77,216,255,.28);
+#intro-body{display:flex;flex-direction:column;width:100%;max-width:880px;min-width:0;
+  max-height:calc(100vh - clamp(24px,6vh,64px));max-height:calc(100dvh - clamp(24px,6vh,64px));
+  border:1px solid rgba(77,216,255,.28);
   background:#030a08;box-shadow:0 0 40px rgba(77,216,255,.07),inset 0 0 24px rgba(0,0,0,.6);}
 .deck-header,.deck-footer{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 24px;}
 .deck-header{border-bottom:1px solid rgba(77,216,255,.18);background:rgba(77,216,255,.025);}
@@ -771,17 +784,17 @@ button.btn{
 .deck-power{color:var(--ambar);font-size:10px;letter-spacing:1px;white-space:nowrap;}
 .deck-power::before{content:"●";margin-right:8px;}
 .intro-ready .deck-power{color:var(--verde);}
-.deck-screen{padding:24px 28px 20px;}
+.deck-header,.deck-footer{flex:0 0 auto;}
+.deck-screen{display:flex;flex-direction:column;min-height:0;padding:24px 28px 20px;}
+.deck-screen>*{flex:0 0 auto;}
+.deck-screen #boot{flex:0 1 276px;min-height:72px;}
 .bios-heading{display:flex;justify-content:space-between;gap:12px;color:var(--cyan);font-size:11px;letter-spacing:1px;margin-bottom:16px;}
 #boot{height:276px;overflow:auto;font-size:13px;line-height:1.75;color:var(--verde);scrollbar-width:thin;
   text-shadow:0 0 5px rgba(77,255,166,.25);}
 #boot .line{white-space:pre-wrap;overflow-wrap:anywhere;}
-#boot .brand{color:var(--cyan);}
-#boot .ok{color:var(--verde);}
-#boot .dim{color:var(--gris);}
-#boot .sig{color:var(--ambar);}
-#boot .end{color:var(--cyan);}
-.intro-booting #boot-body::after{content:"▌";color:var(--verde);animation:deckCursor 1s steps(1) infinite;}
+#boot .brand,#boot .ok,#boot .sig,#boot .end{color:var(--verde);}
+#boot .dim{color:#43df92;}
+#boot .line:last-child::after{content:"▌";color:var(--verde);animation:deckCursor 1s steps(1) infinite;}
 @keyframes deckCursor{50%{opacity:0;}}
 .boot-footer{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid rgba(77,255,166,.12);padding-top:10px;}
 #intro-boot-status{font-size:11px;color:var(--ambar);margin:0;}
@@ -813,9 +826,26 @@ button.btn{
 #intro-fs-status{flex-basis:100%;}
 #intro-fs-status:empty{display:none;}
 .deck-footer{font-size:9px;letter-spacing:1px;line-height:1.6;color:var(--gris);border-top:1px solid rgba(77,216,255,.12);}
-html.motion-off .intro-booting #boot-body::after{animation:none;}
+html.motion-off #boot .line:last-child::after{animation:none;}
+@media(prefers-reduced-motion:reduce){#boot .line:last-child::after{animation:none;}}
+@media(max-height:700px) and (min-width:621px){
+  #intro{padding:12px 18px;}
+  #intro-body{max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);}
+  .deck-header,.deck-footer{padding:10px 20px;}
+  .deck-screen{padding:14px 22px;}
+  .bios-heading{margin-bottom:10px;}
+  #intro-menu{gap:14px 24px;margin-top:12px;padding-top:12px;}
+  .intro-settings{padding-top:10px;}
+  #intro .intro-logo{margin-top:0;}
+}
+@media(max-height:450px){
+  #intro-body{max-height:none;}
+  .deck-screen #boot{flex-basis:120px;height:120px;}
+}
 @media(max-width:620px){
   #intro{padding:16px 12px;}
+  #intro-body{max-height:none;}
+  .deck-screen #boot{flex-basis:228px;}
   .deck-header,.deck-footer{padding:12px 14px;gap:8px;}
   .deck-id{font-size:11px;letter-spacing:1px;}
   .deck-id span{display:none;}
