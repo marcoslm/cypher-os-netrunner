@@ -197,8 +197,10 @@ const defined = new Set(Array.from(src.js.matchAll(/ACTIONS\.([a-zA-Z]+)\s*=/g))
 const missingActs = Array.from(acts).filter(a => !defined.has(a));
 ok(missingActs.length === 0, "todo data-action tiene handler en ACTIONS" +
    (missingActs.length ? " → faltan: " + missingActs.join(", ") : ""));
-["intel-k","offer-why","type-cursor","log-filters","log-chip","caretBlink","quick-btn"].forEach(c =>
+["intel-k","offer-why","type-cursor","log-filters","log-chip","caretBlink","quick-btn","banner-informe","tag.nuevo"].forEach(c =>
   ok(src.css.indexOf(c) >= 0, "CSS define " + c));
+ok(src.html.indexOf('data-view="informes"') >= 0 && src.html.indexOf("notif-informes") >= 0,
+   "botón INFORMES y su notif-dot presentes en el HTML");
 
 /* ---------- NIVEL 2: mensajería (bandeja del deck) ---------- */
 console.log("\nNIVEL 2 · mensajería (bandeja del deck)…");

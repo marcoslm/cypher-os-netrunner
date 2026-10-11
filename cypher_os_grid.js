@@ -634,8 +634,12 @@ function onNodeDefeated(ctx){
     msg("DAEMON "+n.name+" destruido. Algo más te mira desde abajo.","rojo");
   } else if(n.type==="vault"){
     gainXp(90); jobProgressAll("vault");
-    unlock("kuro"); unlock("kuro_abandonado");
-    var dossierNew=unlockProjectDossier(n.proj);
+    /* la línea inferior anuncia el expediente y los informes que lo acompañan:
+       se archivan sin cartel para no repetir el mismo aviso dos veces */
+    var dossierNew=sinAvisoIntel(function(){
+      unlock("kuro"); unlock("kuro_abandonado");
+      return unlockProjectDossier(n.proj);
+    });
     msg("VAULT "+n.proj+" recuperado. "+(dossierNew?"Expediente disponible en INFORMES. ":"")+"Se paga al superficializar.","magenta");
   } else if(n.type==="nucleo"){ defeatNucleo(); }
   updateTopbar(); save(); renderGridHud();

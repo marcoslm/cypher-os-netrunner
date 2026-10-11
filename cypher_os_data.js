@@ -375,7 +375,8 @@ var GRID_EVENTS = [
      }
      if(locked.length){
        var id=pick(locked);
-       unlock(id);
+       /* el propio evento nombra el informe en la línea inferior: sin cartel duplicado */
+       sinAvisoIntel(function(){ unlock(id); });
        msg("FRAGMENTO ▸ informe desbloqueado: "+intelTitle(id)+".","magenta");
      }
    }},

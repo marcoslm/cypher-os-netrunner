@@ -100,6 +100,40 @@ test('legacy en la calle: importar y cargar recuperan VESPER desde el contrato s
   await assertRecovered();
   expect((await game.snapshot()).state.log.filter(e=>e.text.startsWith('INTEL ▸ EXPEDIENTE RECUPERADO // VESPER'))).toHaveLength(1);
 });
+test('INFORMES avisa de lo archivado: punto, marca NUEVO y cartel discreto', async ({page,game}) => {
+  // Logros ya concedidos: con una sola acción real, el único cartel posible es el de INFORMES.
+  const achievements=await page.evaluate(()=>ACHIEVEMENTS.map(a=>a.id));
+  await game.setup({state:{achievements}});
+  const dot=page.locator('#notif-informes');
+  const banner=page.locator('#banner');
+  await expect(dot).not.toHaveClass(/show/);
+  await nav(page,'contactos').click();
+  await page.locator('[data-action="acceptJob"]').first().click();
+  // El informe de LOS FIXERS se archiva: cartel verde discreto, no la tarjeta de logro.
+  await expect(banner).toHaveClass(/banner-informe/);
+  await expect(page.locator('#banner-icon')).toHaveText('▤');
+  await expect(page.locator('#banner-title')).toHaveText('LOS FIXERS');
+  await expect(page.locator('#banner-sub')).toHaveText('revisa INFORMES');
+  await expect(dot).toHaveClass(/show/);
+  await page.screenshot({path:'test-results/informe-aviso.png'});
+  await page.clock.runFor(3000);
+  await expect(banner).not.toHaveClass(/show/);
+  await expect(banner).toHaveCSS('opacity','0');
+  await nav(page,'informes').click();
+  await expect(page.locator('.intel').filter({hasText:'LOS FIXERS'})).toContainText('NUEVO');
+  await expect(page.locator('#panel-scroll .sub')).toContainText('1 nuevo');
+  await page.screenshot({path:'test-results/informe-nuevo.png'});
+  await expect(dot).not.toHaveClass(/show/);
+  // La marca es de la visita: al volver al índice ya no repite lo leído.
+  await nav(page,'inicio').click();
+  await nav(page,'informes').click();
+  await expect(page.locator('.intel .tag.nuevo')).toHaveCount(0);
+  await expect(page.locator('#panel-scroll .sub')).toContainText('1/43 desbloqueado');
+  await game.reload();
+  await expect(dot).not.toHaveClass(/show/);
+  await nav(page,'informes').click();
+  await expect(page.locator('.intel .tag.nuevo')).toHaveCount(0);
+});
 test('HUD: visitas, ICE, tres contratos y avisos persistentes de exploración y agotamiento', async ({page,game}) => {
   const inm=trackedImmersion();
   Object.assign(inm.grid.nodes[2],{type:'ice',tier:2,tierName:'T2',name:'ICE DE PRUEBA'});

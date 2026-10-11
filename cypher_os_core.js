@@ -39,7 +39,7 @@ function nuevoEstado() {
     jobs:[], offers:[], intel:[], achievements:[], mensajes:[],
     history:{finalUnlocked:false, finalDone:false},
     log:[], clock:(23*60+47), nextDepth:null, snd:true, amb:false, mus:true, best:{},
-    difficulty:"normal", _jobQuotaVersion:1
+    difficulty:"normal", _jobQuotaVersion:1, _intelVistos:[]
   };
 }
 
@@ -88,31 +88,75 @@ function showSaveIndicator(){
   setTimeout(function(){ el.classList.remove("show"); },1500);
 }
 /* ---- banner llamativo (logros / subidas de nivel) ----
-   Cola simple: si se desbloquean varios a la vez, se muestran en secuencia. */
-var _bannerQueue=[], _bannerTimer=null;
+   Cola simple: si se desbloquean varios a la vez, se muestran en secuencia.
+   Los INFORMES reutilizan el mismo cartel en versión discreta (CONTRACTS §13):
+   una sola tarjeta por ráfaga, sin sonido y menos tiempo en pantalla, para no
+   competir con logros ni subidas de nivel. */
+var _bannerQueue=[], _bannerTimer=null, _bannerActual=null;
+function bannerMs(kind){ return kind==="informe" ? 2400 : 3400; }
+function bannerClass(kind){
+  if(kind==="logro") return "banner-logro";
+  if(kind==="informe") return "banner-informe";
+  return "banner-nivel";
+}
+function bannerIcon(kind){
+  if(kind==="logro") return "★";
+  if(kind==="informe") return "▤";
+  return "▲";
+}
+/* Contenido del cartel ya visible, sin reiniciar su entrada. */
+function pintarBanner(b){
+  var icon=document.getElementById("banner-icon");
+  var tEl=document.getElementById("banner-title");
+  var sEl=document.getElementById("banner-sub");
+  if(icon) icon.textContent=bannerIcon(b.kind);
+  if(tEl) tEl.textContent=b.title;
+  if(sEl) sEl.textContent=b.sub;
+}
+/* Tarjeta nueva: reinicia clase y entrada. Con movimiento reducido o animaciones
+   OFF, cypher_os.css deja el cartel sin transición (información estática). */
+function mostrarBanner(b){
+  var el=document.getElementById("banner"); if(!el) return;
+  el.className="banner "+bannerClass(b.kind);
+  void el.offsetWidth;
+  el.classList.add("show");
+  pintarBanner(b);
+}
+/* Una sola ventana de tiempo para toda la cola; al cerrarse, nextBanner decide
+   si muestra la siguiente tarjeta o apaga el cartel. */
+function programarBanner(ms){
+  clearTimeout(_bannerTimer);
+  _bannerTimer=setTimeout(function(){ _bannerTimer=null; nextBanner(); },ms);
+}
 function showBanner(kind, title, sub){
   _bannerQueue.push({kind:kind, title:title, sub:sub||""});
   if(!_bannerTimer) nextBanner();
 }
 function nextBanner(){
   var el=document.getElementById("banner");
-  if(!el){ _bannerQueue=[]; _bannerTimer=null; return; }
-  if(!_bannerQueue.length){ el.classList.remove("show"); _bannerTimer=null; return; }
+  if(!el){ _bannerQueue=[]; _bannerActual=null; _bannerTimer=null; return; }
+  if(!_bannerQueue.length){
+    el.classList.remove("show"); _bannerActual=null; _bannerTimer=null; return;
+  }
   var b=_bannerQueue.shift();
-  var icon=document.getElementById("banner-icon");
-  var tEl=document.getElementById("banner-title");
-  var sEl=document.getElementById("banner-sub");
-  if(icon) icon.textContent = b.kind==="logro" ? "★" : "▲";
-  if(tEl) tEl.textContent=b.title;
-  if(sEl) sEl.textContent=b.sub;
-  el.className="banner "+(b.kind==="logro"?"banner-logro":"banner-nivel");
-  void el.offsetWidth;
-  el.classList.add("show");
-  _bannerTimer=setTimeout(function(){
-    _bannerTimer=null;
-    if(_bannerQueue.length) nextBanner();
-    else el.classList.remove("show");
-  },3400);
+  _bannerActual=b;
+  mostrarBanner(b);
+  programarBanner(bannerMs(b.kind));
+}
+/* Aviso de INFORMES: la ráfaga (un nivel puede abrir tres informes de golpe) se
+   agrupa en la tarjeta que ya está en pantalla o en cola; si no hay ninguna, se
+   abre con el título del informe recién archivado. */
+function showInformeBanner(id){
+  if(!id) return;
+  var visible=_bannerQueue.length ? _bannerQueue[_bannerQueue.length-1] : _bannerActual;
+  if(visible && visible.kind==="informe"){
+    visible.n=(visible.n||1)+1;
+    visible.title=visible.n+" INFORMES ARCHIVADOS";
+    visible.sub="revisa INFORMES";
+    if(visible===_bannerActual){ pintarBanner(visible); programarBanner(bannerMs("informe")); }
+    return;
+  }
+  showBanner("informe", intelTitle(id), "revisa INFORMES");
 }
 var _invalidSaveRecovered=false;
 function load(){
@@ -180,14 +224,25 @@ function ensureStateIntegrity(){
   if(S.mus==null) S.mus=true;   /* canal de música: por defecto ON */
   if(typeof syncDeckState==="function") syncDeckState(); /* ajustes locales, no del importado */
   if(!S._seenPanels) S._seenPanels={};
+  /* Informes ya abiertos en INFORMES: alimentan el punto del lateral y las
+     marcas NUEVO del índice (CONTRACTS §13). Una partida anterior a este campo
+     no lo traía: si ya había abierto el panel, sus informes quedan vistos en
+     vez de fingir que son nuevos; si nunca lo abrió, el punto vuelve a avisar. */
+  if(!Array.isArray(S._intelVistos)){
+    S._intelVistos=(S._seenPanels.informes ? S.intel.slice() : []);
+  }
   if(!S.achievements) S.achievements=[];
   if(!S._seenTransmissions) S._seenTransmissions=[];
   if(!S.player._unlockedSkills) S.player._unlockedSkills=[];
   if(!S._activityCooldowns || S._cdVersion!==2){ S._activityCooldowns={}; S._cdVersion=2; }
   if(S._tutorialDone==null) S._tutorialDone=false;
-  restoreProjectDossiersFromJobs();
-  restoreProjectDossiersFromSnapshot(S._inImmersion);
-  retireRecoveredVaultJobs(S._inImmersion);
+  /* La evidencia recuperada al cargar/importar no es una novedad para el
+     jugador: se archiva en silencio, sin cartel de INFORMES. */
+  sinAvisoIntel(function(){
+    restoreProjectDossiersFromJobs();
+    restoreProjectDossiersFromSnapshot(S._inImmersion);
+    retireRecoveredVaultJobs(S._inImmersion);
+  });
   pruneRecoveredVaultOffers();
 }
 
@@ -296,7 +351,12 @@ function checkUnlocks(){
 }
 
 function unlock(id){
-  if(S.intel.indexOf(id)<0){ S.intel.push(id); addLog("INTEL ▸ "+intelTitle(id)+" desbloqueado."); updateNotifications(); }
+  if(S.intel.indexOf(id)<0){
+    S.intel.push(id);
+    addLog("INTEL ▸ "+intelTitle(id)+" desbloqueado.");
+    updateNotifications();
+    if(!_intelAvisoSilencioso) showInformeBanner(id);
+  }
 }
 function unlockProjectDossier(project){
   if(!Object.prototype.hasOwnProperty.call(PROYECTO_EXPEDIENTE,project)) return false;
@@ -436,6 +496,31 @@ function intelTitle(id){
   for(var i=0;i<INTEL.length;i++) if(INTEL[i].id===id) return INTEL[i].t;
   return id;
 }
+/* ---- INFORMES: informes sin abrir ----
+   `S._intelVistos` guarda los ids ya leídos en INFORMES (partida, no runtime):
+   el punto del lateral vive mientras quede alguno sin abrir y el índice marca
+   NUEVO lo recién archivado (CONTRACTS §13). `_intelAvisoSilencioso` es solo de
+   sesión: cargar, importar y migrar evidencia no son una novedad para el
+   jugador, así que no anuncian nada. */
+var _intelAvisoSilencioso=false;
+function sinAvisoIntel(fn){
+  var previo=_intelAvisoSilencioso;
+  _intelAvisoSilencioso=true;
+  try{ return fn(); }
+  finally{ _intelAvisoSilencioso=previo; }
+}
+function intelVistos(){
+  if(!S || !Array.isArray(S._intelVistos)) return [];
+  return S._intelVistos;
+}
+function intelNuevos(){
+  if(!S || !S.intel) return [];
+  var vistos=intelVistos();
+  if(!vistos.length) return S.intel.slice();
+  return S.intel.filter(function(id){ return vistos.indexOf(id)<0; });
+}
+function intelNuevosCount(){ return intelNuevos().length; }
+function marcarIntelVistos(){ if(S && S.intel) S._intelVistos=S.intel.slice(); }
 
 /* ---- cuotas de una sola inmersión ----
    El nivel mejora el pago, no el tamaño finito del grid ni la RAM disponible. */

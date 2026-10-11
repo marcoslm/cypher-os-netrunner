@@ -694,9 +694,9 @@ function updateNotifications(){
   /* estado: si hay skillPoints > 0 */
   var dotEstado = document.getElementById("notif-estado");
   if(dotEstado) dotEstado.classList.toggle("show", p.skillPoints>0 && !S._seenPanels.estado);
-  /* informes: si hay intel recién desbloqueado */
+  /* informes: el punto vive mientras haya informes sin abrir en INFORMES */
   var dotInformes = document.getElementById("notif-informes");
-  if(dotInformes) dotInformes.classList.toggle("show", S.intel.length>0 && !S._seenPanels.informes);
+  if(dotInformes) dotInformes.classList.toggle("show", intelNuevosCount()>0);
   /* trabajos: si hay contratos sin completar */
   var dotTrabajos = document.getElementById("notif-trabajos");
   if(dotTrabajos) dotTrabajos.classList.toggle("show", S.jobs.some(function(j){ return !j.done; }) && !S._seenPanels.trabajos);
@@ -708,6 +708,9 @@ function markPanelSeen(view){
   if(!S) return;
   if(!S._seenPanels) S._seenPanels={};
   S._seenPanels[view]=true;
+  /* Abrir INFORMES da por vistos sus informes: apaga el punto al instante y
+     deja las marcas NUEVO para esta visita (el índice ya se ha pintado). */
+  if(view==="informes"){ marcarIntelVistos(); updateNotifications(); }
   save();
 }
 
@@ -1104,11 +1107,18 @@ function renderLogros(){
     ============================================================ */
 
 function renderInformes(){
+  /* los recién archivados se marcan en esta visita: al abrir el panel quedan
+     vistos (markPanelSeen), pero la marca sigue visible hasta salir de él */
+  var nuevos=intelNuevos();
   var html='<h1 class="title">INFORMES</h1>'+
-    '<div class="sub">conocimiento prohibido · '+S.intel.length+"/"+INTEL.length+' desbloqueado</div>'+
+    '<div class="sub">conocimiento prohibido · '+S.intel.length+"/"+INTEL.length+' desbloqueado'+
+    (nuevos.length?' · <span class="cyan">'+nuevos.length+" nuevo"+(nuevos.length>1?"s":"")+'</span>':'')+
+    '</div>'+
     '<div class="intel-grid">';
   INTEL.forEach(function(it){
-    if(has(it.id)) html+='<div class="intel"><b class="cyan">'+it.t+'</b> <span class="tag '+it.r+'">'+RISK_TXT[it.r]+'</span>'+
+    if(has(it.id)) html+='<div class="intel"><b class="cyan">'+it.t+'</b> '+
+      (nuevos.indexOf(it.id)>=0?'<span class="tag nuevo">NUEVO</span>':'')+
+      '<span class="tag '+it.r+'">'+RISK_TXT[it.r]+'</span>'+
       (it.k?'<div class="intel-k">▸ '+it.k+'</div>':'')+
       '<div class="llore">'+it.l.replace(/\n/g,"<br>")+'</div></div>';
     else html+='<div class="intel"><b class="gris">▒▒▒▒▒ [CIFRADO]</b><div class="muted text-xs mt-1 intel-hint">desbloqueo: '+intelHint(it.id)+'</div></div>';
@@ -1794,7 +1804,7 @@ function clearSessionRuntime(){
   var tree=document.getElementById("skilltree-overlay");
   if(tree){ tree.classList.remove("show"); tree.classList.add("hidden"); }
   ACTIONS.closeSkillTree=null;
-  clearTimeout(_bannerTimer); _bannerTimer=null; _bannerQueue=[];
+  clearTimeout(_bannerTimer); _bannerTimer=null; _bannerQueue=[]; _bannerActual=null;
   var banner=document.getElementById("banner"); if(banner) banner.classList.remove("show");
 }
 
@@ -2104,7 +2114,7 @@ function validImportState(o){
       }
     }
   }
-  var lists=["jobs","offers","intel","achievements","mensajes","log","_seenTransmissions"];
+  var lists=["jobs","offers","intel","achievements","mensajes","log","_seenTransmissions","_intelVistos"];
   for(i=0;i<lists.length;i++){
     key=lists[i]; if(o[key]!=null && !Array.isArray(o[key])) return false;
   }
@@ -2136,7 +2146,7 @@ function validImportState(o){
       j=o.mensajes[i]; if(!importObject(j) || typeof j.id!=="string") return false;
     }
   }
-  var stringLists=["intel","achievements"];
+  var stringLists=["intel","achievements","_intelVistos"];
   for(i=0;i<stringLists.length;i++){
     var list=o[stringLists[i]];
     if(list && list.some(function(v){ return typeof v!=="string"; })) return false;
@@ -2434,7 +2444,10 @@ function afterBoot(){
   checkAchievements();
   save(); updateBest();
   startClock();
-  checkUnlocks();
+  /* Los triggers ya cumplidos por una partida cargada no son informes nuevos
+     para el jugador: se abren en silencio (el punto del lateral sigue avisando
+     de lo que quede sin abrir). */
+  sinAvisoIntel(checkUnlocks);
   checkMensajes();
   updateNotifications();
   showView(inImmersion ? "red" : "inicio");

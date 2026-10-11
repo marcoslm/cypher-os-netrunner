@@ -950,6 +950,14 @@ html.motion-off .intro-booting #boot-body::after{animation:none;}
   60%{transform:translate(-50%,-50%) scale(1.05);}
   100%{transform:translate(-50%,-50%) scale(1);opacity:1;}
 }
+/* variante INFORME: la misma tarjeta en versión discreta (CONTRACTS §13).
+   Verde neutro, sin halo, sin rebote de escala y menos tiempo en pantalla:
+   informa de un archivo nuevo, no celebra nada. */
+.banner-informe{border-color:var(--verde);padding:9px 16px;gap:10px;box-shadow:none;}
+.banner-informe.show{animation:none;}
+.banner-informe .banner-icon{font-size:20px;color:var(--verde);text-shadow:none;}
+.banner-informe .banner-title{font-size:15px;letter-spacing:2px;color:var(--verde);text-shadow:none;}
+.banner-informe .banner-sub{font-size:11px;letter-spacing:1px;}
 
 /* colores de leyenda de nodos (help) */
 .sym-unknown{color:#7fffa0;}
@@ -961,6 +969,9 @@ html.motion-off .intro-booting #boot-body::after{animation:none;}
 .tag.med{color:var(--ambar);border-color:var(--ambar);}
 .tag.high{color:var(--rojo);border-color:var(--rojo);}
 .tag.ext{color:var(--magenta);border-color:var(--magenta);}
+/* marca NUEVO del índice de INFORMES: informa de lo recién archivado, sin
+   celebrarlo (el riesgo del informe conserva su color a la derecha) */
+.tag.nuevo{color:var(--verde);border-color:var(--verde);}
 
 /* ============================================================
    DINAMISMO · efectos de animación y transición
