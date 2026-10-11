@@ -37,6 +37,13 @@ test('partida F05A: el ✕ y un clic fuera cierran; Escape vuelve al botón',asy
   await game.openSaveTools();
   await expect(dialog(page)).toBeVisible();
   /* El ✕ cierra y devuelve el foco a PARTIDA. */
+  const parity=await page.evaluate(()=>{
+    const styleOf=el=>{const c=getComputedStyle(el);
+      return {font:c.fontSize,pad:c.padding,w:c.width,h:c.height,glyph:el.textContent};};
+    return {menu:styleOf(document.getElementById('save-tools-close')),
+      panel:styleOf(document.querySelector('#controls-overlay .control-close'))};
+  });
+  expect(parity.menu,'el ✕ de PARTIDA es idéntico al del panel de control').toEqual(parity.panel);
   await page.locator('#save-tools-close').click();
   await expect(dialog(page)).toBeHidden();await expect(toggle(page)).toBeFocused();
   /* Clic fuera: navega (acción propia) y además cierra el diálogo. */
