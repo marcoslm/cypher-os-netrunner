@@ -188,7 +188,7 @@ async function run(options = {}){
 
   await check("el ambiente permanece en combate mientras siga activo", () => {
     const g = game();g.sb.__modes=[];
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.amb=true;S.mus=false;inImmersion={grid:{nodes:[]},current:"0_0"};combatActive=true;startAmbient=function(m){AMBIENT.activeMode=m;window.__modes.push(m);};for(var i=0;i<5;i++)updateAmbient();');
+    g.run('document.getElementById("intro").classList.add("hidden");S=nuevoEstado();ensureStateIntegrity();S.amb=true;S.mus=false;inImmersion={grid:{nodes:[]},current:"0_0"};combatActive=true;startAmbient=function(m){AMBIENT.activeMode=m;window.__modes.push(m);};for(var i=0;i<5;i++)updateAmbient();');
     assert.deepEqual(g.sb.__modes, ["combat"]);
   });
 
@@ -407,7 +407,7 @@ async function run(options = {}){
   await check("AMB apagado detiene y desconecta todos sus nodos tras cambios de modo", () => {
     const g=game({timers:true}), audio=audioModel();
     g.sb.AudioContext=function(){return audio.ac;};
-    g.run('S=nuevoEstado();ensureStateIntegrity();setDeckPref("snd",false);setDeckPref("mus",false);initAudio();');
+    g.run('document.getElementById("intro").classList.add("hidden");S=nuevoEstado();ensureStateIntegrity();setDeckPref("snd",false);setDeckPref("mus",false);initAudio();');
     for(let i=0;i<5;i++){
       g.emitElement("h-amb","click");
       assert.equal(g.run("S.amb"),true);

@@ -12,7 +12,7 @@ async function run(options={}){
     finally{g.dispose();}
   }
   const prefs=g=>g.run('_deckPrefs');
-  const setup=g=>g.run('S=nuevoEstado();ensureStateIntegrity();S._tutorialDone=true;msgEl=document.getElementById("msg");');
+  const setup=g=>g.run('document.getElementById("intro").classList.add("hidden");S=nuevoEstado();ensureStateIntegrity();S._tutorialDone=true;msgEl=document.getElementById("msg");');
   const input=(g,key,value)=>{const el=g.sb.document.getElementById('control-'+key);el.value=String(value);g.emitElement(el,'input');};
   const click=(g,selector)=>{const el=g.sb.document.querySelector(selector);assert.ok(el,selector);g.emitElement(el,'click');};
   console.log('\nPANEL DE CONTROL · audio, display y persistencia local…');

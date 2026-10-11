@@ -109,6 +109,7 @@ function finishIntroBoot(){
   if(start && start.focus) start.focus({preventScroll:true});
 }
 function runBoot(){
+  stopMusic(); stopAmbient();
   clearTimeout(_introBootTimer); _introBootTimer=null;
   var intro=document.getElementById("intro"), body=document.getElementById("boot-body");
   if(!intro || !body) return;
@@ -1396,6 +1397,7 @@ ACTIONS.backToIntro = function(){
       var persisted=save(true);
       _resumeAfterIntro=persisted?null:S;
       clearSessionRuntime();
+      stopMusic(); stopAmbient();
       var introEl=document.getElementById("intro");
       if(introEl) introEl.classList.remove("hidden");
       /* El deck sigue encendido: volver a opciones sin repetir el POST. */
@@ -2500,6 +2502,9 @@ function beginIntro(){
   afterBoot();
   var introEl=document.getElementById("intro");
   if(introEl) introEl.classList.add("hidden");
+  /* afterBoot prepara la sesión bajo la consola; el fondo solo suena al salir. */
+  if(S && S.player.cpu<=0) startAmbient("flatline");
+  else updateAmbient();
   syncGameInputLock();
 }
 

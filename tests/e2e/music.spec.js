@@ -95,3 +95,26 @@ test('música: con catálogo disponible las escenas de calor y combate reproduce
   expect(combatTrack).toMatch(/^music\/cyos-combat-/);
   await solveCodeCombat(page);
 });
+
+test('música: volver a intro silencia MP3 y ambiente sin cambiar ajustes; COMENZAR reanuda', async ({ page, game }) => {
+  const { present } = await catalog(page);
+  test.skip(!present.some(f => f.startsWith('music/cyos-ui-')), 'Requiere música local opcional de calle.');
+  await game.setup({state:{offers:[]}});
+  await page.locator('#h-mus').click();
+  await page.locator('#h-amb').click();
+  await expect.poll(() => page.evaluate(() => !MUSIC.el.paused && MUSIC.el.readyState >= 2)).toBe(true);
+  const track = await page.evaluate(() => MUSIC.playing.ui.t.f);
+  await game.openSaveTools();await page.locator('#btn-intro').click();
+  await page.locator('#confirm-overlay [data-action="confirmYes"]').click();
+  await expect(page.locator('#intro')).toBeVisible();
+  expect(await page.evaluate(() => ({paused:MUSIC.el.paused,scene:MUSIC.scene,ambient:AMBIENT.activeMode,mus:S.mus,amb:S.amb})))
+    .toEqual({paused:true,scene:null,ambient:null,mus:true,amb:true});
+  await page.locator('#intro [data-action="openControls"]').click();
+  await page.locator('#control-musVolume').focus();
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(() => MUSIC.el.paused && AMBIENT.activeMode===null)).toBe(true);
+  await page.locator('#intro-start').click();
+  await expect.poll(() => page.evaluate(() => MUSIC.scene==='ui' && !MUSIC.el.paused && AMBIENT.activeMode==='street')).toBe(true);
+  expect(await page.evaluate(() => MUSIC.playing.ui.t.f)).toBe(track);
+});

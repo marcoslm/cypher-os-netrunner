@@ -78,6 +78,13 @@ if(_displayMotion){
   else if(_displayMotion.addListener) _displayMotion.addListener(onDisplayMotionChange);
 }
 var AC = null, FX_BUS=null, MUS_BUS=null;
+var _musicTones=[];
+/* La intro conserva S al volver: la sesión viva no autoriza audio de fondo. */
+function backgroundAudioAllowed(){
+  var intro=document.getElementById("intro");
+  return !(intro && !intro.classList.contains("hidden")) &&
+    !(typeof _entryMode!=="undefined" && (_entryMode==="boot" || _entryMode==="intro"));
+}
 function channelBus(kind){
   if(!AC) return null;
   var bus=kind==="fx"?FX_BUS:MUS_BUS;
@@ -90,7 +97,10 @@ function channelBus(kind){
 }
 function routeTone(osc,g,kind){
   osc.connect(g); g.connect(channelBus(kind));
+  var tone=kind==="mus"?{osc:osc,gain:g}:null;
+  if(tone) _musicTones.push(tone);
   osc.onended=function(){
+    if(tone){ var index=_musicTones.indexOf(tone); if(index>=0) _musicTones.splice(index,1); }
     try{ osc.disconnect(); }catch(e){}
     try{ g.disconnect(); }catch(e){}
   };
@@ -254,7 +264,7 @@ function getNoiseBuffer(){
 
 function startAmbient(mode){
   /* canal de FONDO (S.amb): independiente de FX y música */
-  if(!S || S.amb!==true || !AC){ stopAmbient(); return; }
+  if(!backgroundAudioAllowed() || !S || S.amb!==true || !AC){ stopAmbient(); return; }
   stopAmbient();
   try{
     resumeAudio();
@@ -367,7 +377,7 @@ function stopAmbient(){
 function updateAmbient(){
   /* la música es independiente de los otros canales */
   updateMusic();
-  if(!S || S.amb!==true){ stopAmbient(); return; }
+  if(!backgroundAudioAllowed() || !S || S.amb!==true){ stopAmbient(); return; }
   if(combatActive){
     if(AMBIENT.activeMode!=="combat") startAmbient("combat");
   } else if(inImmersion){
@@ -410,7 +420,7 @@ function updateAmbientStress(){
 
 var MUSIC={ el:null, scene:null, bags:{}, playing:{}, unavailable:{}, serial:0, onMeta:null };
 
-function musicEnabled(){ return !!S && S.mus!==false; }
+function musicEnabled(){ return backgroundAudioAllowed() && !!S && S.mus!==false; }
 /* escena musical actual (histéresis en el calor para no saltar de pista) */
 function musicScene(){
   if(combatActive){
@@ -496,7 +506,7 @@ function playMusicScene(scene, rotate){
       el.loop=false;
       MUSIC.onMeta=function onMeta(){
         el.removeEventListener("loadedmetadata", onMeta);
-        if(serial!==MUSIC.serial) return;
+        if(serial!==MUSIC.serial || !musicEnabled()) return;
         MUSIC.onMeta=null;
         try{ if(wantPos>=0 && wantPos<el.duration-1) el.currentTime=wantPos; }catch(e){}
       };
@@ -525,6 +535,13 @@ function updateMusic(){
   playMusicScene(scene, false);
 }
 function stopMusic(){
+  /* Cancelar también notas futuras del canal 7: no reaparecen al abrir el bus. */
+  var tones=_musicTones.slice(); _musicTones=[];
+  tones.forEach(function(tone){
+    try{ tone.osc.stop(); }catch(e){}
+    try{ tone.osc.disconnect(); }catch(e){}
+    try{ tone.gain.disconnect(); }catch(e){}
+  });
   MUSIC.serial++;
   if(MUSIC.el && MUSIC.onMeta){
     MUSIC.el.removeEventListener("loadedmetadata", MUSIC.onMeta);

@@ -6,9 +6,9 @@ const { loadGame } = require('./harness');
 async function run(options = {}) {
   let passes = 0, fails = 0;
   async function check(label, fn) {
-    const g = loadGame({ timers: 'virtual', seed: 2087, strictDOM: true, canvas: 'stub' });
+    const g = loadGame({ timers: 'virtual', seed: 2087, strictDOM: true, canvas: 'stub', audio: true });
     try {
-      g.run('S=nuevoEstado();S.snd=false;S.amb=false;S.mus=true;S._tutorialDone=true;');
+      g.run('S=nuevoEstado();S.snd=false;S.amb=false;S.mus=true;S._tutorialDone=true;document.getElementById("intro").classList.add("hidden");');
       await fn(g);
       passes++; console.log('  ✔ ' + label);
     } catch (error) { fails++; console.log('  ✖ ' + label + ': ' + error.stack); }
@@ -124,6 +124,39 @@ async function run(options = {}) {
     g.run('combatActive=true;'); assert.equal(g.run('musicScene()'), 'combat');
     g.run('COM={node:{boss:true}};'); assert.equal(g.run('musicScene()'), 'boss');
     g.run('VAULT_PUZZLE={};'); assert.equal(g.run('musicScene()'), 'vault');
+  });
+  await check('intro/BIOS bloquean arranque directo, preferencias y callbacks sin alterar MUS/AMB', g => {
+    g.run('initAudio();setDeckPref("amb",true);updateAmbient();MUSIC.el.currentTime=23;MUSIC.el.duration=400;');
+    const oldMeta=music(g).onMeta;
+    g.run('runBoot();');
+    assert.equal(music(g).el.paused,true);assert.equal(g.run('AMBIENT.activeMode'),null);
+    assert.equal(g.run('MUSIC.playing.ui.pos'),23);
+    const serial=music(g).serial;
+    g.run('setDeckPref("mus",true);setDeckPref("amb",true);setDeckPref("musVolume",60);startAmbient("street");playMusicScene("grid",false);updateAmbient();playCanal7();');
+    emit(g,'ended');emit(g,'error');oldMeta();
+    assert.equal(music(g).scene,null);assert.equal(music(g).el.paused,true);
+    assert.equal(music(g).serial,serial);assert.equal(g.run('AMBIENT.activeMode'),null);
+    assert.equal(g.run('_musicTones.length'),0);
+    assert.equal(g.run('_deckPrefs.mus && _deckPrefs.amb && S.mus && S.amb'),true);
+    g.run('finishIntroBoot();');
+    assert.equal(g.run('backgroundAudioAllowed()'),false);
+  });
+
+  await check('retornar detiene canal 7 y MP3; COMENZAR reanuda posición y ambiente sin cambiar preferencias', g => {
+    g.run('ensureStateIntegrity();S._tutorialDone=true;initAudio();setDeckPref("amb",true);setDeckPref("snd",false);updateAmbient();MUSIC.el.currentTime=31;MUSIC.el.duration=400;playCanal7();');
+    const tones=g.run('_musicTones.slice()');assert.equal(tones.length,16);
+    const track=music(g).playing.ui.t;
+    g.run('ACTIONS.backToIntro();resolveConfirm(true);');
+    assert.equal(music(g).el.paused,true);assert.equal(g.run('AMBIENT.activeMode'),null);
+    assert.equal(g.run('_musicTones.length'),0);
+    for(const tone of tones){assert.equal(tone.osc.stopped,true);assert.equal(tone.osc.disconnected,true);}
+    g.run('applyChannelVolumes();updateAmbient();playCanal7();');
+    assert.equal(g.run('MUS_BUS.gain.value'),0);assert.equal(music(g).scene,null);
+    g.run('beginIntro();');
+    assert.equal(music(g).scene,'ui');assert.equal(music(g).el.paused,false);
+    assert.equal(music(g).playing.ui.t,track);assert.equal(music(g).el.currentTime,31);
+    assert.equal(g.run('AMBIENT.activeMode'),'street');
+    assert.equal(g.run('_deckPrefs.mus && _deckPrefs.amb && S.mus && S.amb'),true);
   });
   console.log(`Música: ${passes} correctas · ${fails} fallos`);
   return options.summary ? { passes, fails, total: passes + fails } : fails;
