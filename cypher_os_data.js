@@ -730,17 +730,17 @@ var MUSIC_TRACKS = {
 /* ---- boot: líneas de la BIOS (las consume cypher_os_ui.js) ---- */
 
 var BOOT_LINES = [
-  ["CYPHER BIOS v9.2.7 · NEON DYNAMICS", "brand"],
-  ["mem check ............... 64K OK", "ok"],
-  ["neural bus .............. OK", "ok"],
-  ["ice breakers ............ MK-I CARGADO", "ok"],
-  ["reloj de street ......... sincronizado", "ok"],
-  ["conectando a la red ..... BUSCANDO SEÑAL", "dim"],
-  ["▸ torre corporativa ..... 51%", "sig"],
-  ["▸ bar-club ÓCTAVA ....... 87%", "sig"],
-  ["▸ alcantarilla de datos . 100%", "ok"],
-  ["señal adquirida.", "ok"],
-  ["bienvenido al cable, corvo.", "end"]
+  ["POST / diagnóstico de encendido", "brand"],
+  ["memoria ................. 64K OK", "ok"],
+  ["bus neural .............. OK", "ok"],
+  ["interfaz del deck ....... OK", "ok"],
+  ["reloj de calle .......... SINCRONIZADO", "ok"],
+  ["explorando el cable ..... BUSCANDO SEÑAL", "dim"],
+  ["  torre corporativa ..... 51%", "sig"],
+  ["  bar-club ÓCTAVA ........ 87%", "sig"],
+  ["  alcantarilla de datos .. 100%", "ok"],
+  ["señal adquirida ......... ENLACE DISPONIBLE", "ok"],
+  ["CYPHER://OS ............. LISTO PARA INICIAR SESIÓN", "end"]
 ];
 
 /* ---- combate: fases por tier (las consume cypher_os_combat.js) ---- */

@@ -19,8 +19,6 @@ test('intro F08: pantalla completa se controla desde la intro sin arrancar la pa
   await expect(page.locator('#intro-start')).toBeVisible();
   await page.locator('#intro-start').click();
   await expect(page.locator('#intro')).toBeHidden();
-  await expect(page.locator('#boot')).toBeVisible();
-  await page.keyboard.press('Enter');
   await expect(page.locator('#boot')).toBeHidden();
   // Tras arrancar, el indicador superior sigue funcionando.
   await page.locator('#h-fs').click();

@@ -10,7 +10,7 @@ test('intro F07B: VOLVER A INTRO guarda y continúa la partida con dificultad el
   await confirm(page).locator('[data-action="confirmYes"]').click();
   await expect(page.locator('#intro')).toBeVisible();await expect(page.locator('#intro-start')).toBeVisible();
   await page.locator('input[name="diff"][value="hardcore"]').check();
-  // El fade de intro usa un timer real: reanudar el reloj durante la transición.
+  // La entrada es directa; reanudar solo el reloj normal de la sesión.
   await game.resume();
   await page.locator('#intro-start').click();
   await game.skipBoot();
@@ -35,6 +35,7 @@ test('intro F02: guardado fallido al volver conserva la partida en memoria',asyn
   await confirm(page).locator('[data-action="confirmYes"]').click();
   await expect(page.locator('#intro')).toBeVisible();
   await game.expectMessage('sigue viva en memoria');
+  await expect(page.locator('#intro-boot-status')).toContainText('recargar puede perder tu progreso');
   await game.resume();
   await page.locator('#intro-start').click();
   await game.skipBoot();

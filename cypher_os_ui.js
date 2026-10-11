@@ -75,63 +75,71 @@ function toggleAmbient(){
 
 
 
-function runBoot(onDone){
-  _entryMode="boot";
-  var bootEl = document.getElementById("boot");
-  var body = document.getElementById("boot-body");
-  bootEl.classList.add("show");
-  bootEl.style.display="flex";
-  bootEl.style.opacity="1";
-  body.innerHTML="";
+/* Un único timer de presentación. Nunca carga S ni pone en marcha el reloj. */
+var _introBootTimer=null;
+var _introBootIndex=0;
+function appendBootLine(){
+  var body=document.getElementById("boot-body");
+  if(!body || _introBootIndex>=BOOT_LINES.length) return;
+  var item=BOOT_LINES[_introBootIndex++], div=document.createElement("div");
+  div.className="line "+item[1]; div.textContent=item[0];
+  body.appendChild(div);
+  /* Terminal clásica: solo desplazar cuando se agota el área del registro. */
+  var log=document.getElementById("boot");
+  if(log) log.scrollTop=log.scrollHeight;
+  return true;
+}
+function finishIntroBoot(){
+  if(_entryMode!=="boot") return;
+  clearTimeout(_introBootTimer); _introBootTimer=null;
+  while(_introBootIndex<BOOT_LINES.length){ if(!appendBootLine()) break; }
+  var intro=document.getElementById("intro"), menu=document.getElementById("intro-menu");
+  var skip=document.getElementById("intro-skip"), log=document.getElementById("boot");
+  if(intro){ intro.classList.remove("intro-booting"); intro.classList.add("intro-ready"); }
+  if(menu){ menu.classList.remove("hidden"); menu.inert=false; menu.removeAttribute("inert"); }
+  if(skip){ skip.classList.add("hidden"); skip.disabled=true; }
+  if(log){ log.scrollTop=log.scrollHeight; log.setAttribute("tabindex","0"); }
+  var power=document.getElementById("intro-power"), status=document.getElementById("intro-boot-status");
+  if(power) power.textContent="EN LÍNEA";
+  if(status) status.textContent="Arranque completo. Esperando al operador.";
+  _entryMode=S ? "intro" : null;
+  if(AC && AC.state==="running") sound.bootEnd();
   syncGameInputLock();
-  var idx=0, done=false, timer=null;
-
+  var start=document.getElementById("intro-start");
+  if(start && start.focus) start.focus({preventScroll:true});
+}
+function runBoot(){
+  clearTimeout(_introBootTimer); _introBootTimer=null;
+  var intro=document.getElementById("intro"), body=document.getElementById("boot-body");
+  if(!intro || !body) return;
+  _entryMode="boot"; _introBootIndex=0; _bootStarted=false;
+  intro.classList.remove("hidden","intro-ready","intro-memory"); intro.classList.add("intro-booting");
+  body.innerHTML="";
+  var menu=document.getElementById("intro-menu"), skip=document.getElementById("intro-skip");
+  if(menu){ menu.classList.add("hidden"); menu.inert=true; menu.setAttribute("inert",""); }
+  if(skip){ skip.classList.remove("hidden"); skip.disabled=false; }
+  var log=document.getElementById("boot");
+  if(log){ log.scrollTop=0; log.setAttribute("tabindex","-1"); }
+  var power=document.getElementById("intro-power"), status=document.getElementById("intro-boot-status");
+  if(power) power.textContent="ENCENDIENDO";
+  if(status) status.textContent="Encendiendo el ciberdeck…";
+  syncGameInputLock();
+  if(skip && skip.focus) skip.focus({preventScroll:true});
+  if(!decorativeMotion()){ finishIntroBoot(); return; }
+  if(AC && AC.state==="running") sound.bootStart();
   function line(){
-    if(done) return;
-    if(idx>=BOOT_LINES.length){ bootEnd(); return; }
-    var txt = BOOT_LINES[idx][0], cls = BOOT_LINES[idx][1];
-    var div = document.createElement("div");
-    div.className = "line "+cls;
-    div.textContent = txt;
-    body.appendChild(div);
-    /* sonido sutil por cada línea de boot */
-    sound.bootLine();
-    idx++;
-    if(idx>=BOOT_LINES.length){
-      /* última línea ya mostrada: pausa para leerla y transición */
-      sound.bootEnd();
-      timer = setTimeout(bootEnd, 1200);
+    _introBootTimer=null;
+    if(_entryMode!=="boot") return;
+    appendBootLine();
+    if(AC && AC.state==="running") sound.bootLine();
+    if(_introBootIndex>=BOOT_LINES.length){
+      _introBootTimer=setTimeout(finishIntroBoot,480);
     } else {
-      timer = setTimeout(line, cls==="sig"?440:340);
+      var cls=BOOT_LINES[_introBootIndex-1][1];
+      _introBootTimer=setTimeout(line,cls==="dim"?620:(cls==="sig"?300:180));
     }
   }
-  function bootEnd(){
-    /* efecto de glitch visual antes de salir */
-    var glitchDiv = document.createElement("div");
-    glitchDiv.className="boot-glitch";
-    body.appendChild(glitchDiv);
-    setTimeout(function(){ fadeOut(); },450);
-  }
-  function fadeOut(){
-    if(done) return;
-    done=true;
-    window.removeEventListener("keydown", skipOnce);
-    if(bootEl) bootEl.removeEventListener("click", skip);
-    clearTimeout(timer);
-    bootEl.style.transition="opacity .5s";
-    bootEl.style.opacity="0";
-    setTimeout(function(){
-      bootEl.style.display="none";
-      bootEl.style.opacity="1";
-      onDone();
-    }, 520);
-  }
-  function skip(){ if(done) return; fadeOut(); }
-  function skipOnce(e){ if(e && (e.repeat || e.ctrlKey || e.altKey || e.metaKey)) return; skip(); }
-
-  bootEl.addEventListener("click", skip);
-  window.addEventListener("keydown", skipOnce);
-  timer = setTimeout(line, 400);
+  _introBootTimer=setTimeout(line,320);
 }
 
 
@@ -289,7 +297,7 @@ function gameInputLayer(){
   if(controlPanelOpen() && (combatActive || (S && S.player.cpu<=0))) closeControlPanel(false);
   if(controlPanelOpen()) return document.getElementById("controls-overlay");
   var mode=entryMode();
-  if(mode) return document.getElementById(mode);
+  if(mode) return document.getElementById("intro"); /* BIOS forma parte de esta misma consola. */
   if(S && S.player.cpu<=0) return document.getElementById("flatline");
   if(combatActive) return document.getElementById("combat");
   return null;
@@ -315,7 +323,7 @@ function syncGameInputLock(){
     os.inert=!!layer;
     if(layer) os.setAttribute("inert",""); else os.removeAttribute("inert");
   }
-  ["intro","boot","controls-overlay"].forEach(function(id){
+  ["intro","controls-overlay"].forEach(function(id){
     var el=document.getElementById(id); if(!el) return;
     var locked=!!(layer && layer!==el);
     el.inert=locked;
@@ -600,6 +608,7 @@ document.addEventListener("click", function(e){
   var btn = e.target.closest("[data-action]");
   if(!btn) return;
   var a = btn.getAttribute("data-action");
+  if(a==="startIntro") return; /* listener local: una entrada y un solo FX de clic */
   var controlAction=["openControls","closeControls","toggleDeckPref","resetControls","confirmYes","confirmNo","toggleFs"].indexOf(a)>=0;
   var mode=entryMode(), layer=gameInputLayer();
   if(mode && (mode==="boot" || !controlAction || !layerContains(layer,btn))) return;
@@ -1244,8 +1253,8 @@ ACTIONS.setDifficulty = function(btn){
   });
 };
 
-/* Volver a la intro desde la calle (F07B): guarda antes y reutiliza el ciclo
-   intro→boot→partida sin duplicar relojes, timers ni listener del botón.
+/* Volver a las opciones desde la calle (F07B): guarda antes y mantiene el
+   deck encendido sin duplicar relojes, timers ni listener del botón.
    Si el storage falla (F-02), la continuación vive en memoria de runtime y
    afterBoot la prioriza: COMENZAR nunca descarta el progreso de la sesión. */
 var _resumeAfterIntro=null;
@@ -1260,11 +1269,14 @@ ACTIONS.backToIntro = function(){
       var persisted=save(true);
       _resumeAfterIntro=persisted?null:S;
       clearSessionRuntime();
-      var introEl=document.getElementById("intro"), bootBg=document.getElementById("boot");
-      if(bootBg){ bootBg.style.display="none"; bootBg.style.opacity="1"; }
-      if(introEl){ introEl.style.display="flex"; introEl.style.opacity="1"; introEl.style.transition=""; }
-      _bootStarted=false; _entryMode="intro";
+      var introEl=document.getElementById("intro");
+      if(introEl) introEl.classList.remove("hidden");
+      /* El deck sigue encendido: volver a opciones sin repetir el POST. */
+      _bootStarted=false; _entryMode="boot"; finishIntroBoot();
       updateLegendaryOption(); initDifficultySelect();
+      if(introEl) introEl.classList.toggle("intro-memory",!persisted);
+      var introStatus=document.getElementById("intro-boot-status");
+      if(!persisted && introStatus) introStatus.textContent="Sesión en memoria. No se pudo guardar: recargar puede perder tu progreso.";
       if(persisted) msg("partida guardada. intro lista para continuar.","verde");
       else msg("no se pudo guardar en este dispositivo. tu partida sigue viva en memoria hasta que recargues la página.","ambar");
     }
@@ -2342,8 +2354,8 @@ function initDifficultySelect(){
 var _bootStarted=false;
 var _pendingDifficulty=null;
 function beginIntro(){
-  if(_bootStarted || controlPanelOpen() || confirmOpen()) return;
-  _bootStarted=true; _entryMode="boot";
+  if(_bootStarted || entryMode()!=="intro" || controlPanelOpen() || confirmOpen()) return;
+  _bootStarted=true;
   /* si la última sesión quedó en pantalla completa, volver a entrar AHORA:
      el clic de ▶ COMENZAR es el gesto de usuario que exige el navegador
      (sin gesto, requestFullscreen se deniega) */
@@ -2352,26 +2364,13 @@ function beginIntro(){
      que la aplica solo a partidas vivas y en calle) */
   var diffEl=document.querySelector('input[name="diff"]:checked');
   _pendingDifficulty = diffEl ? diffEl.value : "normal";
-  /* flash visual en la intro antes de pasar al boot. El boot (fondo opaco
-     #010605, aún sin líneas) se muestra ANTES del fade: si no, al bajar la
-     opacidad de la intro se veía la UI del juego por debajo durante esos ms */
+  /* La BIOS ya terminó. Preparar la partida detrás de la consola opaca;
+     ocultarla solo después, sin flashes de una UI todavía sin restaurar. */
+  initAudio(); resumeAudio(); sound.click();
+  afterBoot();
   var introEl=document.getElementById("intro");
-  var bootBg=document.getElementById("boot");
-  if(bootBg){ bootBg.style.display="flex"; bootBg.style.opacity="1"; }
+  if(introEl) introEl.classList.add("hidden");
   syncGameInputLock();
-  if(introEl){
-    introEl.style.transition="opacity .15s";
-    introEl.style.opacity="0";
-    sound.bootStart();
-    setTimeout(function(){
-      introEl.style.display="none";
-      introEl.style.opacity="1";
-      introEl.style.transition="";
-      runBoot(afterBoot);
-    },180);
-  } else {
-    runBoot(afterBoot);
-  }
 }
 
 window.addEventListener("pointerdown", function first(){ initAudio(); resumeAudio(); }, {once:true});
@@ -2443,12 +2442,11 @@ function _initIntroHandlers(){
   if(_introHandlersReady) return;
   _introHandlersReady=true;
   var startEl=document.getElementById("intro-start");
-  /* SOLO el botón ▶ COMENZAR inicia la partida (CONTRACTS §1): un clic en
-     cualquier otra zona de la intro no debe arrancar el boot. El listener
-     persiste entre retornos a la intro; _bootStarted es la guarda de doble
-     arranque (L-02: sin retiradas de callback ineficaces). */
-  if(startEl){ startEl.addEventListener("click", beginIntro); }
-  else { beginIntro(); }
+  /* Solo COMENZAR abre sesión. Omitir termina la presentación, no el menú.
+     Listeners únicos también cuando se vuelve desde una partida viva. */
+  if(startEl) startEl.addEventListener("click", beginIntro);
+  var skipEl=document.getElementById("intro-skip");
+  if(skipEl) skipEl.addEventListener("click", finishIntroBoot);
 }
 var _introHandlersReady=false;
 /* registrar handlers inmediatamente — el DOM ya está listo porque los scripts están al final de <body> */
@@ -2465,7 +2463,7 @@ if(!fsSupported()){
   if(_fsBtn) _fsBtn.classList.add("hidden");
 }
 updateFsIndicator();
-syncGameInputLock();
+runBoot();
 /* también como fallback por si el DOM aún no estuviera listo (algunos navegadores) */
 if(document.readyState==="loading"){
   window.addEventListener("DOMContentLoaded", _initIntroHandlers);

@@ -395,8 +395,7 @@ async function run(options = {}){
     const g=game({timers:true}), audio=audioModel();
     g.sb.AudioContext=function(){return audio.ac;};
     g.run('var bootSave=nuevoEstado();bootSave.snd=false;localStorage.setItem("cypher_os_save_v9",JSON.stringify(bootSave));_deckPrefs=loadDeckPrefs();');
-    g.emitElement("intro-start","click");
-    g.run('sound.bootLine();sound.bootEnd();');
+    g.run('runBoot();sound.bootLine();sound.bootEnd();');
     assert.equal(g.run("S"),null);
     assert.equal(audio.nodes.length,0);
     g.sb.localStorage.removeItem("cypher_os_save_v9");
@@ -429,8 +428,7 @@ async function run(options = {}){
       const el=g.sb.document.querySelector(selector);
       assert.ok(el, "control presente: " + selector); el.click();
     };
-    click("#intro-start"); g.advance(180);
-    click("#boot"); g.advance(520);
+    click("#intro-start");
     /* Grafo y tiradas explícitos: el barajado musical no debe decidir
        qué enemigo aparece en una regresión del HUD. Input/handlers reales. */
     g.run('S._tutorialDone=true;S.mus=false;stopMusic();S.player.level=6;S.player.sigilo=5;');

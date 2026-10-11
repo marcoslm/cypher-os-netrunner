@@ -15,18 +15,17 @@ function vaultOffer(id, project, corp) {
   };
 }
 
-test('intro: solo COMENZAR inicia y un gesto salta la BIOS real', async ({ page, game }) => {
+test('intro: solo COMENZAR inicia tras la BIOS integrada', async ({ page, game }) => {
   expect(page.url()).toBe(GAME_URL);
   await expect(page).toHaveTitle(/CYPHER:\/\/OS.*v9\.2\.7/);
   await page.locator('#intro .intro-tag').click();
-  await page.keyboard.press('Enter');
   await expect(page.locator('#intro')).toBeVisible();
-  await expect(page.locator('#boot')).toBeHidden();
+  await expect(page.locator('#boot')).toBeVisible();
   expect((await game.snapshot()).state).toBeNull();
   await expect(page.locator('#panel-scroll')).toBeEmpty();
 
   await page.locator('#intro-start').click();
-  await expect(page.locator('#boot')).toHaveCSS('background-color', 'rgb(1, 6, 5)');
+  await expect(page.locator('#intro')).toBeHidden();
   await game.skipBoot({ skip: 'keyboard' });
   await expect(nav(page, 'inicio')).toHaveClass(/active/);
   await expect(page.locator('#h-cpu')).toHaveText('100/100');

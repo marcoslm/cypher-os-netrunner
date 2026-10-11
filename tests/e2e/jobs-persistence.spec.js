@@ -70,7 +70,7 @@ test('vault F01: aceptar y generar conserva el nodo sorteado al guardar, exporta
     expect(restored.immersion).toEqual(expected.immersion);
     expect(restored.saved._inImmersion).toEqual(expected.immersion);
     const expectedPlayer=JSON.parse(JSON.stringify(expected.state.player));
-    // reload() reanuda el reloj durante BIOS; solo ese tiempo legítimo cambia.
+    // reload() reanuda el reloj tras COMENZAR; solo ese tiempo legítimo cambia.
     if (reload) {
       const elapsed=(restored.state.clock-expected.state.clock+1440)%1440;
       expectedPlayer.stats.totalPlayTime+=elapsed;

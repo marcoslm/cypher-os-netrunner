@@ -44,6 +44,7 @@ function jsonFile(value, name = 'partida.json') {
 }
 
 const test = base.extend({
+  progressiveBoot: [false, { option: true }],
   // The built-in page/context fixtures remain test-scoped: no shared profile or storageState.
   page: async ({ page, context }, use, testInfo) => {
     const failures = [];
@@ -90,11 +91,14 @@ const test = base.extend({
     }
   },
 
-  game: async ({ page }, use) => {
+  game: async ({ page, progressiveBoot }, use) => {
     // Install before any game timer exists. CSS and all public game functions are untouched.
     await page.clock.install({ time: new Date(CLOCK_START) });
     await page.goto(GAME_URL);
-    await expect(page.locator('#intro-start')).toBeVisible();
+    if (!progressiveBoot) {
+      if (await page.locator('#intro-skip').isVisible()) await page.locator('#intro-skip').click();
+      await expect(page.locator('#intro-start')).toBeVisible();
+    }
     let paused = false;
     let pauseCount = 0;
 
@@ -110,21 +114,21 @@ const test = base.extend({
         await page.clock.resume();
         paused = false;
       },
-      async skipBoot({ skip = 'keyboard', touch = false, freeze = true } = {}) {
+      async skipBoot({ freeze = true } = {}) {
+        // Compatibilidad de callers: COMENZAR ya entra directamente, sin segunda BIOS.
         await expect(page.locator('#intro')).toBeHidden();
-        await expect(page.locator('#boot')).toBeVisible();
-        await expect(page.locator('#boot-body .line').first()).toBeVisible();
-        if (skip === 'click') {
-          if (touch) await page.locator('#boot').tap();
-          else await page.locator('#boot').click();
-        } else {
-          await page.keyboard.press('Enter');
-        }
         await expect(page.locator('#boot')).toBeHidden();
         await expect(page.locator('#panel-scroll')).not.toBeEmpty();
         if (freeze) await game.freeze();
       },
       async boot(options = {}) {
+        if (await page.locator('#intro-skip').isVisible()) {
+          if (options.touch) await page.locator('#intro-skip').tap();
+          else if (options.skip === 'keyboard') {
+            await page.locator('#intro-skip').focus();
+            await page.keyboard.press('Enter');
+          } else await page.locator('#intro-skip').click();
+        }
         await expect(page.locator('#intro-start')).toBeVisible();
         if (options.difficulty) await page.locator(`input[name="diff"][value="${options.difficulty}"]`).check();
         if (options.touch) await page.locator('#intro-start').tap();

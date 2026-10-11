@@ -66,6 +66,7 @@ function applyDisplayPrefs(){
     document.body.classList.remove("glitch-random");
     if(typeof finishMessageTyping==="function") finishMessageTyping();
     if(typeof finishType==="function") finishType();
+    if(typeof finishIntroBoot==="function") finishIntroBoot();
     if(typeof clearGridDecoration==="function") clearGridDecoration();
   }
   if(typeof startGlitchLoop==="function" && S) startGlitchLoop();

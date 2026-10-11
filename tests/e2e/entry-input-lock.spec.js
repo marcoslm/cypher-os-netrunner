@@ -17,7 +17,7 @@ test('entrada: intro inicial contiene Tab y consume atajos sin inicializar el ju
  for(let i=0;i<16;i++){await page.keyboard.press('Tab');await introFocus(page);}
  await page.keyboard.press('Shift+Tab');await introFocus(page);
  const after=await game.snapshot();expect(after.state).toBeNull();expect(after.immersion).toBeNull();expect(after.saved).toBeNull();
- await expect(page.locator('#boot')).toBeHidden();
+ await expect(page.locator('#boot')).toBeVisible();
 });
 test('entrada: retornar bloquea gameplay y conserva Ctrl+S, controles y foco',async({page,game})=>{
  await game.setup({state:{offers:[]},player:{credits:4321}});await backToIntro(page,game);
@@ -34,18 +34,12 @@ test('entrada: retornar bloquea gameplay y conserva Ctrl+S, controles y foco',as
  await expect(page.locator('#controls-overlay')).toBeHidden();
  expect(await page.locator('#os').evaluate(el=>el.inert)).toBe(true);
 });
-test('entrada: BIOS viva bloquea Ctrl y controles, Enter continúa y libera la sesión',async({page,game})=>{
+test('entrada: retorno usa el deck encendido y COMENZAR libera la sesión directamente',async({page,game})=>{
  await game.setup({state:{offers:[]},player:{credits:4321}});await backToIntro(page,game);
- await page.locator('#intro-start').click();await page.clock.runFor(600);
- await expect(page.locator('#intro')).toBeHidden();await expect(page.locator('#boot')).toBeVisible();
- const before=await game.snapshot();
- for(const chord of [...chords,'Control+s'])await page.keyboard.press(chord);
- await expect(page.locator('#boot')).toBeVisible();
- expect(await page.evaluate(()=>document.activeElement.id)).toBe('boot');
- const after=await game.snapshot();expect(after.immersion).toBeNull();expect(after.state.player).toEqual(before.state.player);
- await expect(page.locator('#controls-overlay')).toBeHidden();
- await page.keyboard.press('Enter');await page.clock.runFor(600);
- await expect(page.locator('#boot')).toBeHidden();
+ await expect(page.locator('#intro-skip')).toBeHidden();
+ await expect(page.locator('#boot-body .line')).toHaveCount(11);
+ await page.locator('#intro-start').click();
+ await expect(page.locator('#intro')).toBeHidden();await expect(page.locator('#boot')).toBeHidden();
  expect(await page.locator('#os').evaluate(el=>el.inert)).toBe(false);
  await page.keyboard.press('Control+k');await expect(page.locator('#cmd')).toBeFocused();
  await page.locator('.navbtn[data-view="red"]').click();

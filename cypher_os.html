@@ -92,27 +92,46 @@
 <!-- Overlay de combat (ICE / daemon) -->
 <div id="combat"></div>
 
-<!-- Secuencia de arranque (boot) -->
-<div id="boot"><div id="boot-body"></div></div>
-
-<!-- Intro simple con botón de comenzar -->
-<div id="intro">
-  <div id="intro-body">
-    <div class="intro-logo"><span class="glow">◈</span> CYPHER://OS</div>
-    <div class="intro-sub">v9.2.7 · NEON DYNAMICS</div>
-    <div class="intro-tag">El cable no duerme. Solo parpadea.</div>
-    <button id="intro-start" data-action="startIntro">▶ COMENZAR</button>
-    <div class="intro-diff">
-      <div class="intro-diff-title">DIFICULTAD</div>
-      <label class="diff-opt verde"><input type="radio" name="diff" value="normal" checked> NORMAL</label>
-      <label class="diff-opt ambar"><input type="radio" name="diff" value="hardcore"> HARDCORE</label>
-      <label id="legendary-opt" class="diff-opt magenta"><input type="radio" name="diff" value="legendario"> LEGENDARIO</label>
+<!-- Una consola: encendido, BIOS y opciones de sesión. -->
+<div id="intro" class="intro-booting" aria-label="Encendido del ciberdeck">
+  <section id="intro-body" aria-label="Consola CORVO-7">
+    <header class="deck-header">
+      <span class="deck-id">◈ CORVO-7 <span>/ CIBERDECK</span></span>
+      <span id="intro-power" class="deck-power">ENCENDIENDO</span>
+    </header>
+    <div class="deck-screen">
+      <div class="bios-heading"><span>CYPHER BIOS v9.2.7</span><span>NEON DYNAMICS</span></div>
+      <div id="boot" role="region" aria-label="Registro de arranque" tabindex="0"><div id="boot-body"></div></div>
+      <div class="boot-footer">
+        <p id="intro-boot-status" role="status" aria-live="polite" aria-atomic="true">Encendiendo el ciberdeck…</p>
+        <button type="button" id="intro-skip" class="btn">OMITIR ARRANQUE</button>
+      </div>
+      <div id="intro-menu" class="hidden" inert>
+        <div class="intro-identity">
+          <div class="intro-sub">SISTEMA CLANDESTINO / v9.2.7</div>
+          <h1 class="intro-logo">CYPHER<span>://</span>OS</h1>
+          <p class="intro-tag">El cable no duerme. Solo parpadea.</p>
+          <p class="intro-hint">el deck está listo. el resto depende de ti.</p>
+        </div>
+        <div class="intro-session">
+          <fieldset class="intro-diff">
+            <legend class="intro-diff-title">DIFICULTAD</legend>
+            <label class="diff-opt verde"><input type="radio" name="diff" value="normal" checked> NORMAL</label>
+            <label class="diff-opt ambar"><input type="radio" name="diff" value="hardcore"> HARDCORE</label>
+            <label id="legendary-opt" class="diff-opt magenta"><input type="radio" name="diff" value="legendario"> LEGENDARIO</label>
+          </fieldset>
+          <button type="button" id="intro-start" data-action="startIntro">▶ COMENZAR</button>
+          <p class="intro-hint">abrir sesión en el cable · corvo-7</p>
+        </div>
+        <div class="intro-settings">
+          <button type="button" class="btn intro-controls" data-action="openControls"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6"/></svg> PANEL DE CONTROL</button>
+          <button type="button" class="btn intro-controls" id="intro-fs" data-action="toggleFs" title="Pantalla completa: desactivada" aria-label="Pantalla completa: desactivada" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg> PANTALLA COMPLETA</button>
+          <p id="intro-fs-status" class="intro-hint" role="status" aria-live="polite" aria-atomic="true"></p>
+        </div>
+      </div>
     </div>
-    <button type="button" class="btn intro-controls" data-action="openControls"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16M8 3v6M16 9v6M10 15v6"/></svg> PANEL DE CONTROL</button>
-    <button type="button" class="btn intro-controls" id="intro-fs" data-action="toggleFs" title="Pantalla completa: desactivada" aria-label="Pantalla completa: desactivada" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg> PANTALLA COMPLETA</button>
-    <p id="intro-fs-status" class="intro-hint" role="status" aria-live="polite" aria-atomic="true"></p>
-    <div class="intro-hint">pulsa ▶ COMENZAR para conectar con el cable · corvo-7</div>
-  </div>
+    <footer class="deck-footer"><span>NEON DYNAMICS / CYPHER BIOS</span><span>REUTILIZADO POR LA CALLE</span></footer>
+  </section>
 </div>
 
 <!-- Flatline / game over -->

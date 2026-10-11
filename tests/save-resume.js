@@ -8,7 +8,7 @@ async function run(options={}){
  async function check(label,fn){
   const g=loadGame({timers:'virtual',strictDOM:true,canvas:'stub',seed:2093});
   try{
-   g.run('S=nuevoEstado();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();document.getElementById("intro").style.display="none";');
+   g.run('S=nuevoEstado();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();document.getElementById("intro").classList.add("hidden");');
    await fn(g);passes++;console.log('  ✔ '+label);
   }catch(e){fails++;console.log('  ✖ '+label+': '+e.stack);}
   finally{g.dispose();}
@@ -28,6 +28,8 @@ async function run(options={}){
   returnIntro(g);
   assert.ok(g.run('_resumeAfterIntro'),'la continuación queda en memoria de runtime');
   assert.match(g.sb.document.getElementById('msg').getAttribute('aria-label'),/sigue viva en memoria/);
+   assert.match(g.sb.document.getElementById('intro-boot-status').textContent,/recargar puede perder tu progreso/);
+   assert.equal(g.sb.document.getElementById('intro').classList.contains('hidden'),false);
   continueGame(g);
   assert.equal(g.run('S.player.credits'),4321,'no el archivo viejo (900) ni una partida nueva (500)');
   assert.equal(g.run('S.jobs[0].prog.gathered'),1);

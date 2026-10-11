@@ -12,7 +12,7 @@ async function rangeValue(page,key,value){
 }
 async function settings(page){return page.evaluate(()=>JSON.parse(JSON.stringify({prefs:_deckPrefs,brillo:_brillo})));}
 
-test('configuración desde intro: sliders nativos, mute antes de BIOS y foco restaurado',async({page,game})=>{
+test('configuración desde intro: sliders nativos, mute antes de sesión y foco restaurado',async({page,game})=>{
   const opener=page.locator('#intro [data-action="openControls"]');await opener.click();
   await expect(panel(page)).toBeVisible();await expect(page.locator('#intro')).toHaveJSProperty('inert',true);
   await expect(panel(page).locator('.control-close')).toBeFocused();
@@ -102,8 +102,9 @@ test('preferencia del sistema tiene prioridad y se aplica desde intro y BIOS',as
   await page.emulateMedia({reducedMotion:'reduce'});await page.locator('#intro [data-action="openControls"]').click();
   await expect(page.locator('#controls-motion')).toContainText('sistema activo');
   await expect(page.locator('html')).toHaveClass(/motion-off/);
-  await page.keyboard.press('Escape');await page.locator('#intro-start').click();
+  await page.keyboard.press('Escape');
   await expect(page.locator('#boot-body .line').first()).toBeVisible();
+  await page.locator('#intro-start').click();
   await game.skipBoot();await expect(page.locator('html')).toHaveClass(/motion-off/);
 });
 

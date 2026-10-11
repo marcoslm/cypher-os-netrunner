@@ -78,7 +78,7 @@ async function run(options={}){
     g.run('setDeckPref("mus",false);');assert.equal(bus.gain.value,0);
     const nodes=g.audio.nodes.length;g.run('playCanal7();');assert.equal(g.audio.nodes.length,nodes);
   });
-  await check('intro tiene panel funcional sin empezar BIOS y restaura foco',g=>{
+  await check('menú de intro tiene panel funcional sin iniciar sesión y restaura foco',g=>{
     const opener=g.sb.document.querySelector('#intro [data-action="openControls"]');opener.focus();g.emitElement(opener,'click');
     assert.equal(g.run('controlPanelOpen()'),true);assert.equal(g.run('_bootStarted'),false);
     assert.equal(g.sb.document.getElementById('intro').inert,true);

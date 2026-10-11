@@ -10,12 +10,12 @@ async function run(options={}) {
     try {
       g.run('S=nuevoEstado();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();');
       // La sesión ya pasó por COMENZAR: la intro queda oculta hasta un retorno.
-      g.run('var intro=document.getElementById("intro");if(intro)intro.style.display="none";');
+      g.run('var intro=document.getElementById("intro");if(intro)intro.classList.add("hidden");');
       await fn(g);passes++;console.log('  ✔ '+label);
     }catch(error){fails++;console.log('  ✖ '+label+': '+error.stack);}
     finally{g.dispose();}
   }
-  const introVisible=g=>g.sb.document.getElementById('intro').style.display!=='none';
+  const introVisible=g=>!g.sb.document.getElementById('intro').classList.contains('hidden');
   const confirmOpen=g=>g.run('confirmOpen()');
   console.log('\nINTRO · retorno y continuación F07B…');
   await check('cancelar el retorno deja la partida y el bucle intactos',g=>{
@@ -35,7 +35,7 @@ async function run(options={}) {
     assert.deepEqual(clone(g.run('S.jobs')),before.jobs);
     assert.match(g.sb.document.getElementById('msg').getAttribute('aria-label'),/partida guardada/);
   });
-  await check('COMENZAR tras retorno reutiliza intro→boot y continúa la partida guardada',g=>{
+  await check('COMENZAR tras retorno entra directamente y continúa la partida guardada',g=>{
     g.run('S.player.credits=4321;S.jobs=[{id:"j",title:"T",desc:"T",type:"recoleta",n:1,contact:"mamaWire",reward:10,xp:1,done:false,failed:false,prog:{gathered:1}}];save();');
     clickAction(g,'backToIntro');g.run('resolveConfirm(true);');
     assert.equal(introVisible(g),true);
@@ -44,7 +44,7 @@ async function run(options={}) {
     radios.forEach(r=>{r.checked=false;});
     const hard=g.sb.document.querySelector('input[name="diff"][value="hardcore"]');hard.checked=true;
     g.run('beginIntro();');assert.equal(g.run('_bootStarted'),true);
-    assert.equal(g.run('_pendingDifficulty'),'hardcore','el radio seleccionado se lee antes del boot');
+    assert.equal(g.run('_pendingDifficulty'),null,'la selección se consume al entrar directamente');
     g.advance(30000);
     assert.equal(introVisible(g),false);assert.equal(g.run('S.player.credits'),4321);
     assert.equal(g.run('S.jobs[0].prog.gathered'),1);

@@ -600,6 +600,9 @@ function loadGame(options = {}){
     run(src.help,FILES.help);
     JS_FILES.forEach(f => run(src.jsFiles[f],f));
     run(INJECT,"harness-inject");
+    /* Las unidades de gameplay parten del menú listo, sin iniciar partida.
+       Los casos de encendido piden boot:'progressive' y avanzan el reloj real del arnés. */
+    if(options.boot!=="progressive") run('finishIntroBoot();',"harness-ready-menu");
   } catch(err){
     try { sandbox.__dispose(); } catch(cleanupError){ err.cleanupError=cleanupError; }
     throw err;
