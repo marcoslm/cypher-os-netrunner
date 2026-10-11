@@ -23,4 +23,6 @@ yarn-error.log*
 
 *.bak
 backup/
-music/
+# Música: solo MP3; repositorio privado mientras se revisan los derechos.
+/music/*
+!/music/*.mp3
