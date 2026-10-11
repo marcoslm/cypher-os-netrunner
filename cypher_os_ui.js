@@ -528,7 +528,7 @@ function showView(v, skipLog){
   updateAmbient();
 }
 
-/* Señales estáticas: nombre accesible sin una región viva que se repita por tick. */
+/* Señales de estado: nombre accesible sin una región viva que se repita por tick. */
 function updateDeckIndicator(id,state,label,mark){
   var el=document.getElementById(id); if(!el) return;
   if(el.getAttribute("data-state")!==state) el.setAttribute("data-state",state);
@@ -555,7 +555,7 @@ function updateTopbar(){
   updateDeckIndicator("cpu-indicator",cpuState,"CPU "+Math.round(Math.max(0,p.cpu))+" de "+p.maxCpu+
     (cpuState==="critical"?" · integridad crítica":(cpuState==="warning"?" · integridad baja":" · integridad estable")),cpuState==="critical"?"‼":(cpuState==="normal"?"":"!"));
   updateDeckIndicator("heat-indicator",heatState,"Calor "+Math.round(Math.max(0,p.heat))+" de 100"+
-    (heatState==="critical"?" · crítico":(heatState==="danger"?" · peligro":(heatState==="warning"?" · elevado":" · bajo"))),heatState==="critical"?"‼":(heatState==="normal"?"":"!"));
+    (heatState==="critical"?" · crítico":(heatState==="danger"?" · peligro":(heatState==="warning"?" · elevado":" · bajo"))),"");
   updateDeckIndicator("ram-indicator",ramState,"RAM "+used+" de "+cap+
     (ramState==="full"?" · llena":(ramState==="warning"?" · queda un hueco":" · capacidad disponible")),ramState==="full"?"LLENA":(ramState==="warning"?"!":""));
   var l = document.getElementById("h-lvl"); if(l) l.textContent = p.level;

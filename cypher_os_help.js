@@ -133,7 +133,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="helprow-item"><span class="lg-key">RAM</span><span class="muted">guardas los datos recogidos. Cuando está llena, superficializa para <b>venderlos</b> (los datos se convierten en ₡; su valor escala con la capa y con HACK).</span></div>'+
 '<div class="helprow-item"><span class="lg-key">CPU</span><span class="muted">tu integridad neural. Al superficializar recuperas +8. Si llega a 0 → FLATLINE (ver ⑭).</span></div>'+
 '</div>'+
-'<p class="help-p">La barra superior conserva CPU, calor y RAM también en pantallas estrechas. CPU avisa con ≤40% de integridad y marca crítico con ≤20%. El calor se destaca desde 40, señala peligro con &gt;70 y crítico con ≥80. Los símbolos <b>!</b> y <b>‼</b> distinguen aviso y estado crítico; <b>RAM LLENA</b> indica falta de capacidad, no daño. Son señales visuales: no cambian las reglas del juego.</p>'+
+'<p class="help-p">La barra superior conserva CPU, calor y RAM también en pantallas estrechas. CPU avisa con ≤40% de integridad y marca crítico con ≤20%. El calor se destaca desde 40, señala peligro con &gt;70 y crítico con ≥80. CPU distingue aviso y estado crítico con <b>!</b> y <b>‼</b>; <b>RAM LLENA</b> indica falta de capacidad, no daño. El calor usa solo color y resplandor: el rojo pulsa suavemente, sin símbolos ni caja. Con movimiento reducido o animaciones OFF, el resplandor queda estático; resplandor OFF lo elimina. Son señales visuales: no cambian las reglas del juego.</p>'+
 '<p class="help-p">Estrategia: cumple el objetivo del contrato, <b>superficializa</b> para vender los datos y cobrar, y vuelve a bajar. No profundices demasiado si el calor sube. El reloj de calle avanza <b>1 min por segundo real</b>.</p>'+
 '</div>'+
 

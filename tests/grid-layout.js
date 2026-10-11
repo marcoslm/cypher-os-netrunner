@@ -108,6 +108,8 @@ async function run(options={}) {
       g.run('S.player.maxCpu=200;S.player.cpu=window.__cpu;S.player.heat=window.__heat;updateTopbar();');
       assert.equal(d.getElementById('cpu-indicator').getAttribute('data-state'),cpuState);
       assert.equal(d.getElementById('heat-indicator').getAttribute('data-state'),heatState);
+      assert.equal(d.getElementById('heat-indicator').querySelector('.deck-mark'),null);
+      assert.ok(!/[!‼]/.test(d.getElementById('heat-indicator').textContent));
     }
     g.run('startImmersion(4);inImmersion.dataUsed=ramCap()-1;updateTopbar();');
     assert.equal(d.getElementById('ram-indicator').getAttribute('data-state'),'warning');
@@ -118,7 +120,9 @@ async function run(options={}) {
     g.run('inImmersion.dataUsed=0;S.player.cpu=200;S.player.heat=0;updateTopbar();');
     for(const id of ['cpu-indicator','heat-indicator','ram-indicator']) {
       assert.equal(d.getElementById(id).getAttribute('data-state'),'normal');
-      assert.equal(d.getElementById(id).querySelector('.deck-mark').textContent,'');
+      const badge=d.getElementById(id).querySelector('.deck-mark');
+      if(id==='heat-indicator')assert.equal(badge,null);
+      else assert.equal(badge.textContent,'');
     }
   });
   console.log(`Grid/layout: ${passes} correctas · ${fails} fallos`);
