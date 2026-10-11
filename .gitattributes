@@ -1,0 +1,24 @@
+# Recursos binarios: sin diff textual ni estadísticas de lenguajes de GitHub.
+*.mp3 binary linguist-vendored
+*.wav binary linguist-vendored
+*.ogg binary linguist-vendored
+*.flac binary linguist-vendored
+*.m4a binary linguist-vendored
+*.mp4 binary linguist-vendored
+*.webm binary linguist-vendored
+*.png binary linguist-vendored
+*.jpg binary linguist-vendored
+*.jpeg binary linguist-vendored
+*.gif binary linguist-vendored
+*.webp binary linguist-vendored
+*.ico binary linguist-vendored
+*.woff binary linguist-vendored
+*.woff2 binary linguist-vendored
+*.ttf binary linguist-vendored
+*.otf binary linguist-vendored
+*.pdf binary linguist-vendored
+*.zip binary linguist-vendored
+*.7z binary linguist-vendored
+
+# Documentación: conservar su visualización, sin contarla como código.
+*.md linguist-documentation
