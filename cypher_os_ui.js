@@ -1159,7 +1159,7 @@ function renderInicio(){
   /* caja de ambiente: frase contextual de la calle, sin repetir la anterior */
   var dir="La calle está quieta.";
   if(S.history.finalDone) dir=pickFresh("calle-fin", FRASES_CALLE_FIN);
-  else if(!S.history.finalUnlocked && p.level>=5 && p.rep.night0X>=3) dir="NIGHT-0X tiene una última oferta. Revisa CONTACTOS.";
+  else if(S.narrative && S.narrative.chapters.c08==="accepted") dir="La revocacion sigue pendiente de recuperar y verificar.";
   else {
     var active=S.jobs.filter(function(j){return !j.done;});
     if(active.length){
@@ -1183,7 +1183,7 @@ function renderInicio(){
     '<button class="btn" data-action="goTienda">⛿ MERCADO NEGRO</button>'+
     '<button class="btn ambar" data-action="goTrabajos">▤ TRABAJOS</button>'+
     '</div>';
-  if(S.history.finalUnlocked && !S.history.finalDone)
+  if(S.history.finalUnlocked && !S.history.finalDone && !inImmersion)
     html+='<div class="center mt-2"><button class="btn magenta" data-action="acceptNucleo">✦ EL NÚCLEO (profundidad 5)</button></div>';
   if(S.history.finalDone)
     html+='<div class="center mt-2"><button class="btn magenta" data-action="startEndless">◈ SEALED NETWORK</button> <span class="muted text-xs">modo supervivencia</span></div>';
@@ -1732,8 +1732,8 @@ CMD.clear = CMD.cls = function(){ scroller("<div class='muted'>pantalla limpia.<
 CMD.salir = CMD.back = function(){ showView("inicio"); };
 CMD.nucleo = function(){
   if(S.history.finalDone){ msg("EL NÚCLEO ya cayó. El cable sigue abierto: explora SEALED NETWORK.","cyan"); }
-  else if(S.player.level<5 || S.player.rep.night0X<3){ msg("EL NÚCLEO no disponible. Necesitas nivel 5 y reputación con NIGHT-0X ≥ 3."); }
-  else { S.history.finalUnlocked=true; S.nextDepth=5; addLog("NIGHT-0X ▸ misión EL NÚCLEO asignada."); msg("NIGHT-0X: baja a la capa 5 y apaga el ojo de su autor.","magenta"); save(); }
+  else if(!S.narrative || S.narrative.chapters.c08!=="accepted") msg("EL NÚCLEO no disponible: falta preparar el caso de revocacion.","ambar");
+  else ACTIONS.acceptNucleo();
 };
 CMD.whoami = function(){ msg("eres CORVO-7 · netrunner de calle. El cable no duerme. Solo parpadea."); };
 CMD.tiempo = function(){ msg("hora de calle: "+timeStr(S.clock)+"."); };
@@ -1809,17 +1809,11 @@ function clearSessionRuntime(){
 }
 
 function flatline(){
-  /* Guardar el último checkpoint ANTES de persistir la muerte. El autosave de
-     FLATLINE nunca puede sustituir esta copia (vive dentro de S). */
   if(S.difficulty!=="hardcore"){
-    var checkpoint=load();
-    if(checkpoint && checkpoint._reconnectCheckpoint) checkpoint=checkpoint._reconnectCheckpoint;
-    if(!checkpoint || !checkpoint.player || checkpoint.player.cpu<=0 || checkpoint.difficulty!==S.difficulty){
-      /* localStorage bloqueado: conservar el progreso de la sesión en memoria. */
-      checkpoint=JSON.parse(JSON.stringify(S));
-      checkpoint.player.cpu=1;
-    }
+    var checkpoint=JSON.parse(JSON.stringify(S));
     delete checkpoint._reconnectCheckpoint;
+    checkpoint._inImmersion=null;
+    checkpoint.player.cpu=1;
     S._reconnectCheckpoint=checkpoint;
   } else delete S._reconnectCheckpoint;
   var p=S.player; p.cpu=0;
@@ -1849,7 +1843,7 @@ function showFlatline(){
     (isHardcore?'':'<button class="btn magenta" data-action="reconnect">RECONEXIÓN</button>')+
     '<button class="btn" data-action="newRecord">NUEVO REGISTRO</button>'+
     '</div>'+
-    '<p class="muted flatline-hint">'+(isHardcore?'HARDCORE: debes empezar una nueva partida.':'RECONEXIÓN: recuperas la última partida, pierdes los datos de esta inmersión, CPU ~50%, calor reducido.')+'</p>';
+    '<p class="muted flatline-hint">'+(isHardcore?'HARDCORE: debes empezar una nueva partida.':'RECONEXIÓN: conservas equipo, saldo y archivo; pierdes la carga de la inmersión. CPU ~50%, calor reducido.')+'</p>';
   syncGameInputLock();
 }
 
@@ -1914,10 +1908,10 @@ ACTIONS.newRecord = function(){
 };
 
 ACTIONS.acceptNucleo = function(){
-  if(!livingInteraction() || S.history.finalDone || S.player.level<5 || S.player.rep.night0X<3) return;
+  if(!livingInteraction() || !S.narrative || S.narrative.chapters.c08!=="accepted" || inImmersion) return;
   S.history.finalUnlocked=true; S.nextDepth=5;
-  addLog("NIGHT-0X ▸ misión EL NÚCLEO asignada. Profundidad 5.");
-  msg("NIGHT-0X: baja a la capa 5 y apaga el ojo de su autor. ¿Listo?","magenta");
+  addLog("CASO c08 ▸ red de revocacion preparada. Profundidad 5.");
+  msg("recupera la prueba de revocacion y vuelve para verificarla.","magenta");
   save(); showView("contactos");
 };
 
@@ -1996,7 +1990,8 @@ function validImportImmersion(inm,ram){
      !importNatural(g.maxDepth) || g.maxDepth<1 || g.byLayer.length!==g.maxDepth+1 ||
      !importNatural(inm.depth) || inm.depth!==g.maxDepth ||
      typeof g.entry!=="string" || typeof inm.current!=="string" ||
-     !importNatural(inm.dataUsed) || !Array.isArray(inm.data) || inm.dataUsed!==inm.data.length || inm.dataUsed>ram ||
+    !importNatural(inm.dataUsed) || !Array.isArray(inm.data) ||
+    inm.dataUsed!==inm.data.length+(inm.narrativePayload!=null?1:0) || inm.dataUsed>ram ||
      !importNatural(inm.moves) || !importNatural(inm.maxDepthReached) || inm.maxDepthReached>inm.depth ||
      (inm.combatOccurred!=null && typeof inm.combatOccurred!=="boolean") ||
      (inm.enemiesDefeated!=null && !importNatural(inm.enemiesDefeated))) return false;
@@ -2016,6 +2011,8 @@ function validImportImmersion(inm,ram){
     for(var f=0;f<flags.length;f++) if(n[flags[f]]!=null && typeof n[flags[f]]!=="boolean") return false;
     if((n.name!=null && !importText(n.name,80)) || (n.tierName!=null && !importText(n.tierName,16)) ||
        (n.proj!=null && !importText(n.proj,40))) return false;
+    if(n.storyChapter!=null && !storyItem(STORY_CHAPTERS,n.storyChapter)) return false;
+    if(n.storyDefense!=null && typeof n.storyDefense!=="string") return false;
     byId[n.id]=n;
   }
   if(!byId[g.entry] || !byId[inm.current] || inm.maxDepthReached<byId[inm.current].layer) return false;
@@ -2051,6 +2048,9 @@ function validImportImmersion(inm,ram){
   for(i=0;i<g.nodes.length;i++){
     n=g.nodes[i];
     if(!layered[n.id] || !Array.isArray(g.adj[n.id])) return false;
+    if(n.storyChapter!=null && (!byId[n.storyDefense] || n.storyDefense===n.id ||
+       ["ice","daemon","nucleo"].indexOf(byId[n.storyDefense].type)<0 ||
+       storyItem(STORY_CHAPTERS,n.storyChapter).depth!==inm.depth)) return false;
   }
   for(key in g.adj){
     if(!Object.prototype.hasOwnProperty.call(g.adj,key)) continue;
@@ -2092,6 +2092,7 @@ function importTypedFields(value, defaults){
 }
 function validImportState(o){
   if(!importObject(o) || !importObject(o.player)) return false;
+  if(!validNarrativeState(o.narrative)) return false;
   var p=o.player, i, key, j;
   var nums=["cpu","maxCpu","heat","credits","level","xp","skillPoints",
     "hack","sigilo","nervios","ramUp","fwUp","linkUp","breakerUp","decoys","virus"];
@@ -2155,6 +2156,8 @@ function validImportState(o){
     return !importNumber(v) || v<0 || Math.floor(v)!==v;
   })) return false;
   if(o.history!=null && !importTypedFields(o.history,{finalUnlocked:false,finalDone:false})) return false;
+    if(!importObject(o.history) || o.history.finalDone!==(o.narrative.chapters.c08==="resolved") ||
+      o.history.finalUnlocked!==(storyPhaseRank(o.narrative.chapters.c08)>=storyPhaseRank("accepted"))) return false;
   if(o.best!=null){
     /* También comprobar los antiguos contadores de best: ensureStateIntegrity
        puede migrarlos a stats, y no debe introducir ahí valores malformados. */
@@ -2176,6 +2179,8 @@ function validImportState(o){
   if(o._jobQuotaVersion!=null && (!importNatural(o._jobQuotaVersion) || o._jobQuotaVersion>1)) return false;
   if(!importNatural(p.ramUp)) return false;
   if(o._inImmersion!=null && !validImportImmersion(o._inImmersion,6+p.ramUp*4)) return false;
+  if(o._inImmersion && o._inImmersion.narrativePayload!=null &&
+     !validStoryPayload(o._inImmersion.narrativePayload,o.narrative,o._inImmersion)) return false;
   if(o._reconnectCheckpoint!=null){
     if(!importObject(o._reconnectCheckpoint) || o._reconnectCheckpoint._reconnectCheckpoint!=null ||
        !validImportState(o._reconnectCheckpoint)) return false;
@@ -2188,6 +2193,9 @@ function importGameState(imported){
     msg("termina el combate o cierra la confirmación antes de importar.","ambar"); return false;
   }
   if(!validImportState(imported)){
+    if(importObject(imported) && importObject(imported.player) && imported.narrative==null){
+      msg("esta revision requiere una partida nueva; el formato anterior no es compatible.","ambar"); return false;
+    }
     msg("archivo inválido: datos de partida incompletos o dañados.","rojo"); sound.error(); return false;
   }
   var previousS=S, previousImmersion=inImmersion, previousView=currentView;
@@ -2412,7 +2420,8 @@ function afterBoot(){
   else if(saved) addLog("partida restaurada desde el cable.");
   else {
     generateOffers(); addLog("registro nuevo · corvo-7 en la calle.");
-    if(_invalidSaveRecovered) addLog("GUARDADO ▸ archivo dañado rechazado. Copia original conservada en el resguardo local cypher_os_save_recovery_v9.");
+    if(_invalidSaveRecovered) addLog("GUARDADO ▸ archivo dañado rechazado. Copia original conservada en el resguardo local "+SAVE_RECOVERY_KEY+".");
+    if(_oldSavePresent) addLog("GUARDADO ▸ la revision narrativa requiere una partida nueva; las partidas de prueba anteriores no son compatibles.");
   }
   /* la dificultad elegida en el intro solo afecta a partidas VIVAS y EN CALLE:
      cambiar el radio no puede resucitar un guardado HARDCORE tras una recarga,

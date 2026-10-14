@@ -57,6 +57,7 @@ function bossImmersion() {
   const boss = { id: '5_0', layer: 5, x: 880, y: 270, type: 'nucleo', name: 'EL NÚCLEO',
     tier: 4, tierName: 'T4', boss: true, done: false, _done: false, _used: false, data: 0 };
   const previous = inm.grid.nodes.at(-1);
+  Object.assign(previous, { type: 'data', data: 0, storyChapter: 'c08', storyDefense: boss.id });
   inm.grid.nodes.push(boss);
   inm.grid.byLayer.push([boss]);
   inm.grid.adj[previous.id].push(boss.id);
@@ -141,7 +142,7 @@ test('scanner HARDCORE: daño fatal limpia rAF/timer y sigue muerto tras tiempo 
   expect((await game.snapshot()).state.player.cpu).toBe(0);
 });
 
-test('Núcleo: no permite huir, cuatro claves pagan una sola vez, epílogo y partida posterior', async ({ page, game }) => {
+test('Núcleo F1: cuatro claves consumen defensa sin pagar ni cerrar el caso', async ({ page, game }) => {
   await game.setup({
     player: { level: 5, rep: { night0X: 3 }, stats: { maxDepth: 5 } },
     state: { history: { finalUnlocked: true } }, immersion: bossImmersion()
@@ -159,32 +160,29 @@ test('Núcleo: no permite huir, cuatro claves pagan una sola vez, epílogo y par
   expect(inBattle.saved._inImmersion.grid.nodes.find(n => n.boss).done).toBe(false);
   await solveCodeCombat(page);
   await expect(page.locator('#combat')).toBeHidden();
-  await expect(page.locator('#overlay')).toContainText('EL NÚCLEO');
+  await expect(page.locator('#overlay')).toBeHidden();
   const victory = await game.snapshot();
-  expect(victory.saved.history.finalDone).toBe(true);
-  expect(victory.saved.best.finalDone).toBe(true);
-  expect(victory.saved.player).toMatchObject({ credits: 5500, level: 7, xp: 0, skillPoints: 2,
-    stats: { ice: 1, credits: 5000, totalDamageDealt: 128 } });
-  expect(victory.state.intel).toContain('tras_nucleo');
-  expect(victory.state.achievements).toContain('nucleoDefeated');
-  await page.clock.runFor(2000);
-  await expect(page.locator('#nucleo-quote')).toContainText('GRACIAS POR LA REPARACIÓN');
-  await action(page, 'nucleoContinue').click();
+  expect(victory.saved.history.finalDone).toBe(false);
+  expect(victory.saved.best.finalDone).not.toBe(true);
+  expect(victory.saved.narrative.chapters.c08).toBe('accepted');
+  expect(victory.saved.player).toMatchObject({ credits: 500, level: 5, xp: 0, skillPoints: 0,
+    stats: { ice: 1, credits: 0, totalDamageDealt: 128 } });
+  expect(victory.state.intel).not.toContain('tras_nucleo');
+  expect(victory.state.achievements).not.toContain('nucleoDefeated');
   await clickCurrentNode(page); // the actual consumed node, not onNodeDefeated()
   await expect(page.locator('#combat')).toBeHidden();
-  expect((await game.snapshot()).state.player.credits).toBe(5500);
+  expect((await game.snapshot()).state.player.credits).toBe(500);
   await page.keyboard.press('Control+s');
   await game.reload();
   await expect(page.locator('#legendary-opt')).toBeHidden(); // intro is gone after boot
   expect((await game.snapshot()).immersion.grid.nodes.find(n => n.boss).done).toBe(true);
   await clickCurrentNode(page);
   await expect(page.locator('#combat')).toBeHidden();
-  expect((await game.snapshot()).state.player.credits).toBe(5500);
+  expect((await game.snapshot()).state.player.credits).toBe(500);
   await action(page, 'doSuperficie').click();
   await action(page, 'closeResume').click();
-  await expect(action(page, 'startEndless')).toBeVisible();
-  await game.command('nucleo');
-  expect((await game.snapshot()).state.nextDepth).toBeNull();
+  await expect(action(page, 'startEndless')).toHaveCount(0);
+  expect((await game.snapshot()).state.history.finalDone).toBe(false);
 });
 
 test.describe('scanner táctil', () => {

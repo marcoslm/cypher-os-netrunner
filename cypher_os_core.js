@@ -39,12 +39,255 @@ function nuevoEstado() {
     jobs:[], offers:[], intel:[], achievements:[], mensajes:[],
     history:{finalUnlocked:false, finalDone:false},
     log:[], clock:(23*60+47), nextDepth:null, snd:true, amb:false, mus:true, best:{},
-    difficulty:"normal", _jobQuotaVersion:1, _intelVistos:[]
+    difficulty:"normal", _jobQuotaVersion:1, _intelVistos:[], narrative:newNarrativeState()
   };
 }
 
 var S = null;
 var ACTIONS = {};
+
+function storyItem(catalog, id){
+  for(var index=0;index<catalog.length;index++) if(catalog[index].id===id) return catalog[index];
+  return null;
+}
+function newNarrativeState(){
+  var chapters={}, files={};
+  STORY_CHAPTERS.forEach(function(chapter){ chapters[chapter.id]="locked"; });
+  STORY_FILES.forEach(function(file){ files[file.id]="unknown"; });
+  return {version:1, entry:"prologue", prologuePage:0, aliasAcquired:false,
+    chapters:chapters, awarded:[], files:files, readFiles:[], readConversations:[],
+    seenCases:[], keys:[], recoveryStage:"not_started"};
+}
+function storyPhaseRank(phase){ return ["locked","offered","accepted","returned","resolved"].indexOf(phase); }
+function storyConversationAvailable(narrative,id){
+  var item=storyItem(STORY_CONVERSATIONS,id);
+  return !!(item && narrative.entry==="active" &&
+    storyPhaseRank(narrative.chapters[item.chapter])>=storyPhaseRank(item.phase));
+}
+function storyBeginRecovery(){
+  if(!S || !S.narrative || S.narrative.entry!=="diagnostic") return false;
+  var narrative=S.narrative;
+  narrative.entry="active"; narrative.recoveryStage="needs_index";
+  narrative.files.l_estancia="readable"; narrative.files.l_revision="readable";
+  narrative.files.l_contacto="readable"; narrative.files.l_indice="damaged";
+  narrative.chapters.c01="offered";
+  save();
+  return true;
+}
+function storyFinishPrologue(){
+  if(!S || !S.narrative || S.narrative.entry!=="prologue") return false;
+  S.narrative.entry="diagnostic";
+  save();
+  return true;
+}
+function storyMap(value){ return !!value && typeof value==="object" && !Array.isArray(value); }
+function storyExactMap(value,keys){
+  if(!storyMap(value) || Object.keys(value).length!==keys.length) return false;
+  for(var index=0;index<keys.length;index++) if(!Object.prototype.hasOwnProperty.call(value,keys[index])) return false;
+  return true;
+}
+function storyUniqueList(value,allowed){
+  if(!Array.isArray(value) || value.length>allowed.length) return false;
+  var seen=Object.create(null);
+  for(var index=0;index<value.length;index++){
+    var id=value[index];
+    if(typeof id!=="string" || allowed.indexOf(id)<0 || seen[id]) return false;
+    seen[id]=true;
+  }
+  return true;
+}
+function validNarrativeState(narrative){
+  var fields=["version","entry","prologuePage","aliasAcquired","chapters","awarded","files",
+    "readFiles","readConversations","seenCases","keys","recoveryStage"];
+  var chapterIds=STORY_CHAPTERS.map(function(item){ return item.id; });
+  var fileIds=STORY_FILES.map(function(item){ return item.id; });
+  var conversationIds=STORY_CONVERSATIONS.map(function(item){ return item.id; });
+  if(!storyExactMap(narrative,fields) || narrative.version!==1 ||
+     ["prologue","diagnostic","active"].indexOf(narrative.entry)<0 ||
+     typeof narrative.prologuePage!=="number" || narrative.prologuePage%1!==0 ||
+     narrative.prologuePage<0 || narrative.prologuePage>2 || typeof narrative.aliasAcquired!=="boolean" ||
+     !storyExactMap(narrative.chapters,chapterIds) || !storyExactMap(narrative.files,fileIds)) return false;
+  if(!storyUniqueList(narrative.awarded,chapterIds) || !storyUniqueList(narrative.seenCases,chapterIds) ||
+     !storyUniqueList(narrative.readFiles,fileIds) || !storyUniqueList(narrative.readConversations,conversationIds) ||
+     !storyUniqueList(narrative.keys,["k_casos"])) return false;
+  var expected=newNarrativeState(), active=narrative.entry==="active", stopped=false;
+  if(active){
+    expected.files.l_estancia="readable"; expected.files.l_revision="readable";
+    expected.files.l_contacto="readable"; expected.files.l_indice="damaged";
+    expected.recoveryStage="needs_index";
+  }
+  for(var chapterIndex=0;chapterIndex<STORY_CHAPTERS.length;chapterIndex++){
+    var chapter=STORY_CHAPTERS[chapterIndex], phase=narrative.chapters[chapter.id];
+    if(storyPhaseRank(phase)<0) return false;
+    if(!active){ if(phase!=="locked") return false; }
+    else if(stopped){ if(phase!=="locked") return false; }
+    else {
+      if(phase==="locked") return false;
+      if(phase!=="resolved") stopped=true;
+    }
+    if((phase==="resolved")!==(narrative.awarded.indexOf(chapter.id)>=0)) return false;
+    if(storyPhaseRank(phase)>=storyPhaseRank("returned")){
+      chapter.files.forEach(function(id){ expected.files[id]="readable"; });
+    }
+  }
+  if(narrative.chapters.c02==="resolved"){
+    expected.files.l_indice="readable"; expected.files.l_casos="sealed";
+    expected.recoveryStage="index_restored";
+  } else if(narrative.keys.length) return false;
+  if(narrative.keys.length && narrative.files.l_casos==="readable"){
+    expected.files.l_casos="readable"; expected.recoveryStage="complete_known";
+  }
+  if(storyPhaseRank(narrative.chapters.c03)>=storyPhaseRank("accepted") && expected.files.l_casos!=="readable") return false;
+  if(narrative.chapters.c06==="resolved") expected.files.l_testimonio="readable";
+  if(narrative.chapters.c08==="resolved") expected.files.r_copia_final="readable";
+  if(narrative.recoveryStage!==expected.recoveryStage) return false;
+  for(var fileIndex=0;fileIndex<fileIds.length;fileIndex++){
+    var fileId=fileIds[fileIndex];
+    if(narrative.files[fileId]!==expected.files[fileId]) return false;
+  }
+  if(!active && (narrative.aliasAcquired || narrative.readFiles.length || narrative.readConversations.length || narrative.seenCases.length)) return false;
+  if(active && storyPhaseRank(narrative.chapters.c01)>=storyPhaseRank("accepted") && !narrative.aliasAcquired) return false;
+  for(var readIndex=0;readIndex<narrative.readFiles.length;readIndex++){
+    if(narrative.files[narrative.readFiles[readIndex]]!=="readable") return false;
+  }
+  for(var messageIndex=0;messageIndex<narrative.readConversations.length;messageIndex++){
+    if(!storyConversationAvailable(narrative,narrative.readConversations[messageIndex])) return false;
+  }
+  for(var seenIndex=0;seenIndex<narrative.seenCases.length;seenIndex++){
+    if(narrative.chapters[narrative.seenCases[seenIndex]]!=="resolved") return false;
+  }
+  if(storyPhaseRank(narrative.chapters.c05)>=storyPhaseRank("accepted") &&
+     narrative.readConversations.indexOf("m_nara_presentacion")<0) return false;
+  return true;
+}
+function validStoryPayload(payload,narrative,immersion){
+  if(!storyExactMap(payload,["chapter","node","files"]) || !validNarrativeState(narrative) || !storyMap(immersion)) return false;
+  var chapter=storyItem(STORY_CHAPTERS,payload.chapter);
+  if(!chapter || narrative.chapters[chapter.id]!=="accepted" || typeof payload.node!=="string" ||
+     !storyUniqueList(payload.files,chapter.files) || payload.files.length!==chapter.files.length ||
+     !immersion.grid || !Array.isArray(immersion.grid.nodes)) return false;
+  for(var index=0;index<immersion.grid.nodes.length;index++){
+    var node=immersion.grid.nodes[index];
+    if(node.id===payload.node){
+      if(node.storyChapter!==chapter.id || node.done!==true || !node.storyDefense) return false;
+      for(var defenseIndex=0;defenseIndex<immersion.grid.nodes.length;defenseIndex++){
+        var defense=immersion.grid.nodes[defenseIndex];
+        if(defense.id===node.storyDefense) return defense.id!==node.id && defense.done===true &&
+          ["ice","daemon","nucleo"].indexOf(defense.type)>=0;
+      }
+      return false;
+    }
+  }
+  return false;
+}
+function storyReservedRam(){
+  if(!S || !S.narrative || (inImmersion && inImmersion.narrativePayload)) return 0;
+  for(var index=0;index<STORY_CHAPTERS.length;index++){
+    if(S.narrative.chapters[STORY_CHAPTERS[index].id]==="accepted") return 1;
+  }
+  return 0;
+}
+function storyDiscardPayload(){
+  if(!inImmersion || !inImmersion.narrativePayload) return false;
+  delete inImmersion.narrativePayload; inImmersion.dataUsed--;
+  return true;
+}
+function storyCollectProof(node){
+  if(!S || S.player.cpu<=0 || !inImmersion || combatActive || !node || node.done || inImmersion.narrativePayload) return false;
+  var chapter=storyItem(STORY_CHAPTERS,node.storyChapter);
+  if(!chapter || !S.narrative || S.narrative.chapters[chapter.id]!=="accepted" ||
+      nodeById(node.id)!==node || inImmersion.current!==node.id || inImmersion.depth!==chapter.depth ||
+      inImmersion.dataUsed>=ramCap() || !node.storyDefense) return false;
+    var defense=nodeById(node.storyDefense);
+    if(!defense || defense.id===node.id || defense.done!==true ||
+      ["ice","daemon","nucleo"].indexOf(defense.type)<0) return false;
+  node.done=true; node._done=true;
+  inImmersion.narrativePayload={chapter:chapter.id,node:node.id,files:chapter.files.slice()};
+  inImmersion.dataUsed++;
+  return true;
+}
+function storyAcceptCase(id){
+  if(!S || !S.narrative || S.player.cpu<=0 || inImmersion || combatActive) return false;
+  var narrative=S.narrative, item=storyItem(STORY_CHAPTERS,id);
+  if(!item || narrative.entry!=="active" || narrative.chapters[id]!=="offered") return false;
+  if(id==="c03" && narrative.files.l_casos!=="readable") return false;
+  if(id==="c05" && narrative.readConversations.indexOf("m_nara_presentacion")<0) return false;
+  if(typeof pendingJobData==="function" && pendingJobData(false)+storyReservedRam()>=ramCap()) return false;
+  narrative.chapters[id]="accepted";
+  if(id==="c01") narrative.aliasAcquired=true;
+  if(id==="c08") S.history.finalUnlocked=true;
+  save();
+  return true;
+}
+function storyReadFile(id){
+  if(!S || !S.narrative || S.narrative.files[id]!=="readable") return false;
+  if(S.narrative.readFiles.indexOf(id)<0) S.narrative.readFiles.push(id);
+  save();
+  return true;
+}
+function storySeeCase(id){
+  if(!S || !S.narrative || S.narrative.chapters[id]!=="resolved") return false;
+  if(S.narrative.seenCases.indexOf(id)<0) S.narrative.seenCases.push(id);
+  save();
+  return true;
+}
+function storyNextProloguePage(){
+  if(!S || !S.narrative || S.narrative.entry!=="prologue" || S.narrative.prologuePage>=2) return false;
+  S.narrative.prologuePage++; save(); return true;
+}
+function storyReadConversation(id){
+  if(!S || !S.narrative || !storyConversationAvailable(S.narrative,id)) return false;
+  if(S.narrative.readConversations.indexOf(id)<0) S.narrative.readConversations.push(id);
+  save();
+  return true;
+}
+function storyGrantCaseKey(){
+  if(!S || !S.narrative || !storyConversationAvailable(S.narrative,"m_ines_clave")) return false;
+  if(S.narrative.keys.indexOf("k_casos")<0) S.narrative.keys.push("k_casos");
+  save();
+  return true;
+}
+function storyApplyCaseKey(){
+  if(!S || !S.narrative || S.narrative.keys.indexOf("k_casos")<0 || S.narrative.files.l_casos!=="sealed") return false;
+  S.narrative.files.l_casos="readable"; S.narrative.recoveryStage="complete_known";
+  save();
+  return true;
+}
+function storyReturnCase(id){
+  if(!S || !S.narrative || S.player.cpu<=0 || !inImmersion || combatActive ||
+  inImmersion.current!==inImmersion.grid.entry ||
+     !validStoryPayload(inImmersion.narrativePayload,S.narrative,inImmersion)) return false;
+  var item=storyItem(STORY_CHAPTERS,id), narrative=S.narrative;
+  if(!item || narrative.chapters[id]!=="accepted" || inImmersion.narrativePayload.chapter!==id) return false;
+  item.files.forEach(function(fileId){ narrative.files[fileId]="readable"; });
+  narrative.chapters[id]="returned";
+  delete inImmersion.narrativePayload; inImmersion.dataUsed--;
+  save();
+  return true;
+}
+function storyResolveCase(id){
+  if(!S || !S.narrative || S.player.cpu<=0 || inImmersion || combatActive) return false;
+  var item=storyItem(STORY_CHAPTERS,id), narrative=S.narrative;
+  if(!item || narrative.chapters[id]!=="returned" || narrative.awarded.indexOf(id)>=0) return false;
+  for(var index=0;index<item.files.length;index++) if(narrative.files[item.files[index]]!=="readable") return false;
+  narrative.chapters[id]="resolved"; narrative.awarded.push(id);
+  if(id==="c02"){
+    narrative.files.l_indice="readable"; narrative.files.l_casos="sealed";
+    narrative.recoveryStage="index_restored";
+  }
+  if(id==="c06") narrative.files.l_testimonio="readable";
+  if(id==="c08"){
+    narrative.files.r_copia_final="readable";
+    S.history.finalDone=true; S.history.finalUnlocked=true;
+    S.best.finalDone=true;
+  }
+  for(var chapterIndex=0;chapterIndex<STORY_CHAPTERS.length-1;chapterIndex++){
+    if(STORY_CHAPTERS[chapterIndex].id===id) narrative.chapters[STORY_CHAPTERS[chapterIndex+1].id]="offered";
+  }
+  earnCredits(item.credits); gainXp(item.xp);
+  save();
+  return true;
+}
 
 /* Fuente única de ingresos (A-05 / F-05 del reporte): saldo e histórico de la
    partida crecen juntos, una sola vez por acción. Los logros económicos y
@@ -66,12 +309,14 @@ function xpParaNivel(){ return 80 + S.player.level*40; }
 function isLockdown(){ return S && S.player.heat>=100; }
 
 var _lastSaveShow=0;
+var SAVE_KEY="cypher_os_save_story_v1", SAVE_RECOVERY_KEY="cypher_os_save_recovery_story_v1";
+var _oldSavePresent=false;
 /* Devuelve true si el guardado llegó al storage. Un false permite a la UI
    conservar la sesión en memoria en vez de recargar un archivo obsoleto. */
 function save(showIndicator){
   try {
     S._inImmersion = inImmersion ? JSON.parse(JSON.stringify(inImmersion)) : null;
-    localStorage.setItem("cypher_os_save_v9", JSON.stringify(S));
+    localStorage.setItem(SAVE_KEY, JSON.stringify(S));
     if(showIndicator){
       var now=Date.now();
       if(now-_lastSaveShow>3000){ _lastSaveShow=now; showSaveIndicator(); }
@@ -162,15 +407,15 @@ var _invalidSaveRecovered=false;
 function load(){
   var raw=null;
   try {
-    raw = localStorage.getItem("cypher_os_save_v9");
-    if(!raw) return null;
+    raw = localStorage.getItem(SAVE_KEY);
+    if(!raw){ _oldSavePresent=!!localStorage.getItem("cypher_os_save_v9"); return null; }
     var o = JSON.parse(raw);
     if(!o || !o.player || (typeof validImportState==="function" && !validImportState(o))) throw new Error("guardado inválido");
     return o;
   } catch(e){
     /* No perder el archivo corrupto al iniciar un registro limpio. */
     if(raw){
-      try{ localStorage.setItem("cypher_os_save_recovery_v9",raw); _invalidSaveRecovered=true; }catch(storageErr){}
+      try{ localStorage.setItem(SAVE_RECOVERY_KEY,raw); _invalidSaveRecovered=true; }catch(storageErr){}
     }
     return null;
   }
@@ -343,10 +588,7 @@ function checkUnlocks(){
   if((S.player.stats.maxDepth||0)>=6) unlock("fondo_sueno");
   /* cruces bandeja → INTEL (mensajería Fase 3, CONTRACTS §19) */
   if(msgReceived("m_gracias_reparacion")) unlock("tras_nucleo");
-  if(S.player.level>=5 && S.player.rep.night0X>=3 && !S.history.finalUnlocked){
-    S.history.finalUnlocked = true;
-    addLog("NIGHT-0X ▸ tienes una última oferta pendiente.");
-  }
+  S.history.finalUnlocked=!!(S.narrative && storyPhaseRank(S.narrative.chapters.c08)>=storyPhaseRank("accepted"));
   updateBest();
 }
 

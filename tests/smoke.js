@@ -11,7 +11,7 @@
            eventos/ticker/diálogos, comandos ↔ AYUDA, botones ↔ ACTIONS, CSS)
    ============================================================ */
 "use strict";
-const { loadGame } = require("./harness");
+const { loadGame, storyFixture } = require("./harness");
 
 let passes = 0, fails = 0, warns = 0;
 function ok(cond, label){
@@ -111,6 +111,8 @@ S2.player.level = 10;
 S2.player.stats.maxDepth = 6; S2.player.stats.immerse = 20; S2.player.stats.ice = 20;
 S2.player.stats.daemons = 10; S2.player.stats.data = 100; S2.player.stats.maxHeat = 95;
 S2.player.rep = { mamaWire:5, doctorSudario:5, night0X:5, kairos:5 };
+S2.narrative = storyFixture(S2.narrative, sandbox.STORY_CHAPTERS.map(item => item.id), sandbox.STORY_FILES.map(item => item.id));
+S2.history.finalUnlocked = true;
 S2.history.finalDone = true;
 T.checkUnlocks();
 const un = new Set(S2.intel);
@@ -320,12 +322,14 @@ async function finish(){
   const imports = await require("./import-text-safety").run({summary:true});
   const session = await require("./session-cleanup").run({summary:true});
   const boot = await require("./intro-boot").run({summary:true});
+   const narrative = await require("./narrative-state").run({summary:true});
   const totalFails = fails + harness.fails + regressions.fails + jobs.fails + gridIntel.fails + messages.fails + music.fails + controls.fails + vaults.fails + fixers.fails + layout.fails + saveTools.fails + sidebar.fails + motion.fails + difficulty.fails + intro.fails + introFs.fails + reports.fails + wealth.fails + entry.fails + resume.fails + imports.fails + session.fails + boot.fails;
   console.log("\n================ RESUMEN ================");
   console.log("humo: " + passes + " correctas · arnés: " + harness.passes + "/" + harness.total +
     " · regresiones: " + regressions.passes + "/" + regressions.total + " · trabajos/persistencia: " + jobs.passes + "/" + jobs.total + " · expedientes/HUD: " + gridIntel.passes + "/" + gridIntel.total + " · avisos: " + messages.passes + "/" + messages.total + " · música: " + music.passes + "/" + music.total + " · controles: " + controls.passes + "/" + controls.total + " · vaults/ofertas: " + vaults.passes + "/" + vaults.total + " · fixers/ofertas: " + fixers.passes + "/" + fixers.total + " · grid/layout: " + layout.passes + "/" + layout.total + " · partida/menú: " + saveTools.passes + "/" + saveTools.total + " · lateral: " + sidebar.passes + "/" + sidebar.total + " · movimiento: " + motion.passes + "/" + motion.total + " · dificultad: " + difficulty.passes + "/" + difficulty.total + " · intro: " + intro.passes + "/" + intro.total + " · intro-fullscreen: " + introFs.passes + "/" + introFs.total + " · logros/informes: " + reports.passes + "/" + reports.total + " · logros/créditos: " + wealth.passes + "/" + wealth.total + " · entrada/bloqueo: " + entry.passes + "/" + entry.total + " · guardado/continuación: " + resume.passes + "/" + resume.total + " · importación segura: " + imports.passes + "/" + imports.total + " · sesión/decoración: " + session.passes + "/" + session.total + " · encendido: " + boot.passes + "/" + boot.total);
   console.log("correctas: " + (passes + harness.passes + regressions.passes + jobs.passes + gridIntel.passes + messages.passes + music.passes + controls.passes + vaults.passes + fixers.passes + layout.passes + saveTools.passes + sidebar.passes + motion.passes + difficulty.passes + intro.passes + introFs.passes + reports.passes + wealth.passes + entry.passes + resume.passes + imports.passes + session.passes + boot.passes) + " · fallos: " + totalFails + " · avisos: " + warns);
-  process.exitCode = totalFails ? 1 : 0;
+   console.log("F1 narrativa: " + narrative.passes + "/" + narrative.total + "; total con narrativa: " + (passes + harness.passes + regressions.passes + jobs.passes + gridIntel.passes + messages.passes + music.passes + controls.passes + vaults.passes + fixers.passes + layout.passes + saveTools.passes + sidebar.passes + motion.passes + difficulty.passes + intro.passes + introFs.passes + reports.passes + wealth.passes + entry.passes + resume.passes + imports.passes + session.passes + boot.passes + narrative.passes) + "; fallos: " + (totalFails + narrative.fails));
+   process.exitCode = totalFails + narrative.fails ? 1 : 0;
 }
 finish().catch(function(err){
   console.error("suite interrumpida:", err);

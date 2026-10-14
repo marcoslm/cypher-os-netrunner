@@ -46,6 +46,59 @@ var SIM = {
   substation:"⌁", nucleo:"✦", signal:"◎", empty:"·"
 };
 
+var STORY_CHAPTERS = [
+  {id:"c01", title:"LA FACTURA", depth:1, credits:140, xp:60, source:"Facturacion de La Bajante", files:["r_factura"]},
+  {id:"c02", title:"EL ARCHIVO DE TOMAS", depth:2, credits:180, xp:80, source:"Respaldo de mantenimiento", files:["r_indice"]},
+  {id:"c03", title:"LAS DOS VERSIONES", depth:2, credits:260, xp:120, source:"Servicio de cobertura", files:["r_caso"]},
+  {id:"c04", title:"LOS ONCE SEGUNDOS", depth:3, credits:320, xp:150, source:"Controlador local de 2091", files:["r_parpadeo"]},
+  {id:"c05", title:"LA FIRMA", depth:3, credits:400, xp:180, source:"Archivo de autorizaciones", files:["r_permisos","r_actualizacion"]},
+  {id:"c06", title:"EL HUESPED", depth:4, credits:500, xp:200, source:"Anexo de Revision 4", files:["r_custodia"]},
+  {id:"c07", title:"LA CONTINUIDAD", depth:4, credits:750, xp:240, source:"Control de servicios locales", files:["r_continuidad"]},
+  {id:"c08", title:"SIN ULTIMA PALABRA", depth:5, credits:5000, xp:600, source:"Permisos del Nucleo", files:["r_revocacion"]}
+];
+var STORY_FILES = [
+  {id:"l_estancia", origin:"local", title:"Recibo de estancia", chapter:null},
+  {id:"l_revision", origin:"local", title:"Revision de instalaciones", chapter:null},
+  {id:"l_contacto", origin:"inherited-mail", title:"Las versiones", chapter:null},
+  {id:"l_indice", origin:"local", title:"Indice de mantenimiento", chapter:"c02"},
+  {id:"l_casos", origin:"local", title:"Copias de casos", chapter:"c02"},
+  {id:"r_factura", origin:"network", title:"Historial de factura", chapter:"c01"},
+  {id:"r_indice", origin:"network", title:"Respaldo del indice", chapter:"c02"},
+  {id:"r_caso", origin:"network", title:"Historial de cobertura", chapter:"c03"},
+  {id:"r_parpadeo", origin:"network", title:"Diario del controlador", chapter:"c04"},
+  {id:"r_permisos", origin:"network", title:"Cadena de autorizaciones", chapter:"c05"},
+  {id:"r_custodia", origin:"network", title:"Registro de custodia", chapter:"c06"},
+  {id:"l_testimonio", origin:"current-mail", title:"Tomás confirma su identidad", chapter:"c06"},
+  {id:"r_continuidad", origin:"network", title:"Verificaciones locales", chapter:"c07"},
+  {id:"r_actualizacion", origin:"network", title:"Actualizacion propuesta", chapter:"c05"},
+  {id:"r_revocacion", origin:"network", title:"Permiso revocado", chapter:"c08"},
+  {id:"r_copia_final", origin:"network", title:"Copia preservada", chapter:"c08"}
+];
+var STORY_CONVERSATIONS = [
+  {id:"m_berto_encargo", chapter:"c01", phase:"offered"},
+  {id:"m_celia_alias", chapter:"c01", phase:"accepted"},
+  {id:"m_berto_entrega", chapter:"c01", phase:"resolved"},
+  {id:"m_ines_corte", chapter:"c01", phase:"resolved"},
+  {id:"m_mateo_indice", chapter:"c01", phase:"resolved"},
+  {id:"m_mateo_restaurado", chapter:"c02", phase:"resolved"},
+  {id:"m_ines_clave", chapter:"c02", phase:"resolved"},
+  {id:"m_ines_versiones", chapter:"c03", phase:"resolved"},
+  {id:"m_mateo_controlador", chapter:"c03", phase:"resolved"},
+  {id:"m_ines_parpadeo", chapter:"c04", phase:"resolved"},
+  {id:"m_nara_presentacion", chapter:"c04", phase:"resolved"},
+  {id:"m_nara_firmas", chapter:"c05", phase:"resolved"},
+  {id:"m_nara_custodia", chapter:"c05", phase:"resolved"},
+  {id:"m_tomas_contacto", chapter:"c06", phase:"resolved"},
+  {id:"m_ines_salida", chapter:"c06", phase:"resolved"},
+  {id:"m_celia_operadores", chapter:"c06", phase:"resolved"},
+  {id:"m_nara_continuidad", chapter:"c07", phase:"resolved"},
+  {id:"m_nara_intervencion", chapter:"c07", phase:"resolved"},
+  {id:"m_berto_final", chapter:"c08", phase:"resolved"},
+  {id:"m_ines_final", chapter:"c08", phase:"resolved"},
+  {id:"m_nara_final", chapter:"c08", phase:"resolved"},
+  {id:"m_copia_final", chapter:"c08", phase:"resolved"}
+];
+
 // Datos de lore (informes). Texto breve, estilo fragmento encontrado.
 var INTEL = [
   {id:"anatomia", t:"ANATOMÍA DEL CABLE", r:"low", u:"first_immerse", k:"Qué es la red por dentro: capas superpuestas, como un cuerpo.",
@@ -733,7 +786,7 @@ var MUSIC_TRACKS = {
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],
-  ["FIRMWARE v1.0 alpha · BUILD 65", "dim"],
+  ["FIRMWARE v1.0 alpha · BUILD 66", "dim"],
   ["memoria ................. 64K OK", "ok"],
   ["bus neural .............. OK", "ok"],
   ["interfaz del deck ....... OK", "ok"],

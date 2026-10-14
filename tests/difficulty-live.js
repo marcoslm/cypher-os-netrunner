@@ -48,7 +48,7 @@ async function run(options={}) {
     g.run('renderEstado();');assert.equal(btn(g,'legendario').disabled,true);
     clickAction(g,'setDifficulty',{'data-diff':'legendario'});
     assert.equal(confirm(g),false);assert.equal(g.run('S.difficulty'),'normal');
-    g.run('S.history.finalDone=true;save();renderEstado();');
+    g.run('S.best.finalDone=true;save();renderEstado();');
     assert.equal(btn(g,'legendario').disabled,false);
     clickAction(g,'setDifficulty',{'data-diff':'legendario'});g.run('resolveConfirm(true);');
     assert.equal(g.run('S.difficulty'),'legendario');assert.equal(g.saved().difficulty,'legendario');

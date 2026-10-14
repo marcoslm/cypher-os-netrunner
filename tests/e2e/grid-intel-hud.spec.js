@@ -98,7 +98,7 @@ test('legacy en la calle: importar y cargar recuperan VESPER desde el contrato s
   await game.importFile(incoming,'vesper-antiguo.json');
   await assertRecovered();
   // Arrange the original legacy storage directly, without running its migration in the fixture.
-  await page.evaluate(legacy=>localStorage.setItem('cypher_os_save_v9',JSON.stringify(legacy)),incoming);
+  await page.evaluate(legacy=>localStorage.setItem('cypher_os_save_story_v1',JSON.stringify(legacy)),incoming);
   await game.reload();
   await assertRecovered();
   const migrated=(await game.snapshot()).saved;

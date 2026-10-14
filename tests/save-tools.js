@@ -93,11 +93,11 @@ async function run(options={}) {
     g.run('startImmersion(4);startCombat({node:{type:"ice",tier:1,tierName:"T1",name:"TEST"},onWin:onNodeDefeated});save();');
     /* Estado obsoleto: el diálogo quedó abierto y el fondo está inerte. */
     g.run('openSaveTools()');
-    const state=g.run('S'),inm=g.run('inImmersion'),raw=g.sb.localStorage.getItem('cypher_os_save_v9');
+    const state=g.run('S'),inm=g.run('inImmersion'),raw=g.sb.localStorage.getItem('cypher_os_save_story_v1');
     g.emitElement('btn-reset','click');g.emitElement('btn-import','click');
     assert.equal(g.run('confirmOpen()'),false);assert.equal(g.run('combatActive'),true);
     assert.equal(g.run('S'),state);assert.equal(g.run('inImmersion'),inm);
-    assert.equal(g.sb.localStorage.getItem('cypher_os_save_v9'),raw);
+    assert.equal(g.sb.localStorage.getItem('cypher_os_save_story_v1'),raw);
     /* Congelado bajo una capa activa, una operación rechazada no lo descarta. */
     assert.equal(g.run('saveToolsOpen()'),true);
     assert.equal(g.run('importGameState(nuevoEstado())'),false);

@@ -28,7 +28,7 @@ test('intro F02: guardado fallido al volver conserva la partida en memoria',asyn
   await page.evaluate(()=>{
     S.player.credits=4321;
     const original=Storage.prototype.setItem;
-    Storage.prototype.setItem=function(k,v){ if(k==='cypher_os_save_v9') throw new DOMException('Prueba de cuota','QuotaExceededError'); return original.call(this,k,v); };
+    Storage.prototype.setItem=function(k,v){ if(k==='cypher_os_save_story_v1') throw new DOMException('Prueba de cuota','QuotaExceededError'); return original.call(this,k,v); };
   });
   await game.openSaveTools();
   await page.locator('#btn-intro').click();

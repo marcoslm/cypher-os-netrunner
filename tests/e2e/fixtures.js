@@ -3,6 +3,7 @@
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { test: base, expect } = require('@playwright/test');
+const { storyFixture } = require('../harness');
 
 const GAME_URL = pathToFileURL(path.resolve(__dirname, '../../cypher_os.html')).href;
 const MUSIC_URL = pathToFileURL(path.resolve(__dirname, '../../music') + path.sep).href;
@@ -141,6 +142,14 @@ const test = base.extend({
         await game.boot(options);
       },
       async setup(options = {}, bootOptions = {}) {
+        if (options.state?.history?.finalDone || options.state?.history?.finalUnlocked) {
+          const catalog = await page.evaluate(() => ({ narrative: newNarrativeState(),
+            chapters: STORY_CHAPTERS.map(item => item.id), files: STORY_FILES.map(item => item.id) }));
+          const completed = !!options.state.history.finalDone;
+          options = { ...options, state: { ...options.state,
+            history: { ...options.state.history, finalUnlocked: true, finalDone: completed },
+            narrative: options.state.narrative || storyFixture(catalog.narrative, catalog.chapters, catalog.files, completed ? 'resolved' : 'accepted') } };
+        }
         // Seed once through the real save path. Reloads never reseed localStorage.
         // evaluate is used to arrange state only, never to run the input being tested.
         await page.evaluate(options => {
@@ -189,7 +198,7 @@ const test = base.extend({
       async snapshot() {
         // Read-only observations: no focus(), handlers, synthetic events or state mutations.
         return page.locator('body').evaluate(() => {
-          const raw = localStorage.getItem('cypher_os_save_v9');
+          const raw = localStorage.getItem('cypher_os_save_story_v1');
           return JSON.parse(JSON.stringify({
             state: S, raw, saved: raw ? JSON.parse(raw) : null,
             immersion: inImmersion, view: currentView, combatActive, gridRender,

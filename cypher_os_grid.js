@@ -590,10 +590,10 @@ function useSubstation(n){
 
 function collectData(n){
   if(n.done || n._done){ msg("· dato ya recogido.","gris"); renderGridHud(); return; }
-  if(inImmersion.dataUsed >= ramCap()){
+  if(inImmersion.dataUsed+storyReservedRam() >= ramCap()){
     msg("RAM llena. superficializa para vender antes de recoger más.","ambar"); return;
   }
-  if(n.layer<3 && ramCap()-inImmersion.dataUsed<=pendingJobData(true)){
+  if(n.layer<3 && ramCap()-inImmersion.dataUsed-storyReservedRam()<=pendingJobData(true)){
     msg("RAM reservada para los datos profundos de CARRERA. Recoge primero sus objetivos en capas ≥3.","ambar"); return;
   }
   n._done = true; n.done = true;
@@ -644,19 +644,16 @@ function onNodeDefeated(ctx){
 }
 
 function defeatNucleo(){
+  if(!S.narrative || S.narrative.chapters.c08!=="accepted" || !inImmersion) return false;
+  var objective=null;
+  for(var index=0;index<inImmersion.grid.nodes.length;index++){
+    if(inImmersion.grid.nodes[index].storyChapter==="c08") objective=inImmersion.grid.nodes[index];
+  }
+  if(!objective) return false;
   S.player.stats.ice++;
-  gainXp(600); earnCredits(5000);
-  S.history.finalDone = true;
-  if(!S.best) S.best={};
-  S.best.finalDone = true; /* marca permanente: LEGENDARIO disponible incluso tras NUEVO REGISTRO */
-  unlock("tras_nucleo");
-  addLog("✦ EL NÚCLEO apagado. la ciudad entera respiró.");
+  addLog("✦ EL NÚCLEO ▸ defensa retirada. La revocacion sigue pendiente de recuperacion y entrega.");
   sound.win();
-  showNucleoEnding(function(){
-    var cur = inImmersion ? nodeById(inImmersion.current) : null;
-    if(cur) cur.done=true;
-    msg("el Núcleo parpadea... y tú sigues aquí. ¿seguir en el Grid?","magenta");
-  });
+  return true;
 }
 
 function showNucleoEnding(onDone){

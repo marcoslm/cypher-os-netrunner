@@ -202,7 +202,7 @@ async function run(options = {}) {
     assert.equal(g.run('validImportState(S)'),true);
   });
   await check('importación rechaza visitas y contadores dañados sin sustituir ni guardar', g => {
-    g.run('save();'); const state=g.run('S'), inm=g.run('inImmersion'), raw=g.sb.localStorage.getItem('cypher_os_save_v9');
+    g.run('save();'); const state=g.run('S'), inm=g.run('inImmersion'), raw=g.sb.localStorage.getItem('cypher_os_save_story_v1');
     const mutations=[s=>s.visited.push('fantasma'),s=>s.visited.push(s.visited[0]),s=>s.visited='0_0',s=>s.visited=[],
       s=>s.visitsPartial='false',s=>s.exploredNotified=1,s=>s.exhaustedNotified='true',s=>s.enemyCountsPartial=0,
       s=>s.enemyCounts.ice='1',s=>s.enemyCounts.daemons=-1,s=>s.enemyCounts.nucleo=0.5,
@@ -211,7 +211,7 @@ async function run(options = {}) {
       const candidate=JSON.parse(raw); mutate(candidate._inImmersion); g.sb.__candidate=candidate;
       assert.equal(g.run('importGameState(window.__candidate)'),false);
       assert.equal(g.run('S'),state); assert.equal(g.run('inImmersion'),inm);
-      assert.equal(g.sb.localStorage.getItem('cypher_os_save_v9'),raw);
+      assert.equal(g.sb.localStorage.getItem('cypher_os_save_story_v1'),raw);
     }
   });
   await check('tres contratos y CARRERA usan el progreso real y reflejan calor pasivo', g => {

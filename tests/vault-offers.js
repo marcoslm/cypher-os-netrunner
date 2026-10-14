@@ -185,12 +185,12 @@ async function run(options={}) {
     assert.equal(g.run('projectRecovered("KURO")'),true);
   });
   await check('marca administrativa malformada se rechaza antes de sustituir sesión',g=>{
-    g.run('save();'); const raw=g.sb.localStorage.getItem('cypher_os_save_v9'), original=g.run('S');
+    g.run('save();'); const raw=g.sb.localStorage.getItem('cypher_os_save_story_v1'), original=g.run('S');
     for(const marker of ['true',1,true]) {
       const candidate=JSON.parse(raw); candidate.jobs=[job('KURO','dañado',{_vaultRetired:marker})];
       g.sb.__candidate=candidate;
       assert.equal(g.run('importGameState(window.__candidate)'),false);
-      assert.equal(g.run('S'),original); assert.equal(g.sb.localStorage.getItem('cypher_os_save_v9'),raw);
+      assert.equal(g.run('S'),original); assert.equal(g.sb.localStorage.getItem('cypher_os_save_story_v1'),raw);
     }
   });
   console.log(`Vaults/ofertas: ${passes} correctas · ${fails} fallos`);

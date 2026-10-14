@@ -106,7 +106,7 @@ for(const scenario of scenarios) {
     });
     if(scenario.touch)await page.touchscreen.tap(location.x,location.y);
     else await page.mouse.click(location.x,location.y);
-    if(await page.locator('#codeInput').isVisible())await solveCodeCombat(page);
+    if(await page.locator('#combat').isVisible())await solveCodeCombat(page);
     const after=await game.snapshot();expect(after.immersion.current).toBe('1_low');
     expect(after.immersion.grid.nodes.find(n=>n.id==='1_low')).toMatchObject({done:true,_done:true});
     expect(after.immersion.dataUsed).toBe(1);

@@ -55,7 +55,7 @@ async function run(options={}){
   assert.equal(g.run('S.player.credits'),900,'límite físico documentado: recarga = archivo');
  });
  await check('sin archivo previo, el fallo conserva la partida nueva en memoria',g=>{
-  g.sb.localStorage.removeItem('cypher_os_save_v9');
+  g.sb.localStorage.removeItem('cypher_os_save_story_v1');
   g.run('S=nuevoEstado();ensureStateIntegrity();S.player.credits=777;');
   g.sb.localStorage.fail.setItem=true;
   returnIntro(g);continueGame(g);

@@ -611,7 +611,7 @@ function loadGame(options = {}){
   const game={
     T:sandbox.__T,sandbox,sb:sandbox,src,run,clock,timers:clock,audio:sandbox.__audio,
     emitElement:sandbox.__emitElement,emitDocument:sandbox.__emitDocument,
-    saved:() => JSON.parse(sandbox.localStorage.getItem("cypher_os_save_v9")),
+    saved:() => JSON.parse(sandbox.localStorage.getItem("cypher_os_save_story_v1")),
     pending:clock.pending,ids:clock.ids,fire:clock.fire,list:clock.list,advance:clock.advance,
     dispose:sandbox.__dispose
   };
@@ -619,4 +619,21 @@ function loadGame(options = {}){
   return game;
 }
 
-module.exports = {loadGame,game:loadGame,readSources,createSandbox,createClock,createStorage,audioModel,clickAction,fakeEl,HarnessEvent,ROOT,FILES};
+function storyFixture(narrative, chapterIds, fileIds, phase = 'resolved') {
+  const result = JSON.parse(JSON.stringify(narrative));
+  result.entry = 'active';
+  result.aliasAcquired = true;
+  result.recoveryStage = 'complete_known';
+  result.keys = ['k_casos'];
+  result.readConversations = ['m_nara_presentacion'];
+  for (const id of chapterIds) result.chapters[id] = id === 'c08' ? phase : 'resolved';
+  result.awarded = chapterIds.filter(id => result.chapters[id] === 'resolved');
+  for (const id of fileIds) result.files[id] = 'readable';
+  if (phase === 'accepted') {
+    result.files.r_revocacion = 'unknown';
+    result.files.r_copia_final = 'unknown';
+  }
+  return result;
+}
+
+module.exports = {loadGame,game:loadGame,readSources,createSandbox,createClock,createStorage,audioModel,clickAction,fakeEl,HarnessEvent,ROOT,FILES,storyFixture};

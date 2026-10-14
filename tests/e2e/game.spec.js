@@ -134,7 +134,7 @@ test('HARDCORE: foco e inert, Tab, Ctrl+K/S, recarga y NUEVO REGISTRO cancelar/c
   await expect(page.locator('#cmd')).toBeFocused();
 });
 
-test('NORMAL: RECONEXIÓN restaura el snapshot vivo tras recarga y pierde la inmersión', async ({ page, game }) => {
+test('NORMAL: RECONEXIÓN conserva el estado actual tras recarga y pierde la inmersión', async ({ page, game }) => {
   await game.setup({
     player: { cpu: 88, heat: 80, credits: 1234, level: 3, xp: 11, stats: { jobsFailed: 2 } },
     state: { jobs: [{ id: 'checkpoint-job', title: 'RECOLECTA EN EL GRID', desc: 'Recoge dos datos.', type: 'recoleta', contact: 'mamaWire', n: 2, risk: 'low', reward: 100, xp: 12, done: false, failed: false, prog: { gathered: 1 } }] },
@@ -143,7 +143,7 @@ test('NORMAL: RECONEXIÓN restaura el snapshot vivo tras recarga y pierde la inm
   await page.keyboard.press('Control+s');
   const checkpoint = (await game.snapshot()).saved;
   await game.fatal({ credits: 9876, xp: 99 });
-  expect((await game.snapshot()).saved._reconnectCheckpoint.player.credits).toBe(1234);
+  expect((await game.snapshot()).saved._reconnectCheckpoint.player.credits).toBe(9876);
   await game.reload();
   const reconnect = page.locator('#flatline [data-action="reconnect"]');
   const record = page.locator('#flatline [data-action="newRecord"]');
@@ -159,7 +159,7 @@ test('NORMAL: RECONEXIÓN restaura el snapshot vivo tras recarga y pierde la inm
   await expect(page.locator('#h-ram')).toHaveText('0/6');
   await expect(nav(page, 'inicio')).toHaveClass(/active/);
   const result = await game.snapshot();
-  expect(result.state.player).toMatchObject({ credits: 1234, xp: 11, level: 3, heat: Math.round(checkpoint.player.heat * 0.4), stats: { jobsFailed: 3 } });
+  expect(result.state.player).toMatchObject({ credits: 9876, xp: 99, level: 3, heat: Math.round(checkpoint.player.heat * 0.4), stats: { jobsFailed: 3 } });
   expect(result.state.jobs[0]).toMatchObject({ done: true, failed: true });
   expect(result.immersion).toBeNull();
   expect(result.saved._inImmersion).toBeNull();
@@ -398,19 +398,21 @@ test('vault: solo se acepta en la calle, uno activo y un objetivo en el siguient
   expect(vaults[0]).toMatchObject({ proj: 'KURO', layer: 2 });
 });
 
-test('Núcleo: asignación en una inmersión queda pendiente hasta el siguiente DIP, incluso tras recarga', async ({ page, game }) => {
-  await game.setup({ player: { level: 5, rep: { night0X: 3 } }, immersion: makeImmersion() });
+test('Núcleo: c08 solo prepara el siguiente DIP en calle y persiste tras recarga', async ({ page, game }) => {
+  await game.setup({ player: { level: 5, rep: { night0X: 3 } }, state: { history: { finalUnlocked: true } }, immersion: makeImmersion() });
   const oldGrid = (await game.snapshot()).immersion;
   expect(oldGrid.depth).toBe(4);
   expect(oldGrid.grid.nodes.some(node => node.boss)).toBe(false);
   await nav(page, 'inicio').click();
-  await expect(action(page, 'acceptNucleo')).toBeVisible();
-  await action(page, 'acceptNucleo').click();
-  expect((await game.snapshot()).saved.nextDepth).toBe(5);
+  await expect(action(page, 'acceptNucleo')).toHaveCount(0);
+  await game.command('nucleo');
+  expect((await game.snapshot()).saved.nextDepth).toBeNull();
   expect((await game.snapshot()).immersion.grid).toEqual(oldGrid.grid);
   await nav(page, 'red').click();
   await action(page, 'doSuperficie').click();
   await action(page, 'closeResume').click();
+  await expect(action(page, 'acceptNucleo')).toBeVisible();
+  await action(page, 'acceptNucleo').click();
   expect((await game.snapshot()).saved.nextDepth).toBe(5);
   await game.reload();
   expect((await game.snapshot()).state.nextDepth).toBe(5);

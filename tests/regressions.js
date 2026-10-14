@@ -1,7 +1,7 @@
 /* Regresiones de gameplay/persistencia de CYPHER://OS. Sin dependencias. */
 "use strict";
 const assert = require("node:assert/strict");
-const { loadGame, audioModel, clickAction } = require("./harness");
+const { loadGame, audioModel, clickAction, storyFixture } = require("./harness");
 
 async function run(options = {}){
   let fails = 0, passes = 0;
@@ -132,7 +132,8 @@ async function run(options = {}){
 
   await check("SEALED NETWORK en LEGENDARIO alcanza la capa 6 y posteriores", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.history.finalDone=true;S.best.finalDone=true;S.difficulty="legendario";S._endlessSurfaces=4;ACTIONS.startEndless();');
+    g.sb.__story = storyFixture(g.run('newNarrativeState()'), g.run('STORY_CHAPTERS.map(function(item){return item.id;})'), g.run('STORY_FILES.map(function(item){return item.id;})'));
+    g.run('S=nuevoEstado();ensureStateIntegrity();S.narrative=window.__story;S.history.finalUnlocked=true;S.history.finalDone=true;S.best.finalDone=true;S.difficulty="legendario";S._endlessSurfaces=4;ACTIONS.startEndless();');
     assert.ok(g.run("inImmersion.depth") >= 6);
     assert.ok(g.run("inImmersion.grid.maxDepth") >= 6);
   });
@@ -170,10 +171,10 @@ async function run(options = {}){
 
   await check("RECONEXIÓN recupera checkpoint y contabiliza trabajos si los fracasa", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.jobs=[{id:"uno",type:"recoleta",title:"Uno",done:false,failed:false,prog:{gathered:0}}];save();S.player.credits=987;S.player.xp=29;flatline();afterBoot();clearInterval(loopId);clearTimeout(_glitchId);ACTIONS.reconnect();clearInterval(loopId);');
+    g.run('S=nuevoEstado();ensureStateIntegrity();S.jobs=[{id:"uno",type:"recoleta",title:"Uno",desc:"Carga",contact:"mamaWire",n:1,reward:100,xp:20,done:false,failed:false,prog:{gathered:0}}];save();S.player.credits=987;S.player.xp=29;flatline();afterBoot();clearInterval(loopId);clearTimeout(_glitchId);ACTIONS.reconnect();clearInterval(loopId);');
     const S = g.run("S");
-    assert.equal(S.player.credits, 500);
-    assert.equal(S.player.xp, 0);
+    assert.equal(S.player.credits, 987);
+    assert.equal(S.player.xp, 29);
     assert.ok(S.player.cpu >= 45);
     if(S.jobs[0] && S.jobs[0].failed) assert.equal(S.player.stats.jobsFailed, 1);
   });
@@ -384,12 +385,16 @@ async function run(options = {}){
     assert.equal(g.run('inImmersion.grid.nodes.filter(function(n){return n.type==="vault";}).length'),1);
   });
 
-  await check("NÚCLEO asignado durante inmersión persiste, se consume y genera un solo boss", () => {
+  await check("NÚCLEO exige c08, rechaza asignacion inmersa y genera un solo boss", () => {
     const g=game({timers:true});
     g.run('S=nuevoEstado();ensureStateIntegrity();S.player.level=5;S.player.rep.night0X=3;checkUnlocks();startImmersion(4);showView("inicio");');
     clickAction(g,"acceptNucleo");
-    assert.equal(g.run("S.nextDepth"),5);
+    assert.equal(g.run("S.nextDepth"),null);
+    assert.equal(g.run("S.history.finalUnlocked"),false);
     g.run('superficializar();ACTIONS.closeResume();');
+    g.sb.__story = storyFixture(g.run('newNarrativeState()'), g.run('STORY_CHAPTERS.map(function(item){return item.id;})'), g.run('STORY_FILES.map(function(item){return item.id;})'), 'accepted');
+    g.run('S.narrative=window.__story;S.history.finalUnlocked=true;renderInicio();');
+    clickAction(g,"acceptNucleo");
     assert.equal(g.saved().nextDepth,5);
     g.run('ACTIONS.dipGrid();');
     assert.equal(g.run("inImmersion.depth"),5);
@@ -539,7 +544,7 @@ async function run(options = {}){
   await check("QA-02: todos los contadores y speedrun rechazan tipos dañados sin sustituir estado", () => {
     const g=game();
     g.run('S=nuevoEstado();ensureStateIntegrity();S.snd=false;S.mus=false;S.player.credits=1234;save();');
-    const original=g.run("S"), raw=g.sb.localStorage.getItem("cypher_os_save_v9");
+    const original=g.run("S"), raw=g.sb.localStorage.getItem("cypher_os_save_story_v1");
     const defaults=g.run("defaultStats()");
     const fields=Object.keys(defaults).filter(key=>typeof defaults[key]==="number");
     for(const key of fields){
@@ -547,14 +552,14 @@ async function run(options = {}){
         const candidate=JSON.parse(raw);candidate.player.stats[key]=bad;g.sb.__candidate=candidate;
         assert.equal(g.run('importGameState(window.__candidate)'),false,key+" tipo inválido");
         assert.equal(g.run("S"),original);
-        assert.equal(g.sb.localStorage.getItem("cypher_os_save_v9"),raw);
+        assert.equal(g.sb.localStorage.getItem("cypher_os_save_story_v1"),raw);
       }
     }
     for(const bad of ["true","false",1,[],{}]){
       const candidate=JSON.parse(raw);candidate.player.stats.speedrun=bad;g.sb.__candidate=candidate;
       assert.equal(g.run('importGameState(window.__candidate)'),false,"speedrun debe ser booleano");
       assert.equal(g.run("S"),original);
-      assert.equal(g.sb.localStorage.getItem("cypher_os_save_v9"),raw);
+      assert.equal(g.sb.localStorage.getItem("cypher_os_save_story_v1"),raw);
     }
     for(const bad of ["dañado",false,[],{},NaN]){
       const candidate=JSON.parse(raw);candidate.player.stats.iceByTier[1]=bad;g.sb.__candidate=candidate;
@@ -591,13 +596,13 @@ async function run(options = {}){
   await check("QA-02: best legacy y flags malformados no introducen corrupción al migrar", () => {
     const g=game();
     g.run('S=nuevoEstado();ensureStateIntegrity();S.snd=false;S.mus=false;save();');
-    const original=g.run("S"), raw=g.sb.localStorage.getItem("cypher_os_save_v9");
+    const original=g.run("S"), raw=g.sb.localStorage.getItem("cypher_os_save_story_v1");
     const badBest={maxHeat:"dañado",ghostRuns:[],cleanSrf:{},substationsUsed:true,totalSpent:"345",speedrun:"true",finalDone:"false"};
     for(const [key,bad] of Object.entries(badBest)){
       const candidate=JSON.parse(raw);candidate.player.stats={};candidate.best={[key]:bad};g.sb.__candidate=candidate;
       assert.equal(g.run('importGameState(window.__candidate)'),false,"legacy best."+key);
       assert.equal(g.run("S"),original);
-      assert.equal(g.sb.localStorage.getItem("cypher_os_save_v9"),raw);
+      assert.equal(g.sb.localStorage.getItem("cypher_os_save_story_v1"),raw);
     }
     for(const key of ["snd","amb","mus"]){
       const candidate=JSON.parse(raw);candidate[key]="false";g.sb.__candidate=candidate;

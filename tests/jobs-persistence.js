@@ -295,7 +295,7 @@ async function run(options = {}) {
   });
   await check('importación rechaza grafos, recompensas, flags y progreso dañados sin sustituir sesión', g => {
     setJobs(g,[job('recoleta',2)]); g.run('startImmersion(4);save();');
-    const raw=g.sb.localStorage.getItem('cypher_os_save_v9'), original=g.run('S'), originalInm=g.run('inImmersion');
+    const raw=g.sb.localStorage.getItem('cypher_os_save_story_v1'), original=g.run('S'), originalInm=g.run('inImmersion');
     const corruptions = [
       s=>s._inImmersion.grid.nodes[1].id=s._inImmersion.grid.nodes[0].id,
       s=>s._inImmersion.grid.entry='fantasma', s=>s._inImmersion.current='fantasma',
@@ -315,7 +315,7 @@ async function run(options = {}) {
       const candidate=JSON.parse(raw); corrupt(candidate); g.sb.__candidate=candidate;
       assert.equal(g.run('importGameState(window.__candidate)'),false);
       assert.equal(g.run('S'),original); assert.equal(g.run('inImmersion'),originalInm);
-      assert.equal(g.sb.localStorage.getItem('cypher_os_save_v9'),raw);
+      assert.equal(g.sb.localStorage.getItem('cypher_os_save_story_v1'),raw);
     }
     const legacy=JSON.parse(raw);
     delete legacy._jobQuotaVersion; delete legacy._inImmersion.combatOccurred; delete legacy._inImmersion.enemiesDefeated;
@@ -324,9 +324,9 @@ async function run(options = {}) {
     assert.equal(g.run('importGameState(window.__legacy)'),true,'campos opcionales legacy siguen admitidos');
     assert.equal(g.run('inImmersion.grid.nodes.length'),legacy._inImmersion.grid.nodes.length);
     const candidate=JSON.parse(raw); candidate._inImmersion.grid.nodes[1].data='dañado';
-    g.sb.localStorage.setItem('cypher_os_save_v9',JSON.stringify(candidate));
+    g.sb.localStorage.setItem('cypher_os_save_story_v1',JSON.stringify(candidate));
     assert.equal(g.run('load()'),null);
-    assert.equal(g.sb.localStorage.getItem('cypher_os_save_recovery_v9'),JSON.stringify(candidate));
+    assert.equal(g.sb.localStorage.getItem('cypher_os_save_recovery_story_v1'),JSON.stringify(candidate));
   });
   console.log(`Trabajos/persistencia: ${passes} correctas · ${fails} fallos`);
   return options.summary ? { passes,fails,total:passes+fails } : fails;
