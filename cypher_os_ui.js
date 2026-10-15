@@ -1130,9 +1130,9 @@ function storyContactsHtml(){
   return html+'<button class="btn small" data-action="goTrabajos">CASOS</button>';
 }
 function storyFollowupHtml(){
-  var ids=["c02","c03","c04"], id=_storyCaseId;
+  var ids=Object.keys(STORY_CASE_DETAILS), id=_storyCaseId;
   if(ids.indexOf(id)<0 || S.narrative.chapters[id]==="locked"){
-    id=ids.filter(function(candidate){ return S.narrative.chapters[candidate]!=="resolved"; })[0]||"c04";
+    id=ids.filter(function(candidate){ return S.narrative.chapters[candidate]!=="resolved"; })[0]||ids[ids.length-1];
   }
   if(S.narrative.chapters[id]==="locked") return "";
   var item=storyItem(STORY_CHAPTERS,id), detail=STORY_CASE_DETAILS[id], phase=S.narrative.chapters[id];
@@ -1147,11 +1147,13 @@ function storyFollowupHtml(){
   } else if(phase==="accepted"){
     html+='<p>DESTINO · '+escapeHtml(item.source)+'</p><p>OBJETIVO · '+escapeHtml(storyItem(STORY_FILES,item.files[0]).title)+'</p><p>'+ (inImmersion && inImmersion.narrativePayload?'Copia en tránsito. Vuelve al puerto.':'Vence la defensa identificada, copia la prueba y vuelve al puerto. La retirada sin prueba permite reintentar.')+'</p><button class="btn cyan" data-action="dipGrid">'+(inImmersion?'VOLVER A LA RED':'CONECTAR CON EL DESTINO')+'</button>';
   } else if(phase==="returned"){
-    html+='<p>Copia conservada en ARCHIVOS. Falta la verificación; todavía no se ha pagado.</p><button class="btn cyan" data-action="deliverStoryCase" data-id="'+id+'"'+(inImmersion?' disabled':'')+'>VERIFICAR ENTREGA</button>';
+    html+='<p>Copia conservada en ARCHIVOS. Falta la verificación; todavía no se ha pagado.</p>';
+    if(id==="c06" && S.narrative.files.l_testimonio!=="readable") html+='<p>El diario identifica a Tomás en el Anexo, pero aún falta comprobar quién responde. Inés puede abrir un canal supervisado y contrastar la nota local del conector con un detalle no publicado. La salida sigue pendiente.</p><button class="btn cyan" data-action="confirmStoryCustody"'+(inImmersion?' disabled':'')+'>VERIFICAR IDENTIDAD CON INÉS</button>';
+    else html+='<button class="btn cyan" data-action="deliverStoryCase" data-id="'+id+'"'+(inImmersion?' disabled':'')+'>'+(id==="c06"?'TRAMITAR REVISIÓN Y VERIFICAR ENTREGA':'VERIFICAR ENTREGA')+'</button>';
   } else {
     html+='<p class="verde">ENTREGA VERIFICADA</p><p>'+escapeHtml(detail.conclusion)+'</p><button class="btn small" data-action="openStoryConversation" data-id="'+detail.result+'">RELEER VERIFICACIÓN</button>';
-    if(id!=="c04") html+='<button class="btn cyan" data-action="consultStoryCase" data-id="'+ids[ids.indexOf(id)+1]+'">CONSULTAR SIGUIENTE CASO</button>';
-    else html+='<p>Fin del tramo de investigación disponible. Los trabajos genéricos continúan; el caso de las autorizaciones todavía no está disponible.</p><button class="btn" data-action="openStoryConversation" data-id="m_nara_presentacion">CONTACTAR CON NAEV</button>';
+    if(id!==ids[ids.length-1]) html+='<button class="btn cyan" data-action="consultStoryCase" data-id="'+ids[ids.indexOf(id)+1]+'">CONSULTAR SIGUIENTE CASO</button>';
+    else html+='<p>Fin del tramo de investigación disponible. Los trabajos genéricos continúan; la preparación de servicios todavía no está disponible.</p><button class="btn" data-action="openStoryConversation" data-id="m_berto_acogida">CONTACTAR CON BERTO</button>';
   }
   html+='</section><div class="story-actions">';
   ids.forEach(function(previous){
@@ -1208,6 +1210,11 @@ ACTIONS.deliverStoryCase=function(btn){
   if(!detail || !livingInteraction() || !storyResolveCase(id)) return;
   storyReadConversation(detail.result); storySeeCase(id);
   _storyCaseId=id; _storyConversation=detail.result; showView("trabajos"); updateNotifications();
+  var heading=document.getElementById("conversation-heading"); if(heading) heading.focus();
+};
+ACTIONS.confirmStoryCustody=function(){
+  if(!livingInteraction() || !storyConfirmCustody()) return;
+  _storyCaseId="c06"; _storyConversation="m_tomas_contacto"; showView("trabajos"); updateNotifications();
   var heading=document.getElementById("conversation-heading"); if(heading) heading.focus();
 };
 ACTIONS.receiveStoryKey=function(){

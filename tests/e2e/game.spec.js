@@ -46,6 +46,21 @@ function vaultOffer(id, project, corp) {
   };
 }
 
+async function setupF5(page, game) {
+  const narrative = await page.evaluate(() => {
+    const state = newNarrativeState();
+    Object.assign(state, { entry:'active', aliasAcquired:true, recoveryStage:'complete_known', keys:['k_casos'] });
+    for (const id of ['l_estancia','l_revision','l_contacto','l_indice','l_casos']) state.files[id]='readable';
+    for (const chapter of STORY_CHAPTERS.slice(0,4)) {
+      state.chapters[chapter.id]='resolved'; state.awarded.push(chapter.id);
+      for (const id of chapter.files) state.files[id]='readable';
+    }
+    state.chapters.c05='offered';
+    return state;
+  });
+  await game.setup({ state:{narrative} });
+}
+
 test('intro: COMENZAR abre el relato y la recuperacion activa la sesion', async ({ page, game }) => {
   expect(page.url()).toBe(GAME_URL);
   await expect(page).toHaveTitle(/CYPHER:\/\/OS.*v9\.2\.7/);
@@ -228,9 +243,8 @@ for (const width of [320, 1280]) {
     }
     expect((await game.snapshot()).state.narrative.chapters.c05).toBe('offered');
     await expect(scoped('acceptStoryCase','c05')).toHaveCount(0);
-    await expect(page.locator('#panel-scroll')).toContainText('Fin del tramo');
     expect((await game.snapshot()).state.narrative.readConversations).not.toContain('m_nara_presentacion');
-    await scoped('openStoryConversation','m_nara_presentacion').click();
+    await scoped('consultStoryCase','c05').click();
     await expect(page.locator('#panel-scroll')).toContainText('identidad pendiente');
     await nav(page,'archivos').click();
     await page.locator('[data-action="archiveTab"][data-tab="recovered"]').click();
@@ -274,6 +288,97 @@ test('F4: tres contratos, paquete separado y reconexion reintentable', async ({ 
   await nav(page,'trabajos').click(); await action(page,'dipGrid').click();
   expect((await game.snapshot()).immersion.grid.nodes.find(node=>node.storyChapter==='c02').done).toBe(false);
 });
+
+for (const width of [320,1280]) {
+  test(`F5: firmas, identidad y salida de Tomas a ${width} px`, async ({ page, game }, testInfo) => {
+    test.setTimeout(120000);
+    await page.setViewportSize({width,height:width===320?800:900});
+    await setupF5(page,game);
+    const scoped=(name,id)=>page.locator(`[data-action="${name}"][data-id="${id}"]`);
+    const fits=async()=>{
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+      expect(await page.locator('#panel-scroll').evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    };
+    await nav(page,'trabajos').click();
+    for (const id of ['c05','c06']) {
+      expect((await game.snapshot()).state.narrative.readConversations).not.toContain(id==='c05'?'m_nara_presentacion':'m_nara_custodia');
+      await scoped('consultStoryCase',id).click();
+      await expect(page.locator('#case-heading')).toBeFocused();
+      await fits(); await page.screenshot({path:testInfo.outputPath(`${id}-offer-${width}.png`)});
+      await scoped('acceptStoryCase',id).click();
+      await page.evaluate(()=>{window.__storyRng=Math.random;Math.random=()=>0.99;});
+      try { await action(page,'dipGrid').click(); }
+      finally { await page.evaluate(()=>{Math.random=window.__storyRng;delete window.__storyRng;}); }
+      expect((await game.snapshot()).immersion.depth).toBe(id==='c05'?3:4);
+      await storyRoute(page,id+'_guard');
+      await expect(page.locator('#combat')).toBeHidden();
+      await page.screenshot({path:testInfo.outputPath(`${id}-grid-${width}.png`)});
+      await storyRoute(page,id+'_proof');
+      const transit=await game.snapshot(),files=id==='c05'?['r_permisos','r_actualizacion']:['r_custodia'];
+      expect(transit.immersion.narrativePayload).toMatchObject({chapter:id,files});
+      expect(transit.immersion.dataUsed).toBe(transit.immersion.data.length+1);
+      for(const file of files) expect(transit.state.narrative.files[file]).toBe('unknown');
+      await page.keyboard.press('Control+s');
+      await game.importFile(jsonFile((await game.snapshot()).saved)); await game.reload();
+      expect((await game.snapshot()).immersion).toEqual(transit.immersion);
+      await storyRoute(page,transit.immersion.grid.entry);
+      await action(page,'doSuperficie').click(); await action(page,'closeResume').click();
+      const returned=await game.snapshot();
+      expect(returned.state.narrative.chapters[id]).toBe('returned');
+      for(const file of files) expect(returned.state.narrative.files[file]).toBe('readable');
+      await nav(page,'archivos').click();
+      await page.locator('[data-action="archiveTab"][data-tab="recovered"]').click();
+      for(const file of files){
+        await scoped('openArchive',file).click();
+        await expect(page.locator('#archive-heading')).toBeFocused();
+        await expect(page.locator('.archive-text')).toContainText(file==='r_permisos'?'Damián Orce':file==='r_actualizacion'?'segunda autorización':'18:17');
+        await fits(); await page.screenshot({path:testInfo.outputPath(`${file}-${width}.png`)});
+        await action(page,'closeArchive').click();
+      }
+      await nav(page,'trabajos').click();
+      if(id==='c06'){
+        expect(returned.state.narrative.files.l_testimonio).toBe('unknown');
+        await expect(scoped('deliverStoryCase',id)).toHaveCount(0);
+        await action(page,'confirmStoryCustody').focus(); await page.keyboard.press('Enter');
+        await expect(page.locator('#conversation-heading')).toBeFocused();
+        await expect(page.locator('#panel-scroll')).toContainText('revisión para salir todavía está pendiente');
+        const confirmed=await game.snapshot();
+        expect(confirmed.state.player.credits).toBe(returned.state.player.credits);
+        expect(confirmed.state.narrative.files.l_testimonio).toBe('readable');
+        expect(confirmed.state.narrative.chapters.c06).toBe('returned');
+        expect(confirmed.state.narrative.readConversations).not.toContain('m_ines_salida');
+        await fits(); await page.screenshot({path:testInfo.outputPath(`identity-${width}.png`)});
+        await game.importFile(jsonFile(confirmed.saved)); await game.reload();
+        expect((await game.snapshot()).state.narrative).toEqual(confirmed.state.narrative);
+        await expect(action(page,'confirmStoryCustody')).toHaveCount(0);
+      }
+      await scoped('deliverStoryCase',id).click();
+      expect((await game.snapshot()).state.player.credits).toBe(returned.state.player.credits+(id==='c05'?400:500));
+      await expect(page.locator('#conversation-heading')).toBeFocused();
+      await expect(page.locator('#panel-scroll')).toContainText(id==='c05'?'Retengo la segunda autorización':'salida está ejecutada');
+      await fits(); await page.screenshot({path:testInfo.outputPath(`${id}-reaction-${width}.png`)});
+      await action(page,'closeStoryConversation').click();
+      await expect(scoped('deliverStoryCase',id)).toHaveCount(0);
+    }
+    const finished=await game.snapshot();
+    expect(finished.state.narrative.chapters.c07).toBe('offered');
+    expect(finished.state.narrative.readConversations).not.toContain('m_berto_acogida');
+    await expect(scoped('acceptStoryCase','c07')).toHaveCount(0);
+    await expect(scoped('consultStoryCase','c07')).toHaveCount(0);
+    await expect(page.locator('#panel-scroll')).toContainText('Fin del tramo');
+    await scoped('openStoryConversation','m_berto_acogida').click();
+    await expect(page.locator('#panel-scroll')).toContainText('Ya está aquí');
+    await fits(); await page.screenshot({path:testInfo.outputPath(`welcome-${width}.png`)});
+    await game.reload(); await nav(page,'contactos').click();
+    await scoped('openStoryConversation','m_ines_salida').click();
+    expect((await game.snapshot()).state.player.credits).toBe(finished.state.player.credits);
+    await nav(page,'archivos').click();
+    await page.locator('[data-action="archiveTab"][data-tab="recovered"]').click();
+    await scoped('openArchive','l_testimonio').click();
+    await expect(page.locator('.archive-meta')).toContainText('Correspondencia actual');
+    await expect(page.locator('.archive-text')).toContainText('detalle no publicado');
+  });
+}
 
 test('smoke: todos los paneles, terminal y compras con autosave', async ({ page, game }) => {
   await game.boot({ skip: 'click' });

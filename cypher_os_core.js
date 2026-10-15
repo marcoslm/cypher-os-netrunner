@@ -61,6 +61,8 @@ function newNarrativeState(){
 function storyPhaseRank(phase){ return ["locked","offered","accepted","returned","resolved"].indexOf(phase); }
 function storyConversationAvailable(narrative,id){
   var item=storyItem(STORY_CONVERSATIONS,id);
+  if(id==="m_tomas_contacto" && narrative.files.l_testimonio!=="readable") return false;
+  if(id==="m_berto_acogida" && narrative.readConversations.indexOf("m_ines_salida")<0) return false;
   return !!(item && narrative.entry==="active" &&
     storyPhaseRank(narrative.chapters[item.chapter])>=storyPhaseRank(item.phase));
 }
@@ -138,7 +140,7 @@ function validNarrativeState(narrative){
     expected.files.l_casos="readable"; expected.recoveryStage="complete_known";
   }
   if(storyPhaseRank(narrative.chapters.c03)>=storyPhaseRank("accepted") && expected.files.l_casos!=="readable") return false;
-  if(narrative.chapters.c06==="resolved") expected.files.l_testimonio="readable";
+  if(narrative.chapters.c06==="resolved" || (narrative.chapters.c06==="returned" && narrative.readConversations.indexOf("m_tomas_contacto")>=0)) expected.files.l_testimonio="readable";
   if(narrative.chapters.c08==="resolved") expected.files.r_copia_final="readable";
   if(narrative.recoveryStage!==expected.recoveryStage) return false;
   for(var fileIndex=0;fileIndex<fileIds.length;fileIndex++){
@@ -279,6 +281,7 @@ function storyResolveCase(id){
   var item=storyItem(STORY_CHAPTERS,id), narrative=S.narrative;
   if(!item || narrative.chapters[id]!=="returned" || narrative.awarded.indexOf(id)>=0) return false;
   for(var index=0;index<item.files.length;index++) if(narrative.files[item.files[index]]!=="readable") return false;
+  if(id==="c06" && (narrative.files.l_testimonio!=="readable" || narrative.readConversations.indexOf("m_tomas_contacto")<0)) return false;
   narrative.chapters[id]="resolved"; narrative.awarded.push(id);
   if(id==="c02"){
     narrative.files.l_indice="readable"; narrative.files.l_casos="sealed";
@@ -294,6 +297,19 @@ function storyResolveCase(id){
     if(STORY_CHAPTERS[chapterIndex].id===id) narrative.chapters[STORY_CHAPTERS[chapterIndex+1].id]="offered";
   }
   earnCredits(item.credits); gainXp(item.xp);
+  save();
+  return true;
+}
+
+function storyConfirmCustody(){
+  if(!S || !S.narrative || S.player.cpu<=0 || inImmersion || combatActive) return false;
+  var narrative=S.narrative;
+  if(narrative.chapters.c06!=="returned" || narrative.files.r_custodia!=="readable" ||
+     narrative.files.l_revision!=="readable" || narrative.files.l_testimonio!=="unknown") return false;
+  narrative.files.l_testimonio="readable";
+  if(narrative.readConversations.indexOf("m_tomas_contacto")<0) narrative.readConversations.push("m_tomas_contacto");
+  if(!S._storyAcquired) S._storyAcquired={};
+  S._storyAcquired.l_testimonio=S.clock;
   save();
   return true;
 }

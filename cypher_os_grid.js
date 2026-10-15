@@ -192,7 +192,7 @@ function generateGrid(maxDepth, spawnBoss){
 
 function addStoryGridTarget(grid){
   var chapter=null;
-  ["c02","c03","c04"].some(function(id){
+  ["c02","c03","c04","c05","c06"].some(function(id){
     if(S.narrative.chapters[id]!=="accepted") return false;
     chapter=storyItem(STORY_CHAPTERS,id); return true;
   });
@@ -365,7 +365,7 @@ function startImmersion(depth){
   var finalMission = (S.nextDepth===5 && S.history.finalUnlocked && !S.history.finalDone && !S.history.endlessActive);
   depth = depth || (S.nextDepth || 4);
   var activeCase=storyCaseInPhase("accepted");
-  if(activeCase && ["c02","c03","c04"].indexOf(activeCase.id)>=0) depth=activeCase.depth;
+  if(activeCase && ["c02","c03","c04","c05","c06"].indexOf(activeCase.id)>=0) depth=activeCase.depth;
   if(S.jobs.some(function(j){ return !j.done; })) depth=Math.max(depth,4);
   if(S.nextDepth) S.nextDepth=null;
   /* legendario: +1 sin techo en SEALED NETWORK; grids normales máximo capa 5 */

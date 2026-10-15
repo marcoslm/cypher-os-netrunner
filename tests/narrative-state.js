@@ -29,6 +29,7 @@ async function run(options = {}) {
   const resolve = (game, id) => {
     assert.equal(invoke(game, 'storyAcceptCase', id), true);
     returnProof(game, id);
+    if (id === 'c06') assert.equal(game.run('storyConfirmCustody()'), true);
     assert.equal(invoke(game, 'storyResolveCase', id), true);
   };
 
@@ -36,7 +37,7 @@ async function run(options = {}) {
   check('catalogos e inicio independientes', game => {
     assert.equal(game.run('STORY_CHAPTERS.length'), 8);
     assert.equal(game.run('STORY_FILES.length'), 16);
-    assert.equal(game.run('STORY_CONVERSATIONS.length'), 22);
+    assert.equal(game.run('STORY_CONVERSATIONS.length'), 23);
     assert.equal(game.run('validNarrativeState(S.narrative)'), true);
     game.run('window.other=newNarrativeState();window.other.files.l_estancia="readable";');
     assert.equal(game.run('S.narrative.files.l_estancia'), 'unknown');
@@ -207,6 +208,31 @@ async function run(options = {}) {
     assert.equal(game.run('S.history.finalDone'), true);
     assert.equal(game.run('load().player.credits'), 8050);
   });
+  check('F5 custodia exige identidad confirmada antes del pago y conserva checkpoints resueltos', game => {
+    activate(game);
+    for (const id of ['c01','c02','c03','c04','c05']) {
+      if(id==='c03') game.run('storyGrantCaseKey();storyApplyCaseKey();');
+      if(id==='c05') invoke(game,'storyReadConversation','m_nara_presentacion');
+      resolve(game,id);
+    }
+    assert.equal(game.run('storyConfirmCustody()'),false);
+    assert.equal(invoke(game,'storyAcceptCase','c06'),true);
+    returnProof(game,'c06');
+    const before=game.run('S.player.credits');
+    assert.equal(invoke(game,'storyResolveCase','c06'),false);
+    assert.equal(game.run('S.narrative.files.l_testimonio'),'unknown');
+    assert.equal(invoke(game,'storyReadConversation','m_tomas_contacto'),false);
+    const fabricated=clone(game.run('S')); fabricated.narrative.files.l_testimonio='readable';
+    assert.equal(game.run('validImportState('+JSON.stringify(fabricated)+')'),false);
+    assert.equal(game.run('storyConfirmCustody()'),true);
+    assert.equal(game.run('storyConfirmCustody()'),false);
+    assert.equal(game.run('S.player.credits'),before);
+    assert.equal(game.run('validImportState(load())'),true);
+    assert.equal(invoke(game,'storyResolveCase','c06'),true);
+    assert.equal(game.run('S.player.credits'),before+500);
+    const previous=clone(game.run('S')); previous.narrative.readConversations=previous.narrative.readConversations.filter(id=>id!=='m_tomas_contacto');
+    assert.equal(game.run('validImportState('+JSON.stringify(previous)+')'),true);
+  });
   check('snapshot real conserva paquete y rechaza defensa o archivos fabricados', game => {
     activate(game); invoke(game, 'storyAcceptCase', 'c01');
     game.run('startImmersion(1);var proof=nodeById("1_1"),guard=nodeById("1_0");guard.done=true;inImmersion.current=proof.id;');
@@ -363,7 +389,7 @@ async function run(options = {}) {
     assert.equal(game.run('S.narrative.chapters.c05'),'offered');
     assert.equal(game.sb.document.querySelector('[data-action="acceptStoryCase"][data-id="c05"]'),null);
     assert.equal(game.run('S.narrative.readConversations.indexOf("m_nara_presentacion")'),-1);
-    click('openStoryConversation','m_nara_presentacion');
+    click('consultStoryCase','c05');
     assert.equal(game.run('S.player.credits'),1400);
     assert.match(game.sb.document.getElementById('panel-scroll').textContent,/identidad pendiente/);
   });
@@ -399,6 +425,81 @@ async function run(options = {}) {
     game.run('GRID_EVENTS.filter(function(event){return event.id==="corriente";})[0].effect();');
     assert.equal(game.run('inImmersion.current'),game.run('inImmersion.grid.byLayer[2][0].id'));
     assert.equal(game.run('validImportState(JSON.parse(JSON.stringify(S)))'),true);
+  });
+  check('F5 dos documentos, capas y defensa propia sobreviven a snapshot y reconexion', game => {
+    activate(game);
+    for(const id of ['c01','c02','c03','c04']){
+      if(id==='c03') game.run('storyGrantCaseKey();storyApplyCaseKey();');
+      resolve(game,id);
+    }
+    assert.equal(invoke(game,'storyAcceptCase','c05'),false);
+    invoke(game,'storyReadConversation','m_nara_presentacion');
+    for(const id of ['c05','c06']){
+      assert.equal(invoke(game,'storyAcceptCase',id),true);
+      game.run('S.difficulty="legendario";ensureStateIntegrity();activateStorySession(false);startImmersion();');
+      assert.equal(game.run('inImmersion.depth'),id==='c05'?4:5);
+      assert.equal(game.run('inImmersion.grid.nodes.some(function(node){return node.type==="nucleo";})'),false);
+      assert.equal(game.run('nodeById("'+id+'_guard").tier'),3);
+      game.run('inImmersion.current="'+id+'_proof";inImmersion.maxDepthReached='+ (id==='c05'?3:4)+';');
+      assert.equal(game.run('storyCollectProof(nodeById(inImmersion.current))'),false);
+      game.run('nodeById("'+id+'_guard").done=true;');
+      assert.equal(game.run('storyCollectProof(nodeById(inImmersion.current))'),true);
+      assert.equal(game.run('inImmersion.dataUsed'),1);
+      const files=id==='c05'?['r_permisos','r_actualizacion']:['r_custodia'];
+      assert.deepEqual(clone(game.run('inImmersion.narrativePayload.files')),files);
+      game.run('save();'); const payload=clone(game.run('load()'));
+      assert.equal(game.run('importGameState('+JSON.stringify(payload)+')'),true);
+      const broken=clone(payload); broken._inImmersion.narrativePayload.files=[];
+      assert.equal(game.run('validImportState('+JSON.stringify(broken)+')'),false);
+      game.run('S.player.cpu=0;flatline();ACTIONS.reconnect();');
+      for(const file of files) assert.equal(game.run('S.narrative.files.'+file),'unknown');
+      assert.equal(game.run('S.narrative.chapters.'+id),'accepted');
+      game.run('startImmersion();');
+      assert.equal(game.run('nodeById("'+id+'_proof").done'),false);
+      game.run('inImmersion=null;'); returnProof(game,id);
+      if(id==='c06') assert.equal(game.run('storyConfirmCustody()'),true);
+      assert.equal(invoke(game,'storyResolveCase',id),true);
+    }
+  });
+  check('F5 acciones escalonan identidad, revision, acogida y pago unico sin c07', game => {
+    activate(game);
+    for(const id of ['c01','c02','c03','c04']){
+      if(id==='c03') game.run('storyGrantCaseKey();storyApplyCaseKey();');
+      resolve(game,id);
+    }
+    game.run('ensureStateIntegrity();activateStorySession(false);showView("trabajos");');
+    const click=(action,id)=>{
+      const selector='[data-action="'+action+'"]'+(id?'[data-id="'+id+'"]':'');
+      const element=game.sb.document.querySelector(selector); assert.ok(element,selector);game.emitElement(element,'click');
+    };
+    for(const id of ['c05','c06']){
+      click('consultStoryCase',id);click('acceptStoryCase',id);click('dipGrid');
+      assert.equal(game.run('inImmersion.depth'),id==='c05'?3:4);
+      game.run('nodeById("'+id+'_guard").done=true;inImmersion.current="'+id+'_proof";inImmersion.maxDepthReached='+(id==='c05'?3:4)+';enterNode(nodeById(inImmersion.current));inImmersion.current=inImmersion.grid.entry;superficializar();closeOverlay();');
+      const credits=game.run('S.player.credits');
+      assert.equal(game.run('S.narrative.files.l_testimonio'),'unknown');
+      if(id==='c06'){
+        assert.equal(game.sb.document.querySelector('[data-action="deliverStoryCase"]'),null);
+        assert.equal(game.run('storyConversationAvailable(S.narrative,"m_ines_salida")'),false);
+        click('confirmStoryCustody');
+        assert.equal(game.run('S.player.credits'),credits);
+        assert.match(game.sb.document.getElementById('panel-scroll').textContent,/revisión para salir todavía está pendiente/);
+        assert.equal(game.run('validImportState(load())'),true);
+        click('closeStoryConversation');
+      }
+      click('deliverStoryCase',id);
+      assert.equal(game.run('S.player.credits'),credits+(id==='c05'?400:500));
+      assert.equal(invoke(game,'storyResolveCase',id),false);
+      assert.equal(game.run('storyConfirmCustody()'),false);
+      click('closeStoryConversation');
+    }
+    assert.equal(game.run('S.narrative.readConversations.indexOf("m_berto_acogida")'),-1);
+    assert.equal(game.sb.document.querySelector('[data-action="acceptStoryCase"][data-id="c07"]'),null);
+    assert.equal(game.sb.document.querySelector('[data-action="consultStoryCase"][data-id="c07"]'),null);
+    const before=game.run('S.player.credits');click('openStoryConversation','m_berto_acogida');
+    assert.match(game.sb.document.getElementById('panel-scroll').textContent,/Ya está aquí/);
+    assert.equal(game.run('S.player.credits'),before);
+    assert.equal(game.run('validImportState(load())'),true);
   });
   console.log(`Narrativa: ${passes} correctas, ${fails} fallos`);
   return options.summary ? { passes, fails, total: passes + fails } : fails;
