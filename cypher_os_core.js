@@ -180,6 +180,13 @@ function validStoryPayload(payload,narrative,immersion){
   }
   return false;
 }
+function storyCaseInPhase(phase){
+  if(!S || !S.narrative) return null;
+  for(var index=0;index<STORY_CHAPTERS.length;index++){
+    if(S.narrative.chapters[STORY_CHAPTERS[index].id]===phase) return STORY_CHAPTERS[index];
+  }
+  return null;
+}
 function storyReservedRam(){
   if(!S || !S.narrative || (inImmersion && inImmersion.narrativePayload)) return 0;
   for(var index=0;index<STORY_CHAPTERS.length;index++){
@@ -212,7 +219,7 @@ function storyAcceptCase(id){
   if(!item || narrative.entry!=="active" || narrative.chapters[id]!=="offered") return false;
   if(id==="c03" && narrative.files.l_casos!=="readable") return false;
   if(id==="c05" && narrative.readConversations.indexOf("m_nara_presentacion")<0) return false;
-  if(typeof pendingJobData==="function" && pendingJobData(false)+storyReservedRam()>=ramCap()) return false;
+  if(S.jobs.some(function(job){ return !job.done && ["recoleta","carrera"].indexOf(job.type)>=0 && job.n>=ramCap(); })) return false;
   narrative.chapters[id]="accepted";
   if(id==="c01") narrative.aliasAcquired=true;
   if(id==="c08") S.history.finalUnlocked=true;
@@ -770,8 +777,8 @@ function marcarIntelVistos(){ if(S && S.intel) S._intelVistos=S.intel.slice(); }
    El nivel mejora el pago, no el tamaño finito del grid ni la RAM disponible. */
 function jobQuotaLimit(type){
   switch(type){
-    case "recoleta": return Math.min(6,ramCap());
-    case "carrera": return Math.min(4,ramCap());
+    case "recoleta": return Math.min(6,ramCap()-storyReservedRam());
+    case "carrera": return Math.min(4,ramCap()-storyReservedRam());
     case "rompehielas": return 4;
     case "daemon": return 3;
     case "vault": return 1;
@@ -816,13 +823,13 @@ function jobTargetCount(type,inm){
   for(var i=0;i<nodes.length;i++){
     var n=nodes[i];
     if(n.done || n._done) continue;
-    if(type==="recoleta" && n.type==="data") count++;
-    if(type==="carrera" && n.type==="data" && n.layer>=3) count++;
+    if(type==="recoleta" && n.type==="data" && !n.storyChapter) count++;
+    if(type==="carrera" && n.type==="data" && !n.storyChapter && n.layer>=3) count++;
     if(type==="rompehielas" && n.type==="ice" && n.tier>=2) count++;
     if(type==="daemon" && n.type==="daemon") count++;
     if(type==="vault" && n.type==="vault") count++;
   }
-  if(type==="recoleta" || type==="carrera") count=Math.min(count,Math.max(0,ramCap()-inm.dataUsed));
+  if(type==="recoleta" || type==="carrera") count=Math.min(count,Math.max(0,ramCap()-inm.dataUsed-storyReservedRam()));
   return count;
 }
 /* Un mismo dato profundo avanza todos los contratos de datos: usar máximos,

@@ -302,6 +302,104 @@ async function run(options = {}) {
     assert.ok(game.run('load()'));
     assert.equal(game.run('load()._inImmersion.narrativePayload.chapter'), 'c01');
   });
+  check('F4 objetivos propios preservan contratos y exigen su defensa', game => {
+    activate(game); resolve(game, 'c01');
+    for (const id of ['c02', 'c03', 'c04']) {
+      if (id === 'c03') game.run('storyGrantCaseKey();storyApplyCaseKey();');
+      assert.equal(invoke(game, 'storyAcceptCase', id), true);
+      game.run('S.jobs=[{type:"recoleta",n:3,done:false},{type:"carrera",n:2,done:false},{type:"daemon",n:2,done:false}];window.targetGrid=generateGrid(4,false);inImmersion={grid:window.targetGrid,depth:4,current:"'+id+'_proof",data:[],dataUsed:0};');
+      const grid = clone(game.run('window.targetGrid'));
+      assert.equal(grid.nodes.filter(node => node.type === 'data' && !node.storyChapter).length >= 3, true);
+      assert.equal(grid.nodes.filter(node => node.type === 'data' && !node.storyChapter && node.layer >= 3).length >= 2, true);
+      assert.equal(grid.nodes.filter(node => node.type === 'daemon').length >= 2, true);
+      for (const [node, neighbors] of Object.entries(grid.adj)) for (const neighbor of neighbors) assert.ok(grid.adj[neighbor].includes(node));
+      assert.equal(game.run('storyCollectProof(nodeById("'+id+'_proof"))'), false);
+      game.run('nodeById("'+id+'_guard").done=true;');
+      assert.equal(game.run('storyCollectProof(nodeById("'+id+'_proof"))'), true);
+      assert.equal(game.run('inImmersion.dataUsed'), 1);
+      game.run('inImmersion.current=inImmersion.grid.entry;');
+      assert.equal(invoke(game, 'storyReturnCase', id), true);
+      game.run('inImmersion=null;S.jobs=[];');
+      assert.equal(invoke(game, 'storyResolveCase', id), true);
+    }
+  });
+  check('F4 acciones reales separan indice, permiso, clave y tres entregas', game => {
+    activate(game); resolve(game, 'c01');
+    game.run('ensureStateIntegrity();generateOffers();activateStorySession(false);showView("trabajos");');
+    const click = (action, id) => {
+      const selector = '[data-action="'+action+'"]'+(id?'[data-id="'+id+'"]':'');
+      const element = game.sb.document.querySelector(selector);
+      assert.ok(element, selector); game.emitElement(element, 'click');
+    };
+    for (const id of ['c02','c03','c04']) {
+      if (id === 'c03') {
+        assert.equal(game.run('S.narrative.files.l_indice'), 'readable');
+        assert.equal(game.run('S.narrative.files.l_casos'), 'sealed');
+        assert.equal(game.run('S.narrative.keys.length'), 0);
+        assert.equal(game.run('S.narrative.readConversations.indexOf("m_ines_clave")'), -1);
+        click('consultStoryCase',id);
+        assert.equal(game.sb.document.querySelector('[data-action="acceptStoryCase"]'), null);
+        click('openStoryConversation','m_ines_clave'); click('receiveStoryKey');
+        assert.equal(game.run('S.narrative.files.l_casos'), 'sealed');
+        assert.equal(invoke(game,'storyAcceptCase','c03'),false);
+        click('applyStoryKey');
+        assert.equal(game.run('S.narrative.files.l_casos'), 'readable');
+      } else click('consultStoryCase',id);
+      click('acceptStoryCase',id); click('dipGrid');
+      assert.equal(game.run('inImmersion.depth'), id==='c04'?3:2);
+      game.run('nodeById("'+id+'_guard").done=true;inImmersion.current="'+id+'_proof";inImmersion.maxDepthReached='+ (id==='c04'?3:2)+';enterNode(nodeById(inImmersion.current));save();');
+      const payload=clone(game.run('load()'));
+      assert.ok(payload); assert.equal(payload._inImmersion.narrativePayload.chapter,id);
+      assert.equal(game.run('importGameState('+JSON.stringify(payload)+')'), true);
+      game.run('inImmersion.current=inImmersion.grid.entry;superficializar();closeOverlay();');
+      const credits=game.run('S.player.credits');
+      click('deliverStoryCase',id);
+      assert.equal(game.run('S.player.credits'), credits+game.run('storyItem(STORY_CHAPTERS,"'+id+'").credits'));
+      assert.equal(invoke(game,'storyResolveCase',id),false);
+      click('closeStoryConversation');
+      assert.match(game.sb.document.getElementById('panel-scroll').textContent,/HECHO/);
+    }
+    assert.equal(game.run('S.player.credits'),1400);
+    assert.equal(game.run('S.narrative.chapters.c05'),'offered');
+    assert.equal(game.sb.document.querySelector('[data-action="acceptStoryCase"][data-id="c05"]'),null);
+    assert.equal(game.run('S.narrative.readConversations.indexOf("m_nara_presentacion")'),-1);
+    click('openStoryConversation','m_nara_presentacion');
+    assert.equal(game.run('S.player.credits'),1400);
+    assert.match(game.sb.document.getElementById('panel-scroll').textContent,/identidad pendiente/);
+  });
+  check('F4 reserva con tres contratos, snapshot y reintento sin prueba', game => {
+    activate(game); resolve(game,'c01');
+    game.run('ensureStateIntegrity();activateStorySession(false);S.jobs=[{id:"gather",type:"recoleta",n:6,prog:{gathered:0},done:false}];');
+    assert.equal(invoke(game,'storyAcceptCase','c02'),false);
+    game.run('S.jobs=[{id:"gather",type:"recoleta",title:"Datos",desc:"Datos",contact:"mamaWire",risk:"low",n:3,reward:90,xp:10,prog:{gathered:0},done:false,failed:false},{id:"deep",type:"carrera",title:"Profundos",desc:"Profundos",contact:"mamaWire",risk:"med",n:2,reward:90,xp:10,prog:{deepGathered:0},done:false,failed:false},{id:"guards",type:"rompehielas",title:"Defensas",desc:"Defensas",contact:"mamaWire",risk:"med",n:2,reward:90,xp:10,prog:{iceT2:0},done:false,failed:false}];');
+    assert.equal(invoke(game,'storyAcceptCase','c02'),true);
+    game.run('S.difficulty="legendario";startImmersion(2);');
+    assert.equal(game.run('inImmersion.depth'),5);
+    assert.equal(game.run('jobQuotaLimit("recoleta")'),5);
+    assert.equal(game.run('jobOfferBlocked({type:"recoleta",n:6})!==""'),true);
+    game.run('nodeById("c02_guard").done=true;inImmersion.current="c02_proof";inImmersion.maxDepthReached=2;enterNode(nodeById(inImmersion.current));save();');
+    assert.equal(game.run('S.jobs[0].prog.gathered'),0);
+    assert.equal(game.run('S.jobs[1].prog.deepGathered'),0);
+    const saved=clone(game.run('load()')); assert.ok(saved);
+    assert.equal(game.run('importGameState('+JSON.stringify(saved)+')'),true);
+    assert.equal(game.run('inImmersion.narrativePayload.chapter'),'c02');
+    game.run('S.player.cpu=0;flatline();ACTIONS.reconnect();S.jobs=[];startImmersion(2);');
+    assert.equal(game.run('S.narrative.chapters.c02'),'accepted');
+    assert.equal(game.run('nodeById("c02_proof").done'),false);
+    assert.equal(game.run('S.narrative.files.r_indice'),'unknown');
+  });
+  check('F4 eventos preservan RAM de prueba y usan la capa real', game => {
+    activate(game); resolve(game,'c01'); invoke(game,'storyAcceptCase','c02');
+    game.run('ensureStateIntegrity();activateStorySession(false);startImmersion(2);inImmersion.data=Array.from({length:5},function(){return {value:10};});inImmersion.dataUsed=5;');
+    game.run('GRID_EVENTS.filter(function(event){return event.effect.toString().indexOf("data.push")>=0;})[0].effect();');
+    assert.equal(game.run('inImmersion.dataUsed'),5);
+    game.run('nodeById("c02_guard").done=true;inImmersion.current="c02_proof";inImmersion.maxDepthReached=2;enterNode(nodeById(inImmersion.current));');
+    assert.equal(game.run('inImmersion.narrativePayload.chapter'),'c02');
+    assert.equal(game.run('inImmersion.dataUsed'),6);
+    game.run('GRID_EVENTS.filter(function(event){return event.id==="corriente";})[0].effect();');
+    assert.equal(game.run('inImmersion.current'),game.run('inImmersion.grid.byLayer[2][0].id'));
+    assert.equal(game.run('validImportState(JSON.parse(JSON.stringify(S)))'),true);
+  });
   console.log(`Narrativa: ${passes} correctas, ${fails} fallos`);
   return options.summary ? { passes, fails, total: passes + fails } : fails;
 }

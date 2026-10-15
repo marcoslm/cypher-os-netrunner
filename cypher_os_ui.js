@@ -987,6 +987,7 @@ function pickWhy(contact,type){
 }
 function jobOfferBlocked(o){
   if(S.narrative.chapters.c01!=="resolved") return "Los trabajos genéricos estarán disponibles tras entregar el historial de la factura.";
+  if(["recoleta","carrera"].indexOf(o.type)>=0 && o.n+storyReservedRam()>ramCap()) return "La prueba del caso reserva una unidad de RAM; este contrato no cabe junto a ella.";
   if(o.type==="vault"){
     if(projectRecovered(o.project)) return "ya recuperaste el proyecto "+o.project+". No hay un nuevo contrato para ese vault.";
     if(projectReserved(o.project)) return "ese proyecto ya tiene un contrato en curso.";
@@ -1115,7 +1116,7 @@ function mkOffer(contact,title,desc,type,n,reward,xp,risk,extra){
     project:extra&&extra.project, targetDepth:extra&&extra.targetDepth };
 }
 
-var _storyConversation=null;
+var _storyConversation=null, _storyCaseId=null;
 function storyDialogueHtml(id){
   var dialogue=STORY_DIALOGUES[id];
   if(!dialogue) return "";
@@ -1123,16 +1124,46 @@ function storyDialogueHtml(id){
 }
 function storyContactsHtml(){
   var html='<div class="panel-h">HOSTAL Y CANALES PERSONALES</div>';
-  ["m_berto_encargo","m_celia_alias","m_berto_entrega","m_ines_corte"].forEach(function(id){
+  Object.keys(STORY_DIALOGUES).forEach(function(id){
     if(storyConversationAvailable(S.narrative,id)) html+='<div class="archive-row"><div><b>'+escapeHtml(STORY_DIALOGUES[id].speaker)+'</b><div class="archive-meta">'+escapeHtml(STORY_DIALOGUES[id].channel)+'</div></div><button class="btn small" data-action="openStoryConversation" data-id="'+id+'">LEER</button></div>';
   });
-  return html+'<button class="btn small" data-action="goTrabajos">LA FACTURA</button>';
+  return html+'<button class="btn small" data-action="goTrabajos">CASOS</button>';
+}
+function storyFollowupHtml(){
+  var ids=["c02","c03","c04"], id=_storyCaseId;
+  if(ids.indexOf(id)<0 || S.narrative.chapters[id]==="locked"){
+    id=ids.filter(function(candidate){ return S.narrative.chapters[candidate]!=="resolved"; })[0]||"c04";
+  }
+  if(S.narrative.chapters[id]==="locked") return "";
+  var item=storyItem(STORY_CHAPTERS,id), detail=STORY_CASE_DETAILS[id], phase=S.narrative.chapters[id];
+  var html='<section class="story-case"><h2 id="case-heading" tabindex="-1">'+escapeHtml(item.title)+'</h2><p class="sub">'+escapeHtml(detail.client)+'</p>';
+  if(phase==="offered"){
+    html+='<p>DESTINO · '+escapeHtml(item.source)+' · capa '+item.depth+'</p><p>'+item.credits+'₡ y '+item.xp+' XP al verificar la entrega. Una unidad de RAM para la copia.</p>';
+    if(_storyCaseId!==id) html+='<button class="btn cyan" data-action="consultStoryCase" data-id="'+id+'">CONSULTAR ENCARGO</button>';
+    else if(id==="c03" && S.narrative.files.l_casos!=="readable"){
+      html+='<p>El índice identifica C-29-09-2093. Falta el permiso de Inés y aplicar su clave a las copias locales.</p><button class="btn" data-action="openStoryConversation" data-id="m_ines_clave">CONSULTAR PERMISO DE INÉS</button>';
+      if(S.narrative.keys.indexOf("k_casos")>=0) html+='<button class="btn cyan" data-action="applyStoryKey"'+(inImmersion?' disabled':'')+'>APLICAR CLAVE</button>';
+    } else html+=storyDialogueHtml(detail.intro)+'<button class="btn cyan" data-action="acceptStoryCase" data-id="'+id+'"'+(inImmersion?' disabled':'')+'>ACEPTAR CASO</button>';
+  } else if(phase==="accepted"){
+    html+='<p>DESTINO · '+escapeHtml(item.source)+'</p><p>OBJETIVO · '+escapeHtml(storyItem(STORY_FILES,item.files[0]).title)+'</p><p>'+ (inImmersion && inImmersion.narrativePayload?'Copia en tránsito. Vuelve al puerto.':'Vence la defensa identificada, copia la prueba y vuelve al puerto. La retirada sin prueba permite reintentar.')+'</p><button class="btn cyan" data-action="dipGrid">'+(inImmersion?'VOLVER A LA RED':'CONECTAR CON EL DESTINO')+'</button>';
+  } else if(phase==="returned"){
+    html+='<p>Copia conservada en ARCHIVOS. Falta la verificación; todavía no se ha pagado.</p><button class="btn cyan" data-action="deliverStoryCase" data-id="'+id+'"'+(inImmersion?' disabled':'')+'>VERIFICAR ENTREGA</button>';
+  } else {
+    html+='<p class="verde">ENTREGA VERIFICADA</p><p>'+escapeHtml(detail.conclusion)+'</p><button class="btn small" data-action="openStoryConversation" data-id="'+detail.result+'">RELEER VERIFICACIÓN</button>';
+    if(id!=="c04") html+='<button class="btn cyan" data-action="consultStoryCase" data-id="'+ids[ids.indexOf(id)+1]+'">CONSULTAR SIGUIENTE CASO</button>';
+    else html+='<p>Fin del tramo de investigación disponible. Los trabajos genéricos continúan; el caso de las autorizaciones todavía no está disponible.</p><button class="btn" data-action="openStoryConversation" data-id="m_nara_presentacion">CONTACTAR CON NAEV</button>';
+  }
+  html+='</section><div class="story-actions">';
+  ids.forEach(function(previous){
+    if(S.narrative.chapters[previous]==="resolved") html+='<button class="btn small" data-action="reviewStoryCase" data-id="'+previous+'">'+escapeHtml(storyItem(STORY_CHAPTERS,previous).title)+'</button>';
+  });
+  return html+'</div>';
 }
 function storyCaseHtml(){
   var phase=S.narrative.chapters.c01;
   var html='<section class="story-case"><h2>LA FACTURA</h2><p class="sub">Cliente: Berto Salas · Hostal La Bajante</p>';
   if(_storyConversation && storyConversationAvailable(S.narrative,_storyConversation)){
-    return html+storyDialogueHtml(_storyConversation)+'<button class="btn small" data-action="closeStoryConversation">VOLVER AL ENCARGO</button></section>';
+    return '<section class="story-case">'+storyDialogueHtml(_storyConversation)+(_storyConversation==="m_ines_clave" && S.narrative.keys.indexOf("k_casos")<0?'<button class="btn cyan" data-action="receiveStoryKey"'+(inImmersion?' disabled':'')+'>RECIBIR CLAVE AUTORIZADA</button>':'')+'<button class="btn small" data-action="closeStoryConversation">VOLVER AL ENCARGO</button></section>';
   }
   if(phase==="offered"){
     html+=storyDialogueHtml("m_berto_encargo")+'<p>DESTINO · Servicio de facturación del edificio · capa 1</p><p>OBJETIVO · Recuperar el historial LB-2093-10 y volver al puerto. 140₡ y 60 XP al verificar la entrega.</p><p>RECIBO APORTADO POR BERTO · LB-2093-10 · pago recibido el 07-10-2093 a las 18:12.</p><button class="btn cyan" data-action="acceptInvoice">ACEPTAR ENCARGO</button>';
@@ -1141,7 +1172,8 @@ function storyCaseHtml(){
   } else if(phase==="returned"){
     html+=storyDialogueHtml("m_berto_entrega")+'<p>Historial LB-2093-10 conservado. Pendiente de verificación con la oficina de Inés.</p><button class="btn cyan" data-action="deliverInvoice"'+(inImmersion?' disabled':'')+'>ENTREGAR HISTORIAL</button>';
   } else if(phase==="resolved"){
-    html+='<p class="verde">ENTREGA FINALIZADA · Reclamación admitida; corte suspendido preventivamente.</p><p>HECHO · Pago anterior al corte; revisión posterior a la orden.</p><p>SIN CONFIRMAR · Causa y responsabilidad de la discrepancia. Tomás no ha vuelto al hostal, según Berto.</p><p>Fin del tramo de investigación disponible. Los trabajos genéricos están abiertos; los siguientes casos todavía no están disponibles.</p>';
+    html+='<p class="verde">ENTREGA FINALIZADA · Reclamación admitida; corte suspendido preventivamente.</p><p>HECHO · Pago anterior al corte; revisión posterior a la orden.</p><p>SIN CONFIRMAR · Causa y responsabilidad de la discrepancia. Tomás no ha vuelto al hostal, según Berto.</p></section>'+storyFollowupHtml();
+    return html;
   }
   return html+'</section>';
 }
@@ -1150,6 +1182,46 @@ ACTIONS.openStoryConversation=function(btn){
   if(!STORY_DIALOGUES[id] || !storyReadConversation(id)) return;
   _storyConversation=id; showView("trabajos");
   var heading=document.getElementById("conversation-heading"); if(heading) heading.focus();
+};
+ACTIONS.consultStoryCase=function(btn){
+  var id=btn.getAttribute("data-id"), detail=STORY_CASE_DETAILS[id];
+  if(!detail || S.narrative.chapters[id]!=="offered") return;
+  if((id!=="c03" || S.narrative.files.l_casos==="readable") && !storyReadConversation(detail.intro)) return;
+  _storyCaseId=id; _storyConversation=null; showView("trabajos");
+  var heading=document.getElementById("case-heading"); if(heading) heading.focus();
+};
+ACTIONS.reviewStoryCase=function(btn){
+  var id=btn.getAttribute("data-id");
+  if(!STORY_CASE_DETAILS[id] || !storySeeCase(id)) return;
+  _storyCaseId=id; _storyConversation=null; showView("trabajos");
+  var heading=document.getElementById("case-heading"); if(heading) heading.focus();
+};
+ACTIONS.acceptStoryCase=function(btn){
+  var id=btn.getAttribute("data-id");
+  if(!STORY_CASE_DETAILS[id] || !livingInteraction()) return;
+  if(!storyAcceptCase(id)){ msg("No se puede aceptar: vuelve a la calle y deja una unidad de RAM junto a tus contratos; c03 necesita la clave aplicada.","ambar"); return; }
+  _storyCaseId=id; _storyConversation=null; showView("trabajos"); updateNotifications();
+  var heading=document.getElementById("case-heading"); if(heading) heading.focus();
+};
+ACTIONS.deliverStoryCase=function(btn){
+  var id=btn.getAttribute("data-id"), detail=STORY_CASE_DETAILS[id];
+  if(!detail || !livingInteraction() || !storyResolveCase(id)) return;
+  storyReadConversation(detail.result); storySeeCase(id);
+  _storyCaseId=id; _storyConversation=detail.result; showView("trabajos"); updateNotifications();
+  var heading=document.getElementById("conversation-heading"); if(heading) heading.focus();
+};
+ACTIONS.receiveStoryKey=function(){
+  if(!livingInteraction() || inImmersion || !storyGrantCaseKey()) return;
+  storyReadConversation("m_ines_clave"); _storyConversation=null; _storyCaseId="c03"; showView("trabajos");
+  var apply=document.querySelector('[data-action="applyStoryKey"]'); if(apply) apply.focus();
+  msg("Clave recibida con permiso de Inés. La carpeta sigue cifrada hasta APLICAR CLAVE.","cyan");
+};
+ACTIONS.applyStoryKey=function(){
+  if(!livingInteraction() || inImmersion || !storyApplyCaseKey()) return;
+  _storyConversation=null; _storyCaseId="c03"; _archiveOpen=null;
+  if(currentView==="archivos") renderArchivos(); else showView("trabajos");
+  var heading=document.getElementById("case-heading")||document.querySelector("#panel-scroll h1"); if(heading){ heading.setAttribute("tabindex","-1"); heading.focus(); }
+  updateNotifications(); msg("Copias locales legibles. Permiso limitado al caso anonimizado; originales conservados.","cyan");
 };
 ACTIONS.acceptInvoice=function(){
   if(!livingInteraction() || !storyAcceptCase("c01")) return;
@@ -1314,6 +1386,9 @@ function renderInicio(){
   else if(S.narrative.chapters.c01==="accepted") dir=inImmersion && inImmersion.narrativePayload?"El historial sigue en tránsito. Vuelve al puerto con la copia.":"El historial LB-2093-10 está en el servicio de facturación. La copia local del pago no sustituye ese registro.";
   else if(S.narrative.chapters.c01==="returned") dir="Historial conservado. Berto espera la verificación con la oficina de Inés en TRABAJOS.";
   else if(S.narrative && S.narrative.chapters.c08==="accepted") dir="La revocacion sigue pendiente de recuperar y verificar.";
+  else if(storyCaseInPhase("accepted") && STORY_CASE_DETAILS[storyCaseInPhase("accepted").id]) dir=storyCaseInPhase("accepted").title+" · Recupera la copia protegida en "+storyCaseInPhase("accepted").source+" y vuelve al puerto.";
+  else if(storyCaseInPhase("returned") && STORY_CASE_DETAILS[storyCaseInPhase("returned").id]) dir="Copia conservada. La verificación del caso espera en TRABAJOS; todavía no se ha pagado.";
+  else if(storyCaseInPhase("offered") && STORY_CASE_DETAILS[storyCaseInPhase("offered").id]) dir="Siguiente pista: "+storyCaseInPhase("offered").title+". Consulta el encargo en TRABAJOS; no se ha aceptado automáticamente.";
   else {
     var active=S.jobs.filter(function(j){return !j.done;});
     if(active.length){
@@ -1326,9 +1401,9 @@ function renderInicio(){
   }
   var html='<div class="logo glow">CYPHER<br><small>:OS v9.2.7</small></div>'+
     '<p>ÁLEX RIBA · equipo CORVO-7'+(S.narrative.aliasAcquired?' · alias registrado':' · sesión local')+'</p>'+
-    '<div class="panel-h">ARCHIVO LOCAL</div><p>Los originales se conservan. '+(S.narrative.recoveryStage==="needs_index"?'El índice personal necesita un respaldo externo.':'Estado: '+escapeHtml(S.narrative.recoveryStage))+'</p>'+
+    '<div class="panel-h">ARCHIVO LOCAL</div><p>Los originales se conservan. '+(S.narrative.recoveryStage==="needs_index"?'El índice personal necesita un respaldo externo.':S.narrative.recoveryStage==="complete_known"?'Índice restaurado y copias conocidas accesibles.':'Índice reconstruido; las copias de casos requieren la clave autorizada de Inés.')+'</p>'+
     '<button class="btn small" data-action="goArchivos">ABRIR ARCHIVOS</button>'+
-    '<button class="btn small" data-action="goTrabajos">LA FACTURA</button>'+
+    '<button class="btn small" data-action="goTrabajos">CASOS</button>'+
     '<div class="panel-h">ESTADO</div><div class="box">'+
     row2("CPU",Math.round(p.cpu)+"/"+p.maxCpu)+row2("CALOR",Math.round(p.heat)+"/100",p.heat>70?"rojo":(p.heat>40?"ambar":"verde"))+
     row2("CRÉDITOS","₡"+Math.floor(p.credits),"verde")+row2("RAM",dataUsedNow()+"/"+ramCap())+
@@ -1773,6 +1848,7 @@ function renderArchivos(){
   var narrative=S.narrative;
   var html='<h1 class="title">ARCHIVOS</h1><p class="sub">Memoria local · CORVO-7</p>'+
     '<p>RECUPERACIÓN · '+(narrative.recoveryStage==="needs_index"?'El índice necesita un respaldo externo. Los bloques originales se conservan.':narrative.recoveryStage==="complete_known"?'Índice restaurado y copias conocidas accesibles.':'El índice está reconstruido; hay copias que requieren clave.')+'</p>';
+  if(narrative.files.l_casos==="sealed") html+=narrative.keys.indexOf("k_casos")>=0?'<button class="btn cyan" data-action="applyStoryKey"'+(inImmersion?' disabled':'')+'>APLICAR CLAVE</button>':'<button class="btn" data-action="openStoryConversation" data-id="m_ines_clave">CONSULTAR PERMISO DE INÉS</button>';
   if(_archiveOpen && narrative.files[_archiveOpen]==="readable" && STORY_DOCUMENTS[_archiveOpen]){
     var item=storyItem(STORY_FILES,_archiveOpen), doc=STORY_DOCUMENTS[_archiveOpen];
     html+='<article class="archive-document"><button class="btn small" data-action="closeArchive">VOLVER A ARCHIVOS</button>'+
@@ -2031,7 +2107,7 @@ if(_cmdEnterEl) _cmdEnterEl.addEventListener("click", function(){
 
 /* Desechar solo runtime; no completar enemigos ni heredar un grid anterior. */
 function clearSessionRuntime(){
-  _storyConversation=null;
+  _storyConversation=null; _storyCaseId=null;
   _entryMode=null;
   clearTimeout(_introBootTimer); _introBootTimer=null;
   _storyReplay=false; _archiveOpen=null; _archiveTab="previous"; _archiveFilter="all"; _mailTab="current";

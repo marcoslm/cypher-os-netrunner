@@ -99,7 +99,17 @@ var STORY_DOCUMENTS = {
   l_contacto:{date:"08-10-2093",source:"Correo enviado por Tomás · oficina de Inés Aro",text:
     "Para: oficina de Inés Aro. Asunto: las versiones.\n\nInés: he encontrado otra diferencia. No te envío nombres por este canal. Cuando tengas un caso con las dos versiones, guarda también la hora de cada operación. Una copia sin fecha no nos servirá.\n\n— Tomás. 08-10-2093.\n\nARCHIVO DEL ANTERIOR USUARIO · copia enviada, sin ruta de respuesta.\nCanal público: oficina de reclamaciones de Inés Aro."},
   r_factura:{date:"14-10-2093",source:"Servicio de facturación · historial LB-2093-10",text:
-    "FACTURA LB-2093-10 · HISTORIAL DE OPERACIONES\n07-10-2093 18:12 · pago recibido; saldo pendiente 0\n14-10-2093 23:11 · orden de corte emitida por falta de pago\n14-10-2093 23:13 · revisión de estado: pago no reconocido\nREFERENCIA DE REVISIÓN: conciliación central"}
+    "FACTURA LB-2093-10 · HISTORIAL DE OPERACIONES\n07-10-2093 18:12 · pago recibido; saldo pendiente 0\n14-10-2093 23:11 · orden de corte emitida por falta de pago\n14-10-2093 23:13 · revisión de estado: pago no reconocido\nREFERENCIA DE REVISIÓN: conciliación central"},
+  r_indice:{date:"08-10-2093",source:"Respaldo de mantenimiento · copia de T. Egea",text:
+    "ÍNDICE DE MANTENIMIENTO · copia anterior al cierre interrumpido\nReferencias conservadas: estancia; revisión de instalaciones; correo a la oficina de Inés Aro.\nCarpeta de casos: bloques presentes, contenido cifrado.\nCaso autorizado: C-29-09-2093. Destinataria: oficina de Inés Aro.\nControlador histórico revisado: SUM-11, suministro local, archivo de 2091.\n\nLa copia permite ordenar los bloques que siguen en el deck. No contiene contraseñas ni repone bloques ausentes."},
+  l_indice:{date:"08-10-2093",source:"Archivo de Tomás · referencias reconstruidas por ORVIK",text:
+    "ÍNDICE RECONSTRUIDO\nLos bloques supervivientes vuelven a tener orden y referencias. Original conservado.\nC-29-09-2093 · caso consentido · oficina de Inés Aro.\nSUM-11 · controlador local de suministro · diario de 2091.\nCarpeta de casos: cifrada. Consultar el permiso de la destinataria antes de abrirla."},
+  l_casos:{date:"29-09-2093",source:"Copia local de Tomás · uso autorizado por Inés Aro",text:
+    "CASO C-29-09-2093 · copia anonimizada\nLa persona afectada autorizó comparar sus registros. No se conservan aquí nombres ni domicilios.\nConstancia local: cobertura vigente antes de la solicitud de atención. Respuesta del servicio: denegada a las 09:20.\nFalta el historial remoto de operaciones y sus revisiones. Una captura no demuestra qué versión llegó primero.\nPermiso limitado al contraste del caso; no autoriza publicar identidades."},
+  r_caso:{date:"29-09-2093",source:"Servicio de cobertura · diario del caso C-29-09-2093",text:
+    "C-29-09-2093 · HISTORIAL DE COBERTURA\n09:19 · cobertura vigente, solicitud admitida a consulta.\n09:20 · atención denegada; motivo comunicado: cobertura no vigente.\n09:24 · revisión: cobertura marcada como no vigente. Versión anterior preservada en diario.\nMódulo de revisión: conciliación central. Permiso de revisión de motivos: CC-17.\n\nLa revisión es posterior a la denegación. La factura del hostal registra otra revisión posterior a una orden. Son servicios y casos distintos; la coincidencia no identifica por sí sola intención ni autor."},
+  r_parpadeo:{date:"2091 · Parpadeo",source:"Controlador SUM-11 · diario independiente y acuse central",text:
+    "SUM-11 · DIARIO LOCAL DURANTE EL PARPADEO\n+00 s · pérdida de supervisión central.\n+02 s · corte de reserva ejecutado por el controlador; motivo local: protección del suministro.\n+11 s · supervisión restablecida. Registro local preservado.\n\nACUSE DE CONCILIACIÓN CENTRAL\nDespués del restablecimiento · operación atribuida a deuda de usuario. El motivo no coincide con el diario local.\nPermiso de revisión de motivos: CC-17. El mismo permiso figura en el diario de cobertura C-29-09-2093.\n\nOnce segundos sin supervisión no equivalen a ausencia de controladores. Estas copias no identifican quién provocó el apagón."}
 };
 var STORY_DIALOGUES = {
   m_berto_encargo:{speaker:"Berto Salas",channel:"COMUNICACIÓN LOCAL · Hostal La Bajante",text:
@@ -109,7 +119,26 @@ var STORY_DIALOGUES = {
   m_berto_entrega:{speaker:"Berto Salas",channel:"COMUNICACIÓN LOCAL · factura LB-2093-10",text:
     "Ese es mi pago. Si estaba recibido, no podían justificar el corte con una deuda. Mándalo a la oficina de Inés; yo confirmo que es nuestra factura."},
   m_ines_corte:{speaker:"Inés Aro",channel:"OFICINA DE RECLAMACIONES · canal de Álex",text:
-    "La reclamación está admitida y el corte queda suspendido. La revisión llegó después de la orden. No sé todavía si fue un error o una alteración deliberada. Tomás me estaba enseñando a comparar esto. ¿Tienes su equipo?\n\nBerto me ha dicho que no volvió. Llevo días sin respuesta. Si encuentras algo que explique por qué no ha vuelto, avísame."}
+    "La reclamación está admitida y el corte queda suspendido. La revisión llegó después de la orden. No sé todavía si fue un error o una alteración deliberada. Tomás me estaba enseñando a comparar esto. ¿Tienes su equipo?\n\nBerto me ha dicho que no volvió. Llevo días sin respuesta. Si encuentras algo que explique por qué no ha vuelto, avísame."},
+  m_mateo_indice:{speaker:"ORVIK · Mateo Sanz",channel:"RESPALDO DE MANTENIMIENTO · canal de Álex",text:
+    "Tomás guardaba el índice de sus revisiones en el respaldo del servicio. Sin eso voy a leer los bloques fuera de orden. Trae la copia; no necesito sus contraseñas para reconocer qué archivo empieza dónde."},
+  m_mateo_restaurado:{speaker:"ORVIK · Mateo Sanz",channel:"RECONSTRUCCIÓN LOCAL · original conservado",text:
+    "Ya tenemos el índice. Este es el número que Tomás anotó: C-29-09-2093. La carpeta de casos sigue cifrada. Inés figura como destinataria: pregúntale antes de abrir lo que pueda identificar a alguien."},
+  m_ines_clave:{speaker:"Inés Aro",channel:"PERMISO · caso C-29-09-2093",text:
+    "Tomás conservó copias con mi permiso. Te doy la clave para este caso, no para publicar nombres. La persona afectada autorizó que comparásemos sus registros. Necesito el historial del servicio, no otra captura de pantalla."},
+  m_ines_versiones:{speaker:"Inés Aro",channel:"VERIFICACIÓN · diario de cobertura",text:
+    "La cobertura estaba vigente al denegar la atención. La cambiaron cuatro minutos después. Aquí también aparece conciliación central. Son dos casos distintos con la misma secuencia. Ahora podemos buscar quién tiene permiso para hacerlo."},
+  m_mateo_controlador:{speaker:"ORVIK · Mateo Sanz",channel:"ARCHIVO HISTÓRICO · controlador SUM-11",text:
+    "Durante el Parpadeo algunos controladores siguieron solos. El de suministro guardó cada orden. Tomás revisó ese equipo; su número está en el índice. Lo que pasó en la calle no depende de lo que contaron después."},
+  m_ines_parpadeo:{speaker:"Inés Aro",channel:"CONTRASTE · diario local y conciliación",text:
+    "La copia local registra un corte de reserva. El archivo central lo atribuye a una deuda de usuario. La conciliación llegó al volver el Núcleo. No sabemos quién causó el apagón; sí sabemos que alguien cambió el motivo registrado."},
+  m_nara_presentacion:{speaker:"NAEV",channel:"PRESENTACIÓN POR INÉS · canal verificado, identidad pendiente de documentos",text:
+    "Inés me ha dejado ver el número de autorización CC-17. La primera firma es mía. Aprobé corregir inconsistencias de formato, no cambiar derechos ni cerrar reclamaciones. Necesito la cadena completa, incluida la ampliación.\n\nInés confirma el canal de contacto. La identidad y el alcance de esa firma requieren los documentos de autorización; esta comunicación sola no los demuestra."}
+};
+var STORY_CASE_DETAILS = {
+  c02:{intro:"m_mateo_indice",result:"m_mateo_restaurado",client:"ORVIK · respaldo del índice",conclusion:"HECHO · Referencias reconstruidas; caso C-29-09-2093 e interlocutora identificados. La carpeta sigue cifrada. SIGUIENTE · Consultar el permiso de Inés, no adivinar una contraseña."},
+  c03:{intro:"m_ines_clave",result:"m_ines_versiones",client:"Inés Aro · caso consentido",conclusion:"HECHO · Denegación a las 09:20 y revisión a las 09:24; segundo servicio con revisión posterior. SIN CONFIRMAR · Intención y autoría. SIGUIENTE · Contrastar el controlador SUM-11 del índice."},
+  c04:{intro:"m_mateo_controlador",result:"m_ines_parpadeo",client:"ORVIK e Inés · archivo de 2091",conclusion:"HECHO · Once segundos documentados y motivos local/central distintos; permiso CC-17 común. SIN CONFIRMAR · Quién causó el apagón. SIGUIENTE · Consultar el canal de NAEV presentado por Inés; la cadena de autorizaciones corresponde al próximo tramo."}
 };
 var STORY_CONVERSATIONS = [
   {id:"m_berto_encargo", chapter:"c01", phase:"offered"},
@@ -391,7 +420,7 @@ var GRID_EVENTS = [
      "la red te regala un paquete huérfano. nadie reclamará su pérdida."],
    prob:0.10,
    effect:function(){
-     if(inImmersion && ramCap()-inImmersion.dataUsed > pendingJobData(false)){
+    if(inImmersion && ramCap()-inImmersion.dataUsed-storyReservedRam() > pendingJobData(false)){
        inImmersion.data.push({value:randInt(20,50)});
        inImmersion.dataUsed++;
        S.player.stats.data++;
@@ -441,7 +470,7 @@ var GRID_EVENTS = [
    effect:function(){
      if(!inImmersion) return;
      var g=inImmersion.grid;
-     var nextLayer=Math.min(inImmersion.current.split("_")[0]*1+1, g.maxDepth);
+    var nextLayer=Math.min(currentLayer()+1, g.maxDepth);
      var candidates=g.byLayer[nextLayer];
      if(candidates && candidates.length){
        var target=candidates[0];
@@ -823,7 +852,7 @@ var MUSIC_TRACKS = {
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],
-  ["FIRMWARE v1.0 alpha · BUILD 68", "dim"],
+  ["FIRMWARE v1.0 alpha · BUILD 69", "dim"],
   ["memoria ................. 64K OK", "ok"],
   ["bus neural .............. OK", "ok"],
   ["interfaz del deck ....... OK", "ok"],

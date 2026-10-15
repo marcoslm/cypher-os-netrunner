@@ -280,6 +280,41 @@ async function solveCodeCombat(page) {
   await expect(page.locator('#combat')).toBeHidden();
 }
 
+async function scannerState(page) {
+  return page.locator('#combat').evaluate(() => ({
+    active: combatActive, phase: COM?.phase, phases: COM?.phases,
+    remaining: COM?.remaining, time: COM?.time, pos: _scannerPos,
+    dir: _scannerDir, speed: _scannerSpeed, gaps: _scannerGaps.map(gap => ({ ...gap }))
+  }));
+}
+async function solveScanner(page, { touch = false } = {}) {
+  for (let attempt = 0; attempt < 80; attempt++) {
+    const state = await scannerState(page);
+    if (!state.active) return;
+    const available = state.gaps.filter(gap => !gap.hit);
+    if (available.some(gap => state.pos >= gap.x && state.pos <= gap.x + gap.w)) {
+      const beforeHits = state.gaps.filter(gap => gap.hit).length;
+      if (touch) await page.locator('#scanZone').tap();
+      else await page.locator('#scanZone').click();
+      const next = await scannerState(page);
+      if (next.active && next.phase === state.phase) expect(next.gaps.filter(gap => gap.hit)).toHaveLength(beforeHits + 1);
+      else if (next.active) expect(next.phase).toBe(state.phase + 1);
+      continue;
+    }
+    const centers = available.map(gap => gap.x + gap.w / 2);
+    const forward = centers.filter(position => state.dir > 0 ? position > state.pos : position < state.pos);
+    const target = forward.length ? (state.dir > 0 ? Math.min(...forward) : Math.max(...forward)) : (state.dir > 0 ? 95 : 0);
+    const milliseconds = Math.max(32, Math.ceil(Math.abs(target - state.pos) / state.speed * 1000) + 32);
+    await page.clock.runFor(milliseconds);
+    const next = await scannerState(page);
+    if (next.active && next.phase === state.phase) {
+      const rendered = await page.locator('#scanLine').evaluate(element => parseFloat(element.style.left));
+      expect(rendered).toBeCloseTo(next.pos, 4);
+    }
+  }
+  throw new Error('Scanner solver exhausted its bounded observations');
+}
+
 async function downloadJSON(download) {
   expect(await download.failure()).toBeNull();
   const stream = await download.createReadStream();
@@ -289,4 +324,4 @@ async function downloadJSON(download) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
-module.exports = { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat, downloadJSON };
+module.exports = { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat, scannerState, solveScanner, downloadJSON };

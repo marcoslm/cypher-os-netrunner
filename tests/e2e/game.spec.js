@@ -1,6 +1,6 @@
 'use strict';
 
-const { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat, downloadJSON } = require('./fixtures');
+const { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat, solveScanner, downloadJSON } = require('./fixtures');
 
 const nav = (page, view) => page.locator(`.navbtn[data-view="${view}"]`);
 const action = (page, name) => page.locator(`[data-action="${name}"]`);
@@ -9,6 +9,32 @@ async function invoiceMove(page, id) {
   const index = await page.evaluate(id => currentNeighbors().findIndex(node => node.id === id), id);
   expect(index).toBeGreaterThanOrEqual(0);
   await page.locator('#adjlist .adj-node').nth(index).click();
+}
+async function storyRoute(page, target) {
+  for (let step = 0; step < 30; step++) {
+    const next = await page.evaluate(target => {
+      const current = inImmersion.current;
+      if (current === target) return null;
+      const paths = [[current]], seen = new Set([current]);
+      for (const route of paths) for (const neighbor of inImmersion.grid.adj[route.at(-1)]) {
+        if (seen.has(neighbor)) continue;
+        const path = [...route, neighbor];
+        if (neighbor === target) return path[1];
+        seen.add(neighbor); paths.push(path);
+      }
+      throw new Error('No route to ' + target);
+    }, target);
+    if (!next) return;
+    await page.evaluate(() => { window.__storyRng = Math.random; Math.random = () => 0.99; });
+    try { await invoiceMove(page, next); }
+    finally { await page.evaluate(() => { Math.random = window.__storyRng; delete window.__storyRng; }); }
+    if (await page.locator('#combat').isVisible()) {
+      await page.locator('#combat-enter').click();
+      if (await page.locator('#scanZone').isVisible()) await solveScanner(page);
+      else await solveCodeCombat(page);
+    }
+  }
+  throw new Error('Story route exhausted bounded steps');
 }
 
 function vaultOffer(id, project, corp) {
@@ -141,9 +167,113 @@ for (const width of [320, 768]) {
     await action(page, 'deliverInvoice').click();
     await fits(); await page.screenshot({ path: testInfo.outputPath(`invoice-delivery-${width}.png`) });
     await action(page, 'closeStoryConversation').click();
-    await expect(page.locator('#panel-scroll')).toContainText('Fin del tramo');
+    await expect(page.locator('#panel-scroll')).toContainText('EL ARCHIVO DE TOMAS');
   });
 }
+
+for (const width of [320, 1280]) {
+  test(`F4: indice, permiso y contraste de tres casos a ${width} px`, async ({ page, game }, testInfo) => {
+    test.setTimeout(120000);
+    await page.setViewportSize({ width, height: width === 320 ? 800 : 900 });
+    await game.setup();
+    const scoped = (name, id) => page.locator(`[data-action="${name}"][data-id="${id}"]`);
+    await nav(page,'trabajos').click();
+    for (const id of ['c02','c03','c04']) {
+      await scoped('consultStoryCase',id).click();
+      await expect(page.locator('#case-heading')).toBeFocused();
+      if (id === 'c03') {
+        const rebuilt = await game.snapshot();
+        expect(rebuilt.state.narrative.files).toMatchObject({ l_indice:'readable', l_casos:'sealed' });
+        expect(rebuilt.state.narrative.keys).toEqual([]);
+        expect(rebuilt.state.narrative.readConversations).not.toContain('m_ines_clave');
+        await expect(scoped('acceptStoryCase',id)).toHaveCount(0);
+        await scoped('openStoryConversation','m_ines_clave').click();
+        await expect(page.locator('#conversation-heading')).toBeFocused();
+        await action(page,'receiveStoryKey').click();
+        expect((await game.snapshot()).state.narrative.files.l_casos).toBe('sealed');
+        await game.reload();
+        await scoped('consultStoryCase',id).click();
+        await action(page,'applyStoryKey').click();
+        expect((await game.snapshot()).state.narrative.files.l_casos).toBe('readable');
+      }
+      await scoped('acceptStoryCase',id).click();
+      await page.evaluate(() => { window.__storyRng = Math.random; Math.random = () => 0.99; });
+      try { await action(page,'dipGrid').click(); }
+      finally { await page.evaluate(() => { Math.random = window.__storyRng; delete window.__storyRng; }); }
+      await expect(page.locator('#grid-job-items')).toContainText(id === 'c02'?'Respaldo de mantenimiento':id === 'c03'?'Servicio de cobertura':'Controlador local de 2091');
+      await storyRoute(page,id+'_guard');
+      await expect(page.locator('#combat')).toBeHidden();
+      await page.screenshot({ path:testInfo.outputPath(`${id}-grid-${width}.png`) });
+      await storyRoute(page,id+'_proof');
+      const transit = await game.snapshot();
+      expect(transit.immersion.narrativePayload.chapter).toBe(id);
+      expect(transit.state.narrative.chapters[id]).toBe('accepted');
+      await page.keyboard.press('Control+s');
+      await game.importFile(jsonFile((await game.snapshot()).saved));
+      expect((await game.snapshot()).immersion).toEqual(transit.immersion);
+      await game.reload();
+      expect((await game.snapshot()).immersion).toEqual(transit.immersion);
+      await storyRoute(page,transit.immersion.grid.entry);
+      await action(page,'doSuperficie').click(); await action(page,'closeResume').click();
+      const returned = await game.snapshot();
+      expect(returned.state.narrative.chapters[id]).toBe('returned');
+      await scoped('deliverStoryCase',id).click();
+      expect((await game.snapshot()).state.player.credits).toBe(returned.state.player.credits+({c02:180,c03:260,c04:320})[id]);
+      await expect(page.locator('#conversation-heading')).toBeFocused();
+      expect(await page.locator('#panel-scroll').evaluate(element => element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+      await page.screenshot({ path:testInfo.outputPath(`${id}-reaction-${width}.png`) });
+      await action(page,'closeStoryConversation').click();
+      await expect(page.locator('#panel-scroll')).toContainText('HECHO');
+      await expect(scoped('deliverStoryCase',id)).toHaveCount(0);
+    }
+    expect((await game.snapshot()).state.narrative.chapters.c05).toBe('offered');
+    await expect(scoped('acceptStoryCase','c05')).toHaveCount(0);
+    await expect(page.locator('#panel-scroll')).toContainText('Fin del tramo');
+    expect((await game.snapshot()).state.narrative.readConversations).not.toContain('m_nara_presentacion');
+    await scoped('openStoryConversation','m_nara_presentacion').click();
+    await expect(page.locator('#panel-scroll')).toContainText('identidad pendiente');
+    await nav(page,'archivos').click();
+    await page.locator('[data-action="archiveTab"][data-tab="recovered"]').click();
+    await scoped('openArchive','r_parpadeo').click();
+    await expect(page.locator('.archive-text')).toContainText('+11 s');
+    await expect(page.locator('.archive-text')).toContainText('CC-17');
+    await page.screenshot({ path:testInfo.outputPath(`parpadeo-${width}.png`) });
+  });
+}
+
+test('F4: tres contratos, paquete separado y reconexion reintentable', async ({ page, game }) => {
+  const offers = [['recoleta',3],['carrera',1],['rompehielas',2]].map(([type,n]) => ({
+    id:'f4_'+type,contact:'mamaWire',title:type,desc:'Objetivo de prueba '+type,type,n,reward:90,xp:10,risk:'low',why:''
+  }));
+  await game.setup({ state:{offers} });
+  await nav(page,'contactos').click();
+  for (const offer of offers) await page.locator(`[data-action="acceptJob"][data-id="${offer.id}"]`).click();
+  await nav(page,'trabajos').click();
+  await page.locator('[data-action="consultStoryCase"][data-id="c02"]').click();
+  await page.locator('[data-action="acceptStoryCase"][data-id="c02"]').click();
+  await page.evaluate(() => { window.__storyRng=Math.random; Math.random=()=>0.99; });
+  try { await action(page,'dipGrid').click(); }
+  finally { await page.evaluate(() => { Math.random=window.__storyRng; delete window.__storyRng; }); }
+  expect((await game.snapshot()).immersion.depth).toBe(4);
+  await expect(page.locator('#grid-job-items')).toContainText('EL ARCHIVO DE TOMAS');
+  for (const offer of offers) await expect(page.locator('#grid-job-items')).toContainText(offer.title);
+  await storyRoute(page,'c02_guard');
+  const before = await game.snapshot();
+  await storyRoute(page,'c02_proof');
+  const proof = await game.snapshot();
+  expect(proof.immersion.dataUsed).toBe(before.immersion.dataUsed+1);
+  expect(proof.immersion.data).toEqual(before.immersion.data);
+  expect(proof.state.player.stats.data).toBe(before.state.player.stats.data);
+  expect(proof.state.jobs.map(job=>job.prog)).toEqual(before.state.jobs.map(job=>job.prog));
+  await game.fatal(); await page.locator('#flatline [data-action="reconnect"]').click();
+  const retry = await game.snapshot();
+  expect(retry.immersion).toBeNull();
+  expect(retry.state.narrative.chapters.c02).toBe('accepted');
+  expect(retry.state.narrative.files.r_indice).toBe('unknown');
+  expect(retry.state.narrative.files.l_revision).toBe('readable');
+  await nav(page,'trabajos').click(); await action(page,'dipGrid').click();
+  expect((await game.snapshot()).immersion.grid.nodes.find(node=>node.storyChapter==='c02').done).toBe(false);
+});
 
 test('smoke: todos los paneles, terminal y compras con autosave', async ({ page, game }) => {
   await game.boot({ skip: 'click' });

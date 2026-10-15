@@ -1,56 +1,7 @@
 'use strict';
 
-const { test, expect, makeImmersion, solveCodeCombat } = require('./fixtures');
+const { test, expect, makeImmersion, solveCodeCombat, scannerState, solveScanner } = require('./fixtures');
 const action = (page, name) => page.locator(`[data-action="${name}"]`);
-
-async function scannerState(page) {
-  return page.locator('#combat').evaluate(() => ({
-    active: combatActive,
-    phase: COM?.phase,
-    phases: COM?.phases,
-    remaining: COM?.remaining,
-    time: COM?.time,
-    pos: _scannerPos,
-    dir: _scannerDir,
-    speed: _scannerSpeed,
-    gaps: _scannerGaps.map(g => ({ ...g }))
-  }));
-}
-
-async function solveScanner(page, { touch = false } = {}) {
-  // Observe the actual moving challenge and advance its rAF/timers. No assigned
-  // scanner position, generated gaps, hit flag, phase or public handler is mocked.
-  for (let attempt = 0; attempt < 80; attempt++) {
-    const s = await scannerState(page);
-    if (!s.active) return;
-    const available = s.gaps.filter(g => !g.hit);
-    const inside = available.some(g => s.pos >= g.x && s.pos <= g.x + g.w);
-    if (inside) {
-      const beforeHits = s.gaps.filter(g => g.hit).length;
-      if (touch) await page.locator('#scanZone').tap();
-      else await page.locator('#scanZone').click();
-      const next = await scannerState(page);
-      if (next.active && next.phase === s.phase) {
-        expect(next.gaps.filter(g => g.hit)).toHaveLength(beforeHits + 1);
-      } else if (next.active) {
-        expect(next.phase).toBe(s.phase + 1);
-      }
-      continue;
-    }
-    const centers = available.map(g => g.x + g.w / 2);
-    const forward = centers.filter(x => s.dir > 0 ? x > s.pos : x < s.pos);
-    const target = forward.length ? (s.dir > 0 ? Math.min(...forward) : Math.max(...forward)) : (s.dir > 0 ? 95 : 0);
-    const ms = Math.max(32, Math.ceil(Math.abs(target - s.pos) / s.speed * 1000) + 32);
-    await page.clock.runFor(ms);
-    const next = await scannerState(page);
-    if (next.active && next.phase === s.phase) {
-      // A rendered line must agree with the observed challenge state.
-      const rendered = await page.locator('#scanLine').evaluate(el => parseFloat(el.style.left));
-      expect(rendered).toBeCloseTo(next.pos, 4);
-    }
-  }
-  throw new Error('Scanner solver exhausted its bounded observations');
-}
 
 function bossImmersion() {
   const inm = makeImmersion();

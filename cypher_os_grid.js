@@ -186,7 +186,26 @@ function generateGrid(maxDepth, spawnBoss){
   }
   var grid={nodes:nodes, adj:adj, byLayer:byLayer, entry:entry.id, maxDepth:maxDepth};
   ensureGridJobTargets(grid);
+  addStoryGridTarget(grid);
   return grid;
+}
+
+function addStoryGridTarget(grid){
+  var chapter=null;
+  ["c02","c03","c04"].some(function(id){
+    if(S.narrative.chapters[id]!=="accepted") return false;
+    chapter=storyItem(STORY_CHAPTERS,id); return true;
+  });
+  if(!chapter || grid.maxDepth<chapter.depth) return;
+  var layer=chapter.depth, tier=Math.min(3,layer+(S._legendaryTierBoost?1:0));
+  var guard={id:chapter.id+"_guard",layer:layer,x:0,y:0,type:"ice",tier:tier,tierName:"T"+tier,data:0,name:"CUSTODIO · "+chapter.source,done:false,_done:false,_used:false};
+  var proof={id:chapter.id+"_proof",layer:layer,x:0,y:0,type:"data",tier:0,data:0,name:storyItem(STORY_FILES,chapter.files[0]).title,storyChapter:chapter.id,storyDefense:guard.id,done:false,_done:false,_used:false};
+  var anchor=grid.byLayer[layer-1][0];
+  grid.nodes.push(guard,proof); grid.byLayer[layer].push(guard,proof);
+  grid.adj[anchor.id].push(guard.id); grid.adj[guard.id]=[anchor.id,proof.id]; grid.adj[proof.id]=[guard.id];
+  grid.byLayer[layer].forEach(function(node,index){
+    node.x=80+layer/grid.maxDepth*800; node.y=60+(index+1)*420/(grid.byLayer[layer].length+1);
+  });
 }
 
 /* Reservar mínimos de contratos después de colocar el vault. Los contratos
@@ -345,6 +364,8 @@ function startImmersion(depth){
   /* la misión final (S.nextDepth===5) es la ÚNICA inmersión con boss en capa 5 */
   var finalMission = (S.nextDepth===5 && S.history.finalUnlocked && !S.history.finalDone && !S.history.endlessActive);
   depth = depth || (S.nextDepth || 4);
+  var activeCase=storyCaseInPhase("accepted");
+  if(activeCase && ["c02","c03","c04"].indexOf(activeCase.id)>=0) depth=activeCase.depth;
   if(S.jobs.some(function(j){ return !j.done; })) depth=Math.max(depth,4);
   if(S.nextDepth) S.nextDepth=null;
   /* legendario: +1 sin techo en SEALED NETWORK; grids normales máximo capa 5 */
@@ -372,7 +393,7 @@ function startImmersion(depth){
     visited:[g.entry], visitsPartial:false, exploredNotified:false, exhaustedNotified:false
   };
   addLog("DIP ▸ conexión establecida (capa 0).");
-  msg(invoice?"Enlace con el servicio de facturación. La copia del hostal está en el deck; recupera el historial y vuelve al puerto."+(S._legendaryTierBoost?" LEGENDARIO: profundidad 2 y defensa T2.":""):pickFresh("dip", FRASES_DIP),"cyan");
+  msg(invoice?"Enlace con el servicio de facturación. La copia del hostal está en el deck; recupera el historial y vuelve al puerto."+(S._legendaryTierBoost?" LEGENDARIO: profundidad 2 y defensa T2.":""):activeCase?activeCase.title+" · destino: "+activeCase.source+". Recupera la copia protegida y vuelve al puerto.":pickFresh("dip", FRASES_DIP),"cyan");
   /* efecto de dip: sonido + flash */
   sound.dip();
   var osEl = document.getElementById("os");
@@ -575,10 +596,11 @@ function enterNode(n){
   if(n.done){ msg(pickFresh("nodo-limpio", FRASES_NODO_LIMPIO),"gris"); renderGridHud(); return; }
   if(n.storyChapter){
     if(storyCollectProof(n)){
-      addLog("PRUEBA ▸ historial LB-2093-10 copiado. Pendiente de retorno.");
-      msg("Historial copiado a la memoria de tránsito. Procedencia: servicio de facturación. Vuelve al puerto para conservarlo y entregarlo.","cyan");
+      var chapter=storyItem(STORY_CHAPTERS,n.storyChapter);
+      addLog("PRUEBA ▸ "+chapter.title+" copiada. Pendiente de retorno.");
+      msg("Copia en memoria de tránsito. Procedencia: "+chapter.source+". Vuelve al puerto para conservarla y entregarla.","cyan");
       sound.cool(); updateTopbar(); save();
-    } else msg("Historial protegido: retira la defensa del archivador antes de copiarlo.","ambar");
+    } else msg("Copia pendiente: vence su defensa y conserva una unidad de RAM libre.","ambar");
     renderGridHud(); return;
   }
   if(n.type==="puerto"){ msg(pickFresh("puerto", FRASES_PUERTO),"cyan"); renderGridHud(); return; }
@@ -776,7 +798,7 @@ function doSuperficializar(){
   var inm = inImmersion;
   if(!inm) return;
   if(inm.narrativePayload && !storyReturnCase(inm.narrativePayload.chapter)) return;
-  var invoiceReturned=S.narrative.chapters.c01==="returned";
+  var returnedCase=storyCaseInPhase("returned");
   /* capturar datos antes de limpiar */
   var dataCollected=inm.data.length;
   var moves=inm.moves;
@@ -826,7 +848,7 @@ function doSuperficializar(){
      pertenece a la siguiente inmersión y no debe descartarse aquí. */
 
   stopGridRender(); inImmersion=null;
-  if(invoiceReturned) _storyConversation=null;
+  if(returnedCase) _storyConversation=null;
   // Limitar S.jobs: conservar solo los 15 más recientes para evitar crecimiento indefinido.
   if(S.jobs.length>15){
     var activeJobs=S.jobs.filter(function(j){ return !j.done; });
@@ -834,7 +856,7 @@ function doSuperficializar(){
     S.jobs=activeJobs.concat(recentDone);
   }
   updateBest(); updateTopbar();
-  showView(invoiceReturned?"trabajos":"inicio", true);
+  showView(returnedCase?"trabajos":"inicio", true);
   checkUnlocks();
   checkMensajes();
   advanceTutorial();
@@ -851,7 +873,7 @@ function doSuperficializar(){
   var heatDiff=heatAfter-heatBefore;
   var resumeHtml=
     '<h2 class="cyan glow">RESUMEN DE LA INMERSIÓN</h2>'+
-    (invoiceReturned?'<p>Historial LB-2093-10 conservado en ARCHIVOS. Verificación pendiente con Berto e Inés; no se ha cobrado la entrega.</p>':'')+
+    (returnedCase?'<p>'+escapeHtml(returnedCase.title)+' · copia conservada en ARCHIVOS. Verificación pendiente en TRABAJOS; no se ha cobrado la entrega.</p>':'')+
     '<div class="box">'+
     '<div class="resume-row"><span class="rk">Datos recogidos</span><span class="rv">'+dataCollected+'</span></div>'+
     '<div class="resume-row"><span class="rk">Créditos ganados</span><span class="rv">₡'+sellTotal+'</span></div>'+
@@ -1429,13 +1451,14 @@ function updateGridHud(){
   }
   var jobs=S.jobs.filter(function(j){ return !j.done; });
   var jobItems=document.getElementById("grid-job-items"), jobSummary=document.getElementById("grid-jobs-summary");
-  var invoice=inm.grid.nodes.some(function(node){ return node.storyChapter==="c01"; });
-  var caseHtml=invoice?'<div class="grid-job"><b>LA FACTURA</b><span>DESTINO · Servicio de facturación</span><span>OBJETIVO · Historial LB-2093-10</span><span class="cyan">'+(inm.narrativePayload?'Copia en tránsito · vuelve al puerto':'Retira la defensa y recupera el historial')+'</span></div>':'';
-  if(jobItems) jobItems.innerHTML=caseHtml+(jobs.length?jobs.map(gridJobHudHtml).join(""):invoice?'':'<div class="muted">Sin contratos activos.</div>');
+  var caseNode=inm.grid.nodes.filter(function(node){ return !!node.storyChapter; })[0];
+  var chapter=caseNode?storyItem(STORY_CHAPTERS,caseNode.storyChapter):null;
+  var caseHtml=chapter?'<div class="grid-job"><b>'+escapeHtml(chapter.title)+'</b><span>DESTINO · '+escapeHtml(chapter.source)+'</span><span>OBJETIVO · '+escapeHtml(storyItem(STORY_FILES,chapter.files[0]).title)+'</span><span class="cyan">'+(inm.narrativePayload?'Copia en tránsito · vuelve al puerto':'Vence la defensa y recupera la copia')+'</span></div>':'';
+  if(jobItems) jobItems.innerHTML=caseHtml+(jobs.length?jobs.map(gridJobHudHtml).join(""):chapter?'':'<div class="muted">Sin contratos activos.</div>');
   if(jobSummary){
     var ready=jobs.filter(jobComplete).length;
-    var summaryText=invoice?"LA FACTURA · "+(inm.narrativePayload?"copia en tránsito":"historial pendiente"):(jobs.length?"TRABAJOS "+ready+"/"+jobs.length+" listos para cobrar al superficializar":"TRABAJOS · sin contratos activos");
-    var counter=document.getElementById("grid-job-ready"),counterText=invoice?"1 caso":jobs.length?ready+"/"+jobs.length:"0";
+    var summaryText=chapter?chapter.title+" · "+(inm.narrativePayload?"copia en tránsito":"copia pendiente"):(jobs.length?"TRABAJOS "+ready+"/"+jobs.length+" listos para cobrar al superficializar":"TRABAJOS · sin contratos activos");
+    var counter=document.getElementById("grid-job-ready"),counterText=chapter?"1 caso"+(jobs.length?" + "+jobs.length:""):jobs.length?ready+"/"+jobs.length:"0";
     if(counter && counter.textContent!==counterText) counter.textContent=counterText;
     if(jobSummary.getAttribute("aria-label")!==summaryText){
       jobSummary.setAttribute("aria-label",summaryText); jobSummary.title=summaryText;
@@ -1453,7 +1476,7 @@ function updateGridHud(){
     var html='';
     list.forEach(function(n,i){
       var s=SIM[n.type]||"·";
-      var label=(n.type==="data")?("DATOS") :
+      var label=n.storyChapter?escapeHtml(n.name):(n.type==="data")?("DATOS") :
         (n.type==="ice")?("ICE "+escapeHtml(n.tierName)) :
         (n.type==="daemon")?("DAEMON "+escapeHtml(n.name)) :
         (n.type==="vault")?("VAULT "+escapeHtml(n.proj)) :
