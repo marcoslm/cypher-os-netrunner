@@ -14,7 +14,7 @@ async function run(options = {}) {
   async function check(label, fn) {
     const g = loadGame({ timers:'virtual', seed:2077, strictDOM:true, canvas:'stub' });
     try {
-      g.run('S=nuevoEstado();ensureStateIntegrity();S.snd=false;S.mus=false;S._tutorialDone=true;');
+      g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.snd=false;S.mus=false;S._tutorialDone=true;');
       await fn(g); passes++; console.log('  ✔ ' + label);
     } catch (error) { fails++; console.log('  ✖ ' + label + ': ' + error.message); }
     finally { g.dispose(); }
@@ -39,7 +39,7 @@ async function run(options = {}) {
       for (const roll of [0,0.3,0.9]) for (let a=0;a<types.length;a++) for (let b=a;b<types.length;b++) for (let c=b;c<types.length;c++) {
         const selected = [types[a],types[b],types[c]];
         if (selected.filter(type => type === 'vault').length > 1) continue;
-        g.run(`S=nuevoEstado();ensureStateIntegrity();S.player.level=100;S.difficulty='${difficulty}';S.history.finalDone=${finalDone};S._legendaryTierBoost=${difficulty === 'legendario'};Math.random=function(){return ${roll};};`);
+        g.run(`S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.level=100;S.difficulty='${difficulty}';S.history.finalDone=${finalDone};S._legendaryTierBoost=${difficulty === 'legendario'};Math.random=function(){return ${roll};};`);
         const limits = { recoleta:6,carrera:4,rompehielas:4,daemon:3,vault:1 };
         setJobs(g, selected.map((type,i) => job(type,limits[type],'job_'+i)));
         const grid = g.run('generateGrid(4,false)');
@@ -67,7 +67,7 @@ async function run(options = {}) {
     for (let seed=1;seed<=24;seed++) {
       const sample=loadGame({ timers:'virtual', seed, strictDOM:true, canvas:'stub' });
       try {
-        sample.run('S=nuevoEstado();ensureStateIntegrity();');
+        sample.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();');
         for (const depth of [2,3,4]) {
           const contract={...job('vault',1),targetDepth:depth};
           sample.run('S').jobs=[contract,job('carrera',4),job('rompehielas',4)];
@@ -130,7 +130,7 @@ async function run(options = {}) {
   });
   await check('vault F01: exportar/importar/cargar conserva posición, flags y premios antes y después de recuperar', g => {
     for (const consumed of [false,true]) {
-      g.run('clearSessionRuntime();S=nuevoEstado();ensureStateIntegrity();S._tutorialDone=true;');
+      g.run('clearSessionRuntime();S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S._tutorialDone=true;');
       setJobs(g,[job('vault',1),job('recoleta',2)]); g.run('startImmersion(4);');
       const vault=g.run('inImmersion').grid.nodes.find(n=>n.type==='vault');
       if (consumed) { g.sb.__vault=vault; g.run('onNodeDefeated({node:window.__vault});'); }

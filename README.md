@@ -7,9 +7,9 @@ En fase alpha: jugable pero sin probar a fondo. Pueden aparecer bugs sin identif
 
 ## Revision Narrativa En Desarrollo
 
-El codigo de desarrollo incorpora el nuevo estado de historia y su formato de partida. El prologo, los archivos y los casos todavia estan pendientes de conectar a la interfaz; este avance no es una campaña narrativa nueva completa. Los minijuegos actuales se mantienen.
+El codigo de desarrollo incorpora el nuevo estado de historia y su formato de partida. La llegada ya incluye prologo, diagnostico y recuperacion explicita de tres piezas locales, con archivo y correo anterior separados. Puedes releer el prologo desde AYUDA sin modificar la partida. Los casos de investigacion todavia estan pendientes de conectar; este avance no es una campaña narrativa nueva completa. Los minijuegos actuales se mantienen.
 
-Esta revision requiere una partida nueva. Los guardados anteriores de prueba no se cargan ni se convierten, pero tampoco se eliminan. Exportar permite conservarlos fuera del navegador; los ajustes de audio y pantalla siguen siendo preferencias del dispositivo, independientes de la partida.
+Esta revision requiere una partida nueva. Los guardados anteriores de prueba no se cargan ni se convierten, pero tampoco se eliminan. Los archivos exportados anteriores pueden conservarse como respaldo; los ajustes de audio y pantalla siguen siendo preferencias del dispositivo, independientes de la partida.
 
 **[Jugar online en GitHub Pages](https://marcoslm.github.io/cypher-os-netrunner/cypher_os.html)** — abre el enlace y pulsa COMENZAR, sin instalar nada.
 

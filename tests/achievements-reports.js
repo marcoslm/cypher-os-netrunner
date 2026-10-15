@@ -11,7 +11,7 @@ async function run(options={}) {
   async function check(label,fn) {
     const g=loadGame({timers:'virtual',seed:2093,strictDOM:true,canvas:'stub'});
     try {
-      g.run('S=nuevoEstado();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;');
+      g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;');
       await fn(g);passes++;console.log('  ✔ '+label);
     }catch(error){fails++;console.log('  ✖ '+label+': '+error.stack);}
     finally{g.dispose();}
@@ -104,7 +104,7 @@ async function run(options={}) {
   await check('cargar una partida no anuncia informes ni finge novedad',g=>{
     /* Partida anterior al campo: ya tenía sus informes y el panel abierto.
        Los logros van concedidos para que el único cartel posible sea el de INFORMES. */
-    g.run('S=nuevoEstado();ensureStateIntegrity();S._tutorialDone=true;S.player.level=10;'+
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S._tutorialDone=true;S.player.level=10;'+
       'S.player.stats.maxDepth=6;S.player.stats.immerse=5;S.player.stats.ice=10;'+
       'S.achievements=ACHIEVEMENTS.map(function(a){return a.id;});'+
       'sinAvisoIntel(checkUnlocks);S._seenPanels={informes:true};S._intelVistos=undefined;save();');
@@ -118,7 +118,7 @@ async function run(options={}) {
     g.run('clearInterval(loopId);');
   });
   await check('una partida que nunca abrió INFORMES conserva el punto al migrar',g=>{
-    g.run('S=nuevoEstado();ensureStateIntegrity();S._tutorialDone=true;S.intel=["anatomia"];S._intelVistos=undefined;save();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S._tutorialDone=true;S.intel=["anatomia"];S._intelVistos=undefined;save();');
     assert.equal(g.saved()._intelVistos,undefined);
     g.run('afterBoot();');
     assert.equal(g.run('intelNuevosCount()'),1);
@@ -126,7 +126,7 @@ async function run(options={}) {
     g.run('clearInterval(loopId);');
   });
   await check('importar valida _intelVistos y nunca anuncia lo archivado',g=>{
-    g.run('S=nuevoEstado();ensureStateIntegrity();S._tutorialDone=true;S.intel=["anatomia"];save();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S._tutorialDone=true;S.intel=["anatomia"];save();');
     const candidate=clone(g.run('S'));
     g.sb.__candidate=candidate;
     candidate._intelVistos='anatomia';

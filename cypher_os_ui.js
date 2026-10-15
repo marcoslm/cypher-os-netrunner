@@ -96,16 +96,13 @@ function finishIntroBoot(){
   var intro=document.getElementById("intro"), menu=document.getElementById("intro-menu");
   var skip=document.getElementById("intro-skip"), log=document.getElementById("boot");
   if(intro){ intro.classList.remove("intro-booting"); intro.classList.add("intro-ready"); }
-  if(menu){ menu.classList.remove("hidden"); menu.inert=false; menu.removeAttribute("inert"); }
+  if(menu){ menu.classList.add("hidden"); menu.inert=true; menu.setAttribute("inert",""); }
   if(skip){ skip.classList.add("hidden"); skip.disabled=true; }
   if(log){ log.scrollTop=log.scrollHeight; log.setAttribute("tabindex","0"); }
   var power=document.getElementById("intro-power");
   if(power) power.textContent="EN LÍNEA";
-  _entryMode=S ? "intro" : null;
   if(AC && AC.state==="running") sound.bootEnd();
-  syncGameInputLock();
-  var start=document.getElementById("intro-start");
-  if(start && start.focus) start.focus({preventScroll:true});
+  renderStoryEntry();
 }
 function runBoot(){
   stopMusic(); stopAmbient();
@@ -113,7 +110,8 @@ function runBoot(){
   var intro=document.getElementById("intro"), body=document.getElementById("boot-body");
   if(!intro || !body) return;
   _entryMode="boot"; _introBootIndex=0; _bootStarted=false;
-  intro.classList.remove("hidden","intro-ready","intro-memory"); intro.classList.add("intro-booting");
+  intro.classList.remove("hidden","intro-ready","intro-memory","intro-menu-mode","intro-story-mode"); intro.classList.add("intro-booting");
+  var story=document.getElementById("story-entry"); if(story) story.classList.add("hidden");
   body.innerHTML="";
   var menu=document.getElementById("intro-menu"), skip=document.getElementById("intro-skip");
   if(menu){ menu.classList.add("hidden"); menu.inert=true; menu.setAttribute("inert",""); }
@@ -142,6 +140,89 @@ function runBoot(){
   }
   _introBootTimer=setTimeout(line,320);
 }
+
+function showIntroMenu(){
+  clearTimeout(_introBootTimer); _introBootTimer=null;
+  _entryMode=S ? "intro" : null; _bootStarted=false;
+  var intro=document.getElementById("intro"), menu=document.getElementById("intro-menu");
+  if(intro){ intro.classList.remove("hidden","intro-booting","intro-story-mode"); intro.classList.add("intro-ready","intro-menu-mode"); }
+  if(menu){ menu.classList.remove("hidden"); menu.inert=false; menu.removeAttribute("inert"); }
+  var story=document.getElementById("story-entry"); if(story) story.classList.add("hidden");
+  var skip=document.getElementById("intro-skip"); if(skip){ skip.classList.add("hidden"); skip.disabled=true; }
+  syncGameInputLock();
+  var start=document.getElementById("intro-start"); if(start) start.focus();
+}
+var _storyReplay=false, _storyReplayPage=0;
+function renderStoryEntry(){
+  if(!S || (S.narrative.entry==="active" && !_storyReplay)) return;
+  clearTimeout(_introBootTimer); _introBootTimer=null;
+  clearInterval(loopId); loopId=null;
+  stopGlitchLoop(); stopMusic(); stopAmbient();
+  _entryMode=_storyReplay ? "replay" : S.narrative.entry;
+  var intro=document.getElementById("intro"), menu=document.getElementById("intro-menu");
+  intro.classList.remove("hidden","intro-menu-mode","intro-booting","intro-ready"); intro.classList.add("intro-story-mode");
+  menu.classList.add("hidden"); menu.inert=true; menu.setAttribute("inert","");
+  var skip=document.getElementById("intro-skip"); skip.classList.add("hidden"); skip.disabled=true;
+  var story=document.getElementById("story-entry"), html="";
+  story.classList.remove("hidden");
+  if(S.narrative.entry==="prologue" || _storyReplay){
+    var page=_storyReplay ? _storyReplayPage : S.narrative.prologuePage, scene=STORY_PROLOGUE[page];
+    html='<p class="story-kicker">14 OCT 2093 · ÁLEX RIBA</p><h1 id="story-heading" tabindex="-1">'+escapeHtml(scene.title)+'</h1>';
+    scene.paragraphs.forEach(function(text){ html+='<p>'+escapeHtml(text)+'</p>'; });
+    html+='<div class="story-actions"><button class="btn" data-action="storyPrevious"'+(page===0?' disabled':'')+'>ANTERIOR</button>'+
+      '<button class="btn cyan" data-action="storyContinue">'+(page===2?(_storyReplay?'VOLVER A AYUDA':'RECOGER EL DECK'):'CONTINUAR')+'</button>'+
+      '<button class="btn" data-action="storySkip">'+(_storyReplay?'CERRAR RELECTURA':'OMITIR PRÓLOGO')+'</button></div>';
+  } else {
+    html='<p class="story-kicker">CORVO-7 · DIAGNÓSTICO LOCAL</p><h1 id="story-heading" tabindex="-1">Cierre interrumpido</h1>'+
+      '<p>El último cierre no se completó. Parte del archivo personal está dañada.</p>'+
+      '<p>Las funciones de trabajo están disponibles. La recuperación conservará los datos originales. Puede continuar utilizando el equipo durante el proceso.</p>'+
+      '<div class="story-actions"><button class="btn cyan" data-action="storyRecover">INICIAR RECUPERACIÓN</button></div>';
+  }
+  story.innerHTML=html+(_storyReplay?'':'<button class="btn small" data-action="storyMenu">VOLVER AL MENÚ</button>');
+  syncGameInputLock();
+  var heading=document.getElementById("story-heading"); if(heading) heading.focus();
+}
+ACTIONS.storyPrevious=function(){
+  if(_storyReplay){ _storyReplayPage=Math.max(0,_storyReplayPage-1); renderStoryEntry(); return; }
+  if(!S || entryMode()!=="prologue" || S.narrative.prologuePage<=0) return;
+  S.narrative.prologuePage--; save(); renderStoryEntry();
+};
+ACTIONS.storyContinue=function(){
+  if(_storyReplay){
+    if(_storyReplayPage<2){ _storyReplayPage++; renderStoryEntry(); }
+    else closeStoryReplay();
+    return;
+  }
+  if(!S || entryMode()!=="prologue") return;
+  if(storyNextProloguePage()) renderStoryEntry();
+  else if(storyFinishPrologue()) runBoot();
+};
+ACTIONS.storySkip=function(){
+  if(_storyReplay){ closeStoryReplay(); return; }
+  if(entryMode()==="prologue" && storyFinishPrologue()) runBoot();
+};
+ACTIONS.storyRecover=function(){
+  if(entryMode()!=="diagnostic" || !storyBeginRecovery()) return;
+  activateStorySession(false);
+  showView("archivos");
+  msg("Recuperación iniciada. Dos documentos y una conversación legibles. El índice personal está dañado; los bloques originales se conservarán.","cyan");
+};
+ACTIONS.storyMenu=function(){
+  if(!S || ["prologue","diagnostic"].indexOf(entryMode())<0) return;
+  _resumeAfterIntro=save() ? null : S;
+  showIntroMenu();
+};
+function closeStoryReplay(){
+  if(!_storyReplay) return;
+  _storyReplay=false; _entryMode=null;
+  document.getElementById("intro").classList.add("hidden");
+  syncGameInputLock(); startClock(); startGlitchLoop(); updateAmbient(); updateMusic();
+  var trigger=document.querySelector('[data-action="replayPrologue"]'); if(trigger) trigger.focus();
+}
+ACTIONS.replayPrologue=function(){
+  if(!livingInteraction() || inImmersion || modalOpen()) return;
+  _storyReplay=true; _storyReplayPage=0; renderStoryEntry();
+};
 
 
 /* ============================================================
@@ -598,7 +679,9 @@ if(_confirmOverlay) _confirmOverlay.addEventListener("click", function(e){
 function showView(v, skipLog){
   closeSaveTools(false); /* navegación: el menú de partida no sigue a otra vista */
   if(!S || entryMode() || combatActive || (S.player.cpu<=0 && v!=="inicio")) return;
+  if(!Object.prototype.hasOwnProperty.call(VIEWS,v)) v="inicio";
   currentView = v;
+  S._lastView=v;
   if(v !== "red") stopGridRender();
   document.querySelectorAll(".navbtn[data-view]").forEach(function(b){
     b.classList.toggle("active", b.getAttribute("data-view")===v);
@@ -702,6 +785,10 @@ function updateNotifications(){
   /* mensajes: el punto vive mientras haya cartas sin leer */
   var dotMensajes = document.getElementById("notif-mensajes");
   if(dotMensajes) dotMensajes.classList.toggle("show", unreadMsgCount()>0);
+  var dotArchivos=document.getElementById("notif-archivos");
+  if(dotArchivos && S.narrative) dotArchivos.classList.toggle("show",STORY_FILES.some(function(file){
+    return S.narrative.files[file.id]==="readable" && S.narrative.readFiles.indexOf(file.id)<0;
+  }));
 }
 function markPanelSeen(view){
   if(!S) return;
@@ -722,8 +809,9 @@ document.addEventListener("click", function(e){
   var a = btn.getAttribute("data-action");
   if(a==="startIntro") return; /* listener local: una entrada y un solo FX de clic */
   var controlAction=["openControls","closeControls","toggleDeckPref","resetControls","confirmYes","confirmNo","toggleFs"].indexOf(a)>=0;
+  var storyAction=["storyPrevious","storyContinue","storySkip","storyRecover","storyMenu"].indexOf(a)>=0;
   var mode=entryMode(), layer=gameInputLayer();
-  if(mode && (mode==="boot" || !controlAction || !layerContains(layer,btn))) return;
+  if(mode && (mode==="boot" || (!controlAction && !storyAction) || !layerContains(layer,btn))) return;
   if(!S && a!=="startIntro" && !controlAction) return;
   if(controlPanelOpen() && !controlAction) return;
   if(S && S.player.cpu<=0 && ["reconnect","newRecord","confirmYes","confirmNo"].indexOf(a)<0) return;
@@ -746,7 +834,8 @@ var VIEWS = {
   informes: renderInformes,
   registro: renderRegistro,
   logros: renderLogros,
-  ayuda: renderAyuda
+  ayuda: renderAyuda,
+  archivos: renderArchivos
 };
 
 
@@ -1072,7 +1161,7 @@ function renderAyuda(){
   if(typeof HELP_HTML === 'undefined'){
     scroller('<div class="muted">ERROR: archivo de ayuda no cargado (cypher_os_help.js).</div>');
   } else {
-    scroller(HELP_HTML);
+    scroller('<div class="story-actions"><button class="btn" data-action="replayPrologue"'+(inImmersion?' disabled':'')+'>RELEER PRÓLOGO</button></div>'+HELP_HTML);
   }
   updateTopbar();
   msg(pickFresh("view-ayuda", FRASES_VIEWS.ayuda),"cyan");
@@ -1171,6 +1260,9 @@ function renderInicio(){
     }
   }
   var html='<div class="logo glow">CYPHER<br><small>:OS v9.2.7</small></div>'+
+    '<p>ÁLEX RIBA · equipo CORVO-7'+(S.narrative.aliasAcquired?' · alias registrado':' · sesión local')+'</p>'+
+    '<div class="panel-h">ARCHIVO LOCAL</div><p>Los originales se conservan. '+(S.narrative.recoveryStage==="needs_index"?'El índice personal necesita un respaldo externo.':'Estado: '+escapeHtml(S.narrative.recoveryStage))+'</p>'+
+    '<button class="btn small" data-action="goArchivos">ABRIR ARCHIVOS</button>'+
     '<div class="panel-h">ESTADO</div><div class="box">'+
     row2("CPU",Math.round(p.cpu)+"/"+p.maxCpu)+row2("CALOR",Math.round(p.heat)+"/100",p.heat>70?"rojo":(p.heat>40?"ambar":"verde"))+
     row2("CRÉDITOS","₡"+Math.floor(p.credits),"verde")+row2("RAM",dataUsedNow()+"/"+ramCap())+
@@ -1399,7 +1491,7 @@ ACTIONS.backToIntro = function(){
       var introEl=document.getElementById("intro");
       if(introEl) introEl.classList.remove("hidden");
       /* El deck sigue encendido: volver a opciones sin repetir el POST. */
-      _bootStarted=false; _entryMode="boot"; finishIntroBoot();
+      showIntroMenu();
       updateLegendaryOption(); initDifficultySelect();
       if(introEl) introEl.classList.toggle("intro-memory",!persisted);
       var introStatus=document.getElementById("intro-memory-status");
@@ -1515,6 +1607,7 @@ function emisorLine(d){
   if(d.emisor==="no-valido") return '▸ EMISOR: no válido — ruta desechable · SIN RESPUESTA POSIBLE';
   return '▸ EMISOR: ███ enmascarado · SIN RUTA DE VUELTA';
 }
+var _mailTab="current";
 function renderMensajes(){
   var openId=S._msgOpen||null, m=null, def=null, i, j;
   if(openId){
@@ -1524,7 +1617,15 @@ function renderMensajes(){
   }
   var html='<h1 class="title">MENSAJES</h1>'+
     '<div class="sub">bandeja del deck · '+S.mensajes.length+' cartas · '+unreadMsgCount()+' sin leer</div>';
-  if(openId){
+  html+='<div class="archive-tabs" role="group" aria-label="Correspondencia">'+
+    '<button class="btn small" data-action="mailTab" data-tab="current" aria-pressed="'+(_mailTab==="current")+'">ACTUALES</button>'+
+    '<button class="btn small" data-action="mailTab" data-tab="previous" aria-pressed="'+(_mailTab==="previous")+'">ARCHIVO ANTERIOR</button></div>';
+  if(_mailTab==="previous"){
+    if(S.narrative.files.l_contacto==="readable") html+='<section class="inherited-mail"><h2>Correo enviado por Tomás</h2>'+
+      '<p>08-10-2093 · Para: oficina de Inés Aro · Las versiones</p>'+
+      '<button class="btn small" data-action="openArchive" data-id="l_contacto">ABRIR COPIA ENVIADA</button></section>';
+    else html+='<p class="muted">No hay correspondencia anterior legible.</p>';
+  } else if(openId){
     html+='<div class="msgcard">'+
       '<button class="btn small" data-action="closeMsg">◂ VOLVER A LA BANDEJA</button>'+
       '<div class="msg-head"><b class="cyan">'+escapeHtml(def.from)+'</b> <span class="muted text-xs">'+timeStr(m.hora)+'</span></div>'+
@@ -1553,6 +1654,11 @@ function renderMensajes(){
   scroller(html); updateTopbar(); updateNotifications();
   msg(pickFresh("view-mensajes", FRASES_VIEWS.mensajes),"cyan");
 }
+ACTIONS.mailTab=function(btn){
+  var tab=btn.getAttribute("data-tab"); if(["current","previous"].indexOf(tab)<0) return;
+  _mailTab=tab; S._msgOpen=null; renderMensajes();
+  var selected=document.querySelector('[data-action="mailTab"][data-tab="'+tab+'"]'); if(selected) selected.focus();
+};
 ACTIONS.openMsg = function(btn){
   var id=btn?btn.getAttribute("data-id"):null;
   if(!id) return;
@@ -1589,6 +1695,69 @@ ACTIONS.replyMsg = function(btn){
   msg(o.resp?"respuesta enviada. lo que vuelva de vuelta, ya veremos.":"silencio guardado. hay quien responde sin escribir.","cyan");
   save(); checkAchievements(); renderMensajes();
 };
+
+var _archiveTab="previous", _archiveFilter="all", _archiveOpen=null;
+function archiveStateLabel(state){
+  return ({readable:"Legible",damaged:"Falta reconstrucción",partial:"Reconstrucción parcial",sealed:"Falta clave"})[state]||"Desconocido";
+}
+function archiveOriginLabel(origin){
+  return ({local:"Archivo local anterior", "inherited-mail":"Correo anterior · enviado", network:"Recuperado de la red", "current-mail":"Correspondencia actual"})[origin]||"Origen desconocido";
+}
+function renderArchivos(){
+  var narrative=S.narrative;
+  var html='<h1 class="title">ARCHIVOS</h1><p class="sub">Memoria local · CORVO-7</p>'+
+    '<p>RECUPERACIÓN · '+(narrative.recoveryStage==="needs_index"?'El índice necesita un respaldo externo. Los bloques originales se conservan.':narrative.recoveryStage==="complete_known"?'Índice restaurado y copias conocidas accesibles.':'El índice está reconstruido; hay copias que requieren clave.')+'</p>';
+  if(_archiveOpen && narrative.files[_archiveOpen]==="readable" && STORY_DOCUMENTS[_archiveOpen]){
+    var item=storyItem(STORY_FILES,_archiveOpen), doc=STORY_DOCUMENTS[_archiveOpen];
+    html+='<article class="archive-document"><button class="btn small" data-action="closeArchive">VOLVER A ARCHIVOS</button>'+
+      '<h2 id="archive-heading" tabindex="-1">'+escapeHtml(item.title)+'</h2><p class="archive-meta">'+escapeHtml(archiveOriginLabel(item.origin))+' · '+escapeHtml(doc.date)+
+      '<br>'+escapeHtml(doc.source)+'</p><div class="archive-text">'+escapeHtml(doc.text)+'</div></article>';
+  } else {
+    _archiveOpen=null;
+    html+='<div class="archive-tabs" role="group" aria-label="Procedencia de archivos">'+
+      '<button class="btn small" data-action="archiveTab" data-tab="previous" aria-pressed="'+(_archiveTab==="previous")+'">ANTERIORES</button>'+
+      '<button class="btn small" data-action="archiveTab" data-tab="recovered" aria-pressed="'+(_archiveTab==="recovered")+'">RECUPERADOS</button></div>'+
+      '<div class="archive-tools"><label for="archive-filter">Estado</label><select id="archive-filter"><option value="all">Todos</option><option value="readable">Legibles</option><option value="pending">Pendientes</option><option value="sealed">Cifrados</option></select></div><div class="archive-list">';
+    var count=0;
+    STORY_FILES.forEach(function(file){
+      var state=narrative.files[file.id], previous=file.origin==="local"||file.origin==="inherited-mail";
+      if(state==="unknown" || previous!==(_archiveTab==="previous") ||
+         (_archiveFilter==="readable" && state!=="readable") ||
+         (_archiveFilter==="pending" && ["damaged","partial"].indexOf(state)<0) ||
+         (_archiveFilter==="sealed" && state!=="sealed")) return;
+      count++;
+      var doc=STORY_DOCUMENTS[file.id];
+      html+='<div class="archive-row"><div><b>'+escapeHtml(file.title)+'</b><div class="archive-meta">'+escapeHtml(archiveOriginLabel(file.origin))+
+        (doc?' · '+escapeHtml(doc.date):'')+'<br>'+escapeHtml(archiveStateLabel(state))+
+        (state==="readable" && narrative.readFiles.indexOf(file.id)<0?' · SIN LEER':'')+'</div></div>'+
+        (state==="readable" && doc?'<button class="btn small" data-action="openArchive" data-id="'+file.id+'">ABRIR</button>':'')+'</div>';
+    });
+    html+='</div>'+(count?'':'<p class="muted">No hay archivos en esta selección.</p>');
+  }
+  scroller(html); updateTopbar();
+  var filter=document.getElementById("archive-filter");
+  if(filter){ filter.value=_archiveFilter; filter.addEventListener("change",function(){
+    _archiveFilter=filter.value; renderArchivos();
+    var replacement=document.getElementById("archive-filter"); if(replacement) replacement.focus();
+  }); }
+}
+ACTIONS.archiveTab=function(btn){
+  var tab=btn.getAttribute("data-tab"); if(["previous","recovered"].indexOf(tab)<0) return;
+  _archiveTab=tab; _archiveOpen=null; renderArchivos();
+  var selected=document.querySelector('[data-action="archiveTab"][data-tab="'+tab+'"]'); if(selected) selected.focus();
+};
+ACTIONS.openArchive=function(btn){
+  var id=btn.getAttribute("data-id");
+  if(!STORY_DOCUMENTS[id] || !storyReadFile(id)) return;
+  _archiveOpen=id; showView("archivos");
+  var heading=document.getElementById("archive-heading"); if(heading) heading.focus();
+};
+ACTIONS.closeArchive=function(){
+  var id=_archiveOpen; _archiveOpen=null; renderArchivos();
+  var trigger=document.querySelector('[data-action="openArchive"][data-id="'+id+'"]');
+  if(trigger) trigger.focus();
+};
+ACTIONS.goArchivos=function(){ showView("archivos"); };
 
 /* ---- REGISTRO ---- */
 /* clasificación por prefijo (sin migrar guardados): lore / combate / contratos / sistema */
@@ -1739,6 +1908,7 @@ CMD.whoami = function(){ msg("eres CORVO-7 · netrunner de calle. El cable no du
 CMD.tiempo = function(){ msg("hora de calle: "+timeStr(S.clock)+"."); };
 /* bandeja del deck (CONTRACTS §19) */
 CMD.mensajes = CMD.buzon = CMD.mail = function(){ S._msgOpen=null; showView("mensajes"); };
+CMD.archivos=function(){ showView("archivos"); };
 CMD.responder = function(){ msg("la ruta de origen no admite respuesta. quizá era la idea.","cyan"); };
 CMD.guardar = function(){ save(); msg("partida guardada en el cable, corvo. ✓"); };
 CMD.unknown = function(cmd){ msg('comando no reconocido: "'+cmd+'" — escribe AYUDA'); };
@@ -1795,6 +1965,9 @@ if(_cmdEnterEl) _cmdEnterEl.addEventListener("click", function(){
 
 /* Desechar solo runtime; no completar enemigos ni heredar un grid anterior. */
 function clearSessionRuntime(){
+  _entryMode=null;
+  clearTimeout(_introBootTimer); _introBootTimer=null;
+  _storyReplay=false; _archiveOpen=null; _archiveTab="previous"; _archiveFilter="all"; _mailTab="current";
   stopMessageTyping();
   cancelActiveCombat();
   stopGridRender(); inImmersion=null;
@@ -1900,7 +2073,7 @@ ACTIONS.newRecord = function(){
       ensureStateIntegrity(); generateOffers();
       addLog("NUEVO REGISTRO ▸ progreso reiniciado.");
       save();
-      startClock(); showView("inicio"); syncGameInputLock();
+      renderStoryEntry(); syncGameInputLock();
       msg("nuevo registro iniciado. la calle te ve de nuevo desde cero.","cyan");
       updateTopbar();
     }
@@ -2168,6 +2341,7 @@ function validImportState(o){
   }
   if(!importTypedFields(o,{snd:true,amb:false,mus:true})) return false;
   if(o._seenPanels!=null && !importObject(o._seenPanels)) return false;
+  if(o._lastView!=null && (typeof o._lastView!=="string" || !Object.prototype.hasOwnProperty.call(VIEWS,o._lastView))) return false;
   if(o._activityCooldowns!=null){
     if(!importObject(o._activityCooldowns)) return false;
     for(key in o._activityCooldowns){
@@ -2179,6 +2353,7 @@ function validImportState(o){
   if(o._jobQuotaVersion!=null && (!importNatural(o._jobQuotaVersion) || o._jobQuotaVersion>1)) return false;
   if(!importNatural(p.ramUp)) return false;
   if(o._inImmersion!=null && !validImportImmersion(o._inImmersion,6+p.ramUp*4)) return false;
+  if(o.narrative.entry!=="active" && o._inImmersion!=null) return false;
   if(o._inImmersion && o._inImmersion.narrativePayload!=null &&
      !validStoryPayload(o._inImmersion.narrativePayload,o.narrative,o._inImmersion)) return false;
   if(o._reconnectCheckpoint!=null){
@@ -2212,8 +2387,12 @@ function importGameState(imported){
       clearInterval(loopId);
       viewChanged=true; showView("inicio");
       stopMusic(); startAmbient("flatline"); showFlatline();
+    } else if(S.narrative.entry!=="active"){
+      var pendingFlat=document.getElementById("flatline"); if(pendingFlat) pendingFlat.classList.remove("show");
+      viewChanged=true; renderStoryEntry();
     } else {
       var flat=document.getElementById("flatline"); if(flat) flat.classList.remove("show");
+      document.getElementById("intro").classList.add("hidden");
       viewChanged=true; showView(inImmersion ? "red" : "inicio"); startClock();
     }
     checkAchievements();
@@ -2278,8 +2457,7 @@ if(_btnReset) _btnReset.addEventListener("click", function(){
       S=nuevoEstado(); S.best=prevBest;
       ensureStateIntegrity(); generateOffers();
       addLog("RESET ▸ partida nueva desde cero.");
-      save(); startClock();
-      showView("inicio"); syncGameInputLock();
+      save(); renderStoryEntry(); syncGameInputLock();
       msg("partida nueva. de nuevo en la calle, corvo.","cyan");
       updateTopbar();
     }
@@ -2322,7 +2500,7 @@ document.addEventListener("pointerdown", function(e){
 var loopId=null;
 var _gameLoopTick=0;
 function gameLoop(){
-  if(!S || !S.player || S.player.cpu<=0) return;
+  if(!S || !S.player || S.player.cpu<=0 || entryMode()) return;
   if(combatActive && COM && COM.stage==="encounter") return;
   S.clock=(S.clock+1)%1440;
   S.player.stats.totalPlayTime=(S.player.stats.totalPlayTime||0)+1;
@@ -2438,6 +2616,14 @@ function afterBoot(){
     }
   }
   _pendingDifficulty=null;
+  if(S.player.cpu>0 && S.narrative.entry!=="active"){
+    save(); renderStoryEntry(); return;
+  }
+  activateStorySession(deferredDiffNote);
+}
+function activateStorySession(deferredDiffNote){
+  _entryMode=null;
+  var intro=document.getElementById("intro"); if(intro) intro.classList.add("hidden");
   startGlitchLoop(); syncGameInputLock();
   if(S.player.cpu<=0){
     inImmersion=null; /* no reanudar un grid tras FLATLINE */
@@ -2460,13 +2646,13 @@ function afterBoot(){
   sinAvisoIntel(checkUnlocks);
   checkMensajes();
   updateNotifications();
-  showView(inImmersion ? "red" : "inicio");
+  showView(inImmersion ? "red" : S._lastView || "inicio");
   var c=document.getElementById("cmd"); if(c) c.focus();
-  startTutorial();
   if(deferredDiffNote) msg("la red en curso conserva su dificultad "+diffLabel(S.difficulty)+". cámbiala en ESTADO al volver a la calle.","ambar");
   /* refrescar opciones del intro para la próxima carga */
   updateLegendaryOption();
   initDifficultySelect();
+  updateAmbient();
 }
 
 /* true si el Núcleo se ha derrotado alguna vez (S.best.finalDone sobrevive a NUEVO REGISTRO) */
@@ -2508,11 +2694,6 @@ function beginIntro(){
      ocultarla solo después, sin flashes de una UI todavía sin restaurar. */
   initAudio(); resumeAudio(); sound.click();
   afterBoot();
-  var introEl=document.getElementById("intro");
-  if(introEl) introEl.classList.add("hidden");
-  /* afterBoot prepara la sesión bajo la consola; el fondo solo suena al salir. */
-  if(S && S.player.cpu<=0) startAmbient("flatline");
-  else updateAmbient();
   syncGameInputLock();
 }
 
@@ -2523,7 +2704,7 @@ window.addEventListener("pointerdown", function first(){ initAudio(); resumeAudi
    6b. ATAJOS DE TECLADO GLOBALES
    ============================================================ */
 
-var VIEW_ORDER=["inicio","red","contactos","mensajes","trabajos","tienda","estado","informes","registro","logros","ayuda"];
+var VIEW_ORDER=["inicio","red","contactos","mensajes","trabajos","tienda","estado","informes","registro","logros","ayuda","archivos"];
 document.addEventListener("keydown", function(e){
   /* Ctrl+S → guardar partida: capturado SIEMPRE, en cualquier contexto
      (combate, terminal, modales). Si no, el navegador roba la tecla y
@@ -2608,7 +2789,7 @@ if(!fsSupported()){
   if(_fsBtn) _fsBtn.classList.add("hidden");
 }
 updateFsIndicator();
-runBoot();
+showIntroMenu();
 /* también como fallback por si el DOM aún no estuviera listo (algunos navegadores) */
 if(document.readyState==="loading"){
   window.addEventListener("DOMContentLoaded", _initIntroHandlers);

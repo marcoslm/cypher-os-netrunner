@@ -57,6 +57,7 @@
       <button class="navbtn" data-view="registro"><span class="ic">◧</span><span class="lbl">REGISTRO</span></button>
       <button class="navbtn" data-view="logros"><span class="ic">★</span><span class="lbl">LOGROS</span></button>
       <button class="navbtn" data-view="ayuda"><span class="ic">?</span><span class="lbl">AYUDA</span></button>
+      <button class="navbtn" data-view="archivos"><span class="ic">▱</span><span class="lbl">ARCHIVOS</span><span class="notif-dot" id="notif-archivos"></span></button>
       <button class="navbtn save-tools-toggle" id="save-tools-toggle" aria-haspopup="dialog" aria-controls="save-tools" aria-expanded="false" aria-label="Opciones de partida" title="Guardar, exportar, importar y reset"><span class="ic">◰</span><span class="lbl">PARTIDA</span></button>
     </nav>
 
@@ -100,22 +101,22 @@
 <div id="combat"></div>
 
 <!-- Una consola: encendido, BIOS y opciones de sesión. -->
-<div id="intro" class="intro-booting" aria-label="Encendido del ciberdeck">
+<div id="intro" class="intro-menu-mode" aria-label="Entrada de CYPHER://OS">
   <section id="intro-body" aria-label="Consola CORVO-7">
     <header class="deck-header">
       <span class="deck-id">◈ CORVO-7 <span>/ CIBERDECK</span></span>
       <span id="intro-power" class="deck-power" role="status" aria-live="polite" aria-atomic="true">ENCENDIENDO</span>
     </header>
     <div class="deck-screen">
-      <div class="bios-heading"><span>CYPHER BIOS v9.2.7</span><span>NEON DYNAMICS</span></div>
+      <div id="story-entry" class="hidden"></div>
+      <div class="bios-heading"><span>CYPHER BIOS v9.2.7</span><span>LINDE</span></div>
       <div id="boot" role="region" aria-label="Registro de arranque" tabindex="0"><div id="boot-body"></div></div>
-      <button type="button" id="intro-skip" class="btn">OMITIR ARRANQUE</button>
+      <button type="button" id="intro-skip" class="btn hidden" disabled>OMITIR ARRANQUE</button>
       <div id="intro-menu" class="hidden" inert>
         <div class="intro-identity">
           <div class="intro-sub">SISTEMA CLANDESTINO / v9.2.7</div>
           <h1 class="intro-logo">CYPHER<span>://</span>OS</h1>
           <p class="intro-tag">El cable no duerme. Solo parpadea.</p>
-          <p class="intro-hint">el deck está listo. el resto depende de ti.</p>
         </div>
         <div class="intro-session">
           <fieldset class="intro-diff">
@@ -125,7 +126,6 @@
             <label id="legendary-opt" class="diff-opt magenta"><input type="radio" name="diff" value="legendario"> LEGENDARIO</label>
           </fieldset>
           <button type="button" id="intro-start" data-action="startIntro">▶ COMENZAR</button>
-          <p class="intro-hint">abrir sesión en el cable · corvo-7</p>
           <p id="intro-memory-status" role="status" aria-live="polite" aria-atomic="true"></p>
         </div>
         <div class="intro-settings">
@@ -135,7 +135,7 @@
         </div>
       </div>
     </div>
-    <footer class="deck-footer"><span>NEON DYNAMICS / CYPHER BIOS</span><span>REUTILIZADO POR LA CALLE</span></footer>
+    <footer class="deck-footer"><span>LINDE / CYPHER BIOS</span><span>REUTILIZADO POR LA CALLE</span></footer>
   </section>
 </div>
 

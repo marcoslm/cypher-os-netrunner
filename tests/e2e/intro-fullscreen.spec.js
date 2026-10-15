@@ -18,6 +18,7 @@ test('intro F08: pantalla completa se controla desde la intro sin arrancar la pa
   await expect(page.locator('#intro-fs-status')).toContainText('desactivada');
   await expect(page.locator('#intro-start')).toBeVisible();
   await page.locator('#intro-start').click();
+  await game.skipBoot();
   await expect(page.locator('#intro')).toBeHidden();
   await expect(page.locator('#boot')).toBeHidden();
   // Tras arrancar, el indicador superior sigue funcionando.

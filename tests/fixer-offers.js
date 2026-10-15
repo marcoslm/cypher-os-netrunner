@@ -9,7 +9,7 @@ async function run(options={}) {
   async function check(label,fn) {
     const g=loadGame({timers:'virtual',seed:2093,strictDOM:true,canvas:'stub'});
     try {
-      g.run('S=nuevoEstado();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();');
+      g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();');
       await fn(g); passes++; console.log('  ✔ '+label);
     } catch(error) {fails++;console.log('  ✖ '+label+': '+error.stack);}
     finally {g.dispose();}
@@ -33,7 +33,7 @@ async function run(options={}) {
     for(let seed=1;seed<=24;seed++) {
       const sample=loadGame({timers:'virtual',seed,strictDOM:true,canvas:'stub'});
       try {
-        sample.run('S=nuevoEstado();ensureStateIntegrity();S.player.level=4;S.player.rep.night0X=2;');
+        sample.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.level=4;S.player.rep.night0X=2;');
         for(let refresh=0;refresh<4;refresh++) {
           sample.run('generateOffers();'); const offers=sample.run('S.offers');
           assertMinimum(offers);

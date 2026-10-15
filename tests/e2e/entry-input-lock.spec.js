@@ -17,7 +17,7 @@ test('entrada: intro inicial contiene Tab y consume atajos sin inicializar el ju
  for(let i=0;i<16;i++){await page.keyboard.press('Tab');await introFocus(page);}
  await page.keyboard.press('Shift+Tab');await introFocus(page);
  const after=await game.snapshot();expect(after.state).toBeNull();expect(after.immersion).toBeNull();expect(after.saved).toBeNull();
- await expect(page.locator('#boot')).toBeVisible();
+ await expect(page.locator('#boot')).toBeHidden();
 });
 test('entrada: retornar bloquea gameplay y conserva Ctrl+S, controles y foco',async({page,game})=>{
  await game.setup({state:{offers:[]},player:{credits:4321}});await backToIntro(page,game);
@@ -37,7 +37,7 @@ test('entrada: retornar bloquea gameplay y conserva Ctrl+S, controles y foco',as
 test('entrada: retorno usa el deck encendido y COMENZAR libera la sesión directamente',async({page,game})=>{
  await game.setup({state:{offers:[]},player:{credits:4321}});await backToIntro(page,game);
  await expect(page.locator('#intro-skip')).toBeHidden();
- await expect(page.locator('#boot-body .line')).toHaveCount(11);
+ await expect(page.locator('#boot-body .line')).toHaveCount(0);
  await page.locator('#intro-start').click();
  await expect(page.locator('#intro')).toBeHidden();await expect(page.locator('#boot')).toBeHidden();
  expect(await page.locator('#os').evaluate(el=>el.inert)).toBe(false);

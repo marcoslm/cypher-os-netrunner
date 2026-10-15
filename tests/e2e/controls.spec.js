@@ -103,8 +103,12 @@ test('preferencia del sistema tiene prioridad y se aplica desde intro y BIOS',as
   await expect(page.locator('#controls-motion')).toContainText('sistema activo');
   await expect(page.locator('html')).toHaveClass(/motion-off/);
   await page.keyboard.press('Escape');
-  await expect(page.locator('#boot-body .line').first()).toBeVisible();
+  await expect(page.locator('#boot')).toBeHidden();
   await page.locator('#intro-start').click();
+  await page.locator('[data-action="storySkip"]').click();
+  await expect(page.locator('[data-action="storyRecover"]')).toBeVisible();
+  await expect(page.locator('#boot-body .line')).toHaveCount(11);
+  expect(await page.evaluate(()=>_introBootTimer)).toBeNull();
   await game.skipBoot();await expect(page.locator('html')).toHaveClass(/motion-off/);
 });
 

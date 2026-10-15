@@ -27,7 +27,7 @@ async function run(options = {}){
   await check("ficha permanente pausa reloj/calor y no inicia ninguno de los tres minijuegos",()=>{
     for(const enemy of [{type:"ice",tier:1},{type:"ice",tier:3},{type:"daemon",tier:3}]){
       const g=game();g.sb.__enemy=enemy;
-      g.run('S=nuevoEstado();ensureStateIntegrity();S.player.heat=60;S.player.virus=1;startCombat({node:window.__enemy});');
+      g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.heat=60;S.player.virus=1;startCombat({node:window.__enemy});');
       const before=g.run('JSON.stringify(S.player)');const clock=g.run('S.clock');
       for(let i=0;i<30;i++)g.run('gameLoop();');
       g.advance(30000);
@@ -41,7 +41,7 @@ async function run(options = {}){
     }
   });
   await check("ficha breve distingue el evento y conserva nombre literal, tipo y modo sin instrucciones",()=>{
-    const g=game();g.run('S=nuevoEstado();ensureStateIntegrity();startCombat({node:{type:"ice",tier:2,scavenger:true,name:"<b>PERRO</b>"}});');
+    const g=game();g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();startCombat({node:{type:"ice",tier:2,scavenger:true,name:"<b>PERRO</b>"}});');
     assert.equal(g.sb.document.getElementById('encounter-detail').textContent,'TE HA DETECTADO UN RASTREADOR');
     assert.equal(g.sb.document.getElementById('encounter-title').textContent,'<b>PERRO</b>');
     assert.equal(g.sb.document.querySelector('#encounter-title b'),null);
@@ -51,7 +51,7 @@ async function run(options = {}){
     assert.equal(g.sb.document.querySelector('.encounter-gear'),null);
   });
   await check("equipo de la ficha muestra solo recursos existentes y aplicables sin consumirlos",()=>{
-    const g=game();g.run('S=nuevoEstado();ensureStateIntegrity();S.player.decoys=2;S.player.virus=1;S.player.breakerUp=1;S.player.fwUp=1;startCombat({node:{type:"ice",tier:2}});');
+    const g=game();g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.decoys=2;S.player.virus=1;S.player.breakerUp=1;S.player.fwUp=1;startCombat({node:{type:"ice",tier:2}});');
     const items=()=>Array.from(g.sb.document.querySelectorAll('.encounter-gear li'),el=>el.textContent);
     assert.deepEqual(items(),['DECOY ×2','VIRUS ×1','ROMPEHIELOS +1','FIREWALL +10']);
     assert.equal(g.run('S.player.decoys'),2);assert.equal(g.run('S.player.virus'),1);
@@ -61,20 +61,20 @@ async function run(options = {}){
     assert.equal(g.sb.document.querySelector('.encounter-gear'),null);
   });
   await check("huida inicial exitosa aplica calor una vez sin consumir VIRUS ni premiar",()=>{
-    const g=game();g.run('S=nuevoEstado();ensureStateIntegrity();S.player.virus=1;Math.random=function(){return 0;};startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:function(){S.player.credits+=1000;}});doEscape();doEscape();');
+    const g=game();g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.virus=1;Math.random=function(){return 0;};startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:function(){S.player.credits+=1000;}});doEscape();doEscape();');
     assert.equal(g.run('S.player.heat'),5);assert.equal(g.run('S.player.virus'),1);
     assert.equal(g.run('S.player.credits'),500);assert.equal(g.run('combatActive'),false);
   });
   await check("huida inicial fallida aplica un golpe e inicia combate; DECOY conserva su efecto",()=>{
     for(const decoys of [0,1]){
-      const g=game();g.run('S=nuevoEstado();ensureStateIntegrity();Math.random=function(){return .99;};');
+      const g=game();g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();Math.random=function(){return .99;};');
       g.sb.__decoys=decoys;g.run('S.player.decoys=window.__decoys;startCombat({node:{type:"ice",tier:1,name:"TEST"}});window.__dmg=combatDamage();doEscape();');
       assert.equal(g.run('COM.stage'),'combat');assert.equal(g.run('S.player.cpu'),100-(decoys?0:g.run('window.__dmg')));
       assert.equal(g.run('S.player.decoys'),0);assert.equal(g.run('S.player.heat'),0);
     }
   });
   await check("Núcleo bloquea huida inicial y cancelar ficha no deja timers ni recompensas",()=>{
-    const g=game();g.run('S=nuevoEstado();ensureStateIntegrity();startCombat({node:{type:"nucleo",tier:4,name:"TEST"},onWin:function(){S.player.credits+=1000;}});doEscape();');
+    const g=game();g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();startCombat({node:{type:"nucleo",tier:4,name:"TEST"},onWin:function(){S.player.credits+=1000;}});doEscape();');
     assert.equal(g.run('COM.stage'),'encounter');assert.equal(g.sb.document.getElementById('escapeBtn'),null);
     g.run('cancelActiveCombat();');assert.equal(g.run('COM'),null);assert.equal(g.run('combatTimer'),null);
     assert.equal(g.run('S.player.credits'),500);
@@ -82,30 +82,30 @@ async function run(options = {}){
 
   await check("el logro de fixers exige los cuatro indicadores llenos, incluido Kairos", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();');
     for(const id of g.run('CONTACTOS_DEF.map(function(c){return c.id;})')){
       g.run('S.player.rep={mamaWire:5,doctorSudario:5,night0X:5,kairos:5};');
       g.run('S.player.rep['+JSON.stringify(id)+']=4;checkAchievements();');
       assert.equal(g.run('S.achievements.indexOf("allFixers")'), -1);
     }
-    g.run('S=nuevoEstado();ensureStateIntegrity();checkAchievements();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();checkAchievements();');
     assert.equal(g.run('S.achievements.indexOf("allFixers")'), -1);
   });
 
   await check("el último trabajo llena la reputación, celebra una sola vez y guarda el logro", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.player.rep={mamaWire:5,doctorSudario:5,night0X:5,kairos:4};S.jobs=[{id:"ultimo",type:"recoleta",n:1,prog:{gathered:1},reward:100,xp:10,contact:"kairos",title:"Último favor",done:false,failed:false}];inImmersion={data:[],moves:1,maxDepthReached:1,combatOccurred:false};doSuperficializar();checkAchievements();completeJob(S.jobs[0]);');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.rep={mamaWire:5,doctorSudario:5,night0X:5,kairos:4};S.jobs=[{id:"ultimo",type:"recoleta",n:1,prog:{gathered:1},reward:100,xp:10,contact:"kairos",title:"Último favor",done:false,failed:false}];inImmersion={data:[],moves:1,maxDepthReached:1,combatOccurred:false};doSuperficializar();checkAchievements();completeJob(S.jobs[0]);');
     assert.equal(g.saved().player.rep.kairos, 5);
     assert.ok(g.saved().achievements.includes('allFixers'));
     assert.equal(g.run('S.achievements.filter(function(id){return id==="allFixers";}).length'), 1);
     assert.equal(g.run('S.log.filter(function(l){return l.text.indexOf("★ LOGRO ▸ 🤝 TODOS LOS FIXERS RESPONDEN")===0;}).length'), 1);
-    g.run('S=nuevoEstado();ensureStateIntegrity();checkAchievements();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();checkAchievements();');
     assert.equal(g.run('S.achievements.indexOf("allFixers")'), -1);
   });
 
   await check("guardados e importaciones previos reconocen la reputación completa sin repetir el logro", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.player.rep={mamaWire:5,doctorSudario:5,night0X:5,kairos:5};save();afterBoot();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.rep={mamaWire:5,doctorSudario:5,night0X:5,kairos:5};save();afterBoot();');
     assert.ok(g.saved().achievements.includes('allFixers'));
     g.run('afterBoot();');
     assert.equal(g.run('S.log.filter(function(l){return l.text.indexOf("★ LOGRO ▸ 🤝 TODOS LOS FIXERS RESPONDEN")===0;}).length'), 1);
@@ -118,7 +118,7 @@ async function run(options = {}){
   await check("una CARRERA válida cobra independientemente del orden de otros fracasos", () => {
     for(const reverse of [false, true]){
       const g = game();
-      g.run("S=nuevoEstado();ensureStateIntegrity();S.player.heat=40;");
+      g.run("S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.heat=40;");
       const S = g.run("S");
       const failed = { type:"recoleta", n:1, prog:{gathered:0}, reward:100, xp:10, contact:"mamaWire", title:"Recolección", done:false, failed:false };
       const race = { type:"carrera", n:1, prog:{deepGathered:1}, reward:100, xp:10, contact:"mamaWire", title:"Carrera", done:false, failed:false };
@@ -133,14 +133,14 @@ async function run(options = {}){
   await check("SEALED NETWORK en LEGENDARIO alcanza la capa 6 y posteriores", () => {
     const g = game();
     g.sb.__story = storyFixture(g.run('newNarrativeState()'), g.run('STORY_CHAPTERS.map(function(item){return item.id;})'), g.run('STORY_FILES.map(function(item){return item.id;})'));
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.narrative=window.__story;S.history.finalUnlocked=true;S.history.finalDone=true;S.best.finalDone=true;S.difficulty="legendario";S._endlessSurfaces=4;ACTIONS.startEndless();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.narrative=window.__story;S.history.finalUnlocked=true;S.history.finalDone=true;S.best.finalDone=true;S.difficulty="legendario";S._endlessSurfaces=4;ACTIONS.startEndless();');
     assert.ok(g.run("inImmersion.depth") >= 6);
     assert.ok(g.run("inImmersion.grid.maxDepth") >= 6);
   });
 
   await check("superficializar guarda contadores, récord endless y logros antes de avisar", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.player.stats.ghostRuns=2;S.player.stats.cleanSrf=2;S.history.endlessActive=true;S._endlessSurfaces=4;inImmersion={data:[],moves:2,maxDepthReached:6,combatOccurred:false};doSuperficializar();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.stats.ghostRuns=2;S.player.stats.cleanSrf=2;S.history.endlessActive=true;S._endlessSurfaces=4;inImmersion={data:[],moves:2,maxDepthReached:6,combatOccurred:false};doSuperficializar();');
     const state = g.saved();
     assert.equal(state.player.stats.ghostRuns, 3);
     assert.equal(state.player.stats.cleanSrf, 3);
@@ -152,7 +152,7 @@ async function run(options = {}){
 
   await check("el resumen cuenta ICE destruidos en la inmersión, no siempre cero", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();startImmersion(4);var n=inImmersion.grid.nodes[1];n.type="ice";n.tier=1;n.tierName="T1";n.name="TEST";inImmersion.combatOccurred=true;onNodeDefeated({node:n});doSuperficializar();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();startImmersion(4);var n=inImmersion.grid.nodes[1];n.type="ice";n.tier=1;n.tierName="T1";n.name="TEST";inImmersion.combatOccurred=true;onNodeDefeated({node:n});doSuperficializar();');
     assert.match(g.sb.document.getElementById("overlay-inner").innerHTML, /Enemigos derrotados<\/span><span class="rv">1<\/span>/);
   });
 
@@ -160,7 +160,7 @@ async function run(options = {}){
     const g = game(); let overlays = 0;
     const el = g.sb.document.getElementById("flatline");
     el.classList.add = name => { if(name === "show") overlays++; };
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.difficulty="hardcore";save();flatline();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.difficulty="hardcore";save();flatline();');
     assert.equal(g.saved().player.cpu, 0);
     g.run('afterBoot();clearInterval(loopId);clearTimeout(_glitchId);');
     assert.ok(overlays >= 2, "debe reaparecer la pantalla FLATLINE tras cargar");
@@ -171,7 +171,7 @@ async function run(options = {}){
 
   await check("RECONEXIÓN recupera checkpoint y contabiliza trabajos si los fracasa", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.jobs=[{id:"uno",type:"recoleta",title:"Uno",desc:"Carga",contact:"mamaWire",n:1,reward:100,xp:20,done:false,failed:false,prog:{gathered:0}}];save();S.player.credits=987;S.player.xp=29;flatline();afterBoot();clearInterval(loopId);clearTimeout(_glitchId);ACTIONS.reconnect();clearInterval(loopId);');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.jobs=[{id:"uno",type:"recoleta",title:"Uno",desc:"Carga",contact:"mamaWire",n:1,reward:100,xp:20,done:false,failed:false,prog:{gathered:0}}];save();S.player.credits=987;S.player.xp=29;flatline();afterBoot();clearInterval(loopId);clearTimeout(_glitchId);ACTIONS.reconnect();clearInterval(loopId);');
     const S = g.run("S");
     assert.equal(S.player.credits, 987);
     assert.equal(S.player.xp, 29);
@@ -181,7 +181,7 @@ async function run(options = {}){
 
   await check("la importación inválida conserva la partida y el bucle sigue vivo", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();');
     const before = g.run("S");
     g.sb.FileReader = function(){ this.readAsText = () => this.onload({target:{result:'{"player":1}'}}); };
     const input = g.sb.document.getElementById("import-file"); input.files=[{name:"invalida.json"}];
@@ -192,9 +192,9 @@ async function run(options = {}){
 
   await check("importar partida exportada durante inmersión mantiene el grid y los datos", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();startImmersion(4);inImmersion.data=[{value:77}];inImmersion.dataUsed=1;save();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();startImmersion(4);inImmersion.data=[{value:77}];inImmersion.dataUsed=1;save();');
     const exported = g.saved(); exported.player.credits = 8765;
-    g.run('inImmersion=null;S=nuevoEstado();ensureStateIntegrity();');
+    g.run('inImmersion=null;S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();');
     g.sb.FileReader = function(){ this.readAsText = () => this.onload({target:{result:JSON.stringify(exported)}}); };
     const input = g.sb.document.getElementById("import-file"); input.files=[{name:"grid.json"}];
     g.emitElement("import-file", "change", {target:input});
@@ -206,7 +206,7 @@ async function run(options = {}){
 
   await check("se importa un guardado con transmisiones numéricas ya vistas", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S._seenTransmissions=[0,2];window.__candidate=JSON.parse(JSON.stringify(S));S._seenTransmissions=[];');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S._seenTransmissions=[0,2];window.__candidate=JSON.parse(JSON.stringify(S));S._seenTransmissions=[];');
     assert.equal(g.run('importGameState(window.__candidate)'), true);
     assert.deepEqual(Array.from(g.run('S._seenTransmissions')), [0,2]);
     g.run('clearInterval(loopId);');
@@ -214,7 +214,7 @@ async function run(options = {}){
 
   await check("importación con error tardío revierte también el guardado", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();save();window.__candidate=JSON.parse(JSON.stringify(S));window.__candidate.player.credits=8765;window.__failOnce=true;updateAmbient=function(){if(window.__failOnce){window.__failOnce=false;throw Error("render tardío");}};');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();save();window.__candidate=JSON.parse(JSON.stringify(S));window.__candidate.player.credits=8765;window.__failOnce=true;updateAmbient=function(){if(window.__failOnce){window.__failOnce=false;throw Error("render tardío");}};');
     const before=g.run('S');
     assert.equal(g.run('importGameState(window.__candidate)'), false);
     assert.equal(g.run('S'), before);
@@ -224,7 +224,7 @@ async function run(options = {}){
 
   await check("un timeout del daemon anterior no inicia el siguiente combate", () => {
     const g = game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.player.sigilo=10;startCombat({node:{type:"daemon",tier:3,name:"A"},onWin:function(){}});beginCombat();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.sigilo=10;startCombat({node:{type:"daemon",tier:3,name:"A"},onWin:function(){}});beginCombat();');
     const old = g.ids(3500)[0]; assert.ok(old);
     g.run('doEscape();startCombat({node:{type:"daemon",tier:3,name:"B"},onWin:function(){}});beginCombat();');
     g.fire(old);
@@ -234,7 +234,7 @@ async function run(options = {}){
 
   await check("un cooldown de vault cancelado no altera el intento siguiente", () => {
     const g = game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();var auditVault={type:"vault",tier:3,name:"Vault",proj:"TEST"};startVaultPuzzle(auditVault);');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();var auditVault={type:"vault",tier:3,name:"Vault",proj:"TEST"};startVaultPuzzle(auditVault);');
     const first = g.ids(3000)[0]; assert.ok(first); g.fire(first);
     g.run('vaultFail();');
     const old = g.ids(10000)[0]; assert.ok(old);
@@ -245,14 +245,14 @@ async function run(options = {}){
 
   await check("el ambiente permanece en combate mientras siga activo", () => {
     const g = game();g.sb.__modes=[];
-    g.run('document.getElementById("intro").classList.add("hidden");S=nuevoEstado();ensureStateIntegrity();S.amb=true;S.mus=false;inImmersion={grid:{nodes:[]},current:"0_0"};combatActive=true;startAmbient=function(m){AMBIENT.activeMode=m;window.__modes.push(m);};for(var i=0;i<5;i++)updateAmbient();');
+    g.run('document.getElementById("intro").classList.add("hidden");S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.amb=true;S.mus=false;inImmersion={grid:{nodes:[]},current:"0_0"};combatActive=true;startAmbient=function(m){AMBIENT.activeMode=m;window.__modes.push(m);};for(var i=0;i<5;i++)updateAmbient();');
     assert.deepEqual(g.sb.__modes, ["combat"]);
   });
 
   await check("si FULL se deniega, ni preferencia ni aviso quedan activados", async () => {
     const g = game();
     g.sb.document.documentElement.requestFullscreen = () => Promise.reject(new Error("NotAllowedError"));
-    g.run('S=nuevoEstado();ensureStateIntegrity();toggleFs();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();toggleFs();');
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(g.run("_fsWants"), false);
     assert.notEqual(g.sb.localStorage.getItem("cypher_os_full"), "1");
@@ -261,7 +261,7 @@ async function run(options = {}){
 
   await check("EXPORTAR DIARIO respeta también la búsqueda textual", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.log=[{t:"23:48",text:"INTEL ▸ corvo"},{t:"23:49",text:"TIENDA ▸ pulso"}];renderRegistro();renderLogEntries("corvo");ACTIONS.exportDiario();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.log=[{t:"23:48",text:"INTEL ▸ corvo"},{t:"23:49",text:"TIENDA ▸ pulso"}];renderRegistro();renderLogEntries("corvo");ACTIONS.exportDiario();');
     const text = g.sb.__blobs[0].parts.join("");
     assert.ok(text.includes("INTEL ▸ corvo"));
     assert.ok(!text.includes("TIENDA ▸ pulso"));
@@ -269,13 +269,13 @@ async function run(options = {}){
 
   await check("el comando Núcleo no reasigna el jefe derrotado", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.player.level=5;S.player.rep.night0X=3;S.history.finalDone=true;CMD.nucleo();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.level=5;S.player.rep.night0X=3;S.history.finalDone=true;CMD.nucleo();');
     assert.equal(g.run("S.nextDepth"), null);
   });
 
   await check("el árbol permite activar ROMPEMUROS con teclado", () => {
     const g = game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.player.skillPoints=1;');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.skillPoints=1;');
     const tree = g.sb.document.getElementById("skilltree-overlay");
     g.run('renderSkillTree();');
     const first=tree.querySelector('.skill-node[tabindex="0"]');
@@ -294,7 +294,7 @@ async function run(options = {}){
 
   await check("FLATLINE bloquea terminal, compras y foco del fondo sin perder Ctrl+S", () => {
     const g=game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.difficulty="hardcore";save();flatline();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.difficulty="hardcore";save();flatline();');
     const cmd=g.sb.document.getElementById("cmd");
     assert.equal(g.sb.document.getElementById("os").inert,true);
     assert.equal(g.emitDocument("keydown",{key:"k",ctrlKey:true}),true);
@@ -319,7 +319,7 @@ async function run(options = {}){
   await check("Tab no sale de la capa bloqueante y el foco se desbloquea al reconectar", () => {
     const g=game({timers:true});
     const flat=g.sb.document.getElementById("flatline");
-    g.run('S=nuevoEstado();ensureStateIntegrity();save();flatline();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();save();flatline();');
     const first=flat.querySelector('[data-action="reconnect"]'), last=flat.querySelector('[data-action="newRecord"]');
     assert.equal(g.sb.document.activeElement,first);
     last.focus();
@@ -334,7 +334,7 @@ async function run(options = {}){
 
   await check("RESET e IMPORTAR se rechazan en combate y no sustituyen su estado", () => {
     const g=game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();startImmersion(4);startCombat({node:{type:"ice",tier:1,name:"TEST"},onWin:onNodeDefeated});');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();startImmersion(4);startCombat({node:{type:"ice",tier:1,name:"TEST"},onWin:onNodeDefeated});');
     const before=g.run("S"), battle=g.run("COM");
     assert.equal(g.sb.document.getElementById("os").inert,true);
     g.emitElement("btn-reset","click");
@@ -350,13 +350,14 @@ async function run(options = {}){
     assert.equal(g.run("combatActive"),false);
     assert.equal(g.run("inImmersion"),null);
     assert.equal(g.saved()._inImmersion,null);
-    assert.equal(g.sb.document.getElementById("os").inert,false);
+    assert.equal(g.sb.document.getElementById("os").inert,true);
+    assert.equal(g.run('entryMode()'),'prologue');
   });
 
   await check("cancelar runtime invalida timers de memoria y vault sin recompensar", () => {
     for(const mode of ["memoria","vault"]){
       const g=game({timers:true});
-      g.run('S=nuevoEstado();ensureStateIntegrity();');
+      g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();');
       if(mode==="memoria")g.run('startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:function(){S.player.credits+=1000;}});beginCombat();');
       else g.run('startVaultPuzzle({type:"vault",tier:3,proj:"TEST"});');
       const id=g.ids(mode==="memoria"?3500:3000)[0];assert.ok(id);
@@ -372,7 +373,7 @@ async function run(options = {}){
   await check("VAULT no se acepta estando inmerso y vuelve a ser aceptable en la calle", () => {
     const g=game({timers:true});
     // La guardia necesita un vault concreto, no que el sorteo de ofertas lo incluya.
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.offers=[buildOffer("doctorSudario","vault")];startImmersion(4);');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.offers=[buildOffer("doctorSudario","vault")];startImmersion(4);');
     const offer=g.run('S.offers.filter(function(o){return o.type==="vault";})[0]');
     const html=g.run('offerHtml(S.offers.filter(function(o){return o.type==="vault";})[0],CONTACTOS_DEF[1])');
     assert.ok(!html.includes('data-action="acceptJob"'));
@@ -387,7 +388,7 @@ async function run(options = {}){
 
   await check("NÚCLEO exige c08, rechaza asignacion inmersa y genera un solo boss", () => {
     const g=game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.player.level=5;S.player.rep.night0X=3;checkUnlocks();startImmersion(4);showView("inicio");');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.level=5;S.player.rep.night0X=3;checkUnlocks();startImmersion(4);showView("inicio");');
     clickAction(g,"acceptNucleo");
     assert.equal(g.run("S.nextDepth"),null);
     assert.equal(g.run("S.history.finalUnlocked"),false);
@@ -404,7 +405,7 @@ async function run(options = {}){
 
   await check("importación rechaza habilidades malformadas sin perder sesión ni guardado", () => {
     const g=game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.player.credits=1234;save();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.credits=1234;save();');
     const before=g.run("S");
     for(const bad of [{},"rompe1",42,[42]]){
       g.sb.__badSkills=bad;
@@ -419,7 +420,7 @@ async function run(options = {}){
 
   await check("pico de calor por tres fracasos se guarda con INTEL y logro tras enfriar", () => {
     const g=game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();generateOffers();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();generateOffers();');
     const offers=g.run('S.offers.filter(function(o){return o.type!=="vault";}).slice(0,3)');
     for(const o of offers)clickAction(g,"acceptJob",{"data-id":o.id});
     g.run('S.player.heat=80;S.player.stats.maxHeat=80;startImmersion(4);superficializar();ACTIONS.confirmSurf();');
@@ -431,7 +432,7 @@ async function run(options = {}){
 
   await check("ESC huye en revelación de memoria una sola vez; no huye del boss", () => {
     const g=game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();Math.random=function(){return 0;};startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:function(){}});beginCombat();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();Math.random=function(){return 0;};startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:function(){}});beginCombat();');
     assert.equal(g.run("COM.memPhase"),"reveal");
     g.emitDocument("keydown",{key:"Escape",target:g.sb.document.body});
     assert.equal(g.run("combatActive"),false);
@@ -445,7 +446,7 @@ async function run(options = {}){
 
   await check("bloquear fondo del combate no roba el foco del input de claves", () => {
     const g=game({timers:true});
-    g.run('S=nuevoEstado();ensureStateIntegrity();startCombat({node:{type:"ice",tier:1,name:"TEST"},onWin:function(){}});beginCombat();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();startCombat({node:{type:"ice",tier:1,name:"TEST"},onWin:function(){}});beginCombat();');
     const input=g.sb.document.getElementById("codeInput");
     assert.equal(g.sb.document.activeElement,input);
     assert.equal(g.sb.document.getElementById("os").inert,true);
@@ -468,7 +469,7 @@ async function run(options = {}){
   await check("AMB apagado detiene y desconecta todos sus nodos tras cambios de modo", () => {
     const g=game({timers:true}), audio=audioModel();
     g.sb.AudioContext=function(){return audio.ac;};
-    g.run('document.getElementById("intro").classList.add("hidden");S=nuevoEstado();ensureStateIntegrity();setDeckPref("snd",false);setDeckPref("mus",false);initAudio();');
+    g.run('document.getElementById("intro").classList.add("hidden");S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();setDeckPref("snd",false);setDeckPref("mus",false);initAudio();');
     for(let i=0;i<5;i++){
       g.emitElement("h-amb","click");
       assert.equal(g.run("S.amb"),true);
@@ -490,6 +491,8 @@ async function run(options = {}){
       assert.ok(el, "control presente: " + selector); el.click();
     };
     click("#intro-start");
+    click('[data-action="storySkip"]');click('#intro-skip');click('[data-action="storyRecover"]');
+    g.run('showView("inicio");');
     /* Grafo y tiradas explícitos: el barajado musical no debe decidir
        qué enemigo aparece en una regresión del HUD. Input/handlers reales. */
     g.run('S._tutorialDone=true;S.mus=false;stopMusic();S.player.level=6;S.player.sigilo=5;');
@@ -523,7 +526,7 @@ async function run(options = {}){
 
   await check("QA-01: ganar el rastreador ante RAM llena no deja el HUD de la ruta anterior", () => {
     const g=game({seed:5});
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.snd=false;S.mus=false;S.player._gridEventCooldown=3;startImmersion(4);inImmersion.dataUsed=ramCap();inImmersion.data=Array.from({length:ramCap()},function(){return {value:10};});S.player.stats.data=ramCap();renderGridHud();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.snd=false;S.mus=false;S.player._gridEventCooldown=3;startImmersion(4);inImmersion.dataUsed=ramCap();inImmersion.data=Array.from({length:ramCap()},function(){return {value:10};});S.player.stats.data=ramCap();renderGridHud();');
     const target=g.run('currentNeighbors()[2].id');
     assert.equal(target,"1_2");
     g.sb.document.querySelector('.adj-node[data-idx="2"]').click();
@@ -543,7 +546,7 @@ async function run(options = {}){
 
   await check("QA-02: todos los contadores y speedrun rechazan tipos dañados sin sustituir estado", () => {
     const g=game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.snd=false;S.mus=false;S.player.credits=1234;save();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.snd=false;S.mus=false;S.player.credits=1234;save();');
     const original=g.run("S"), raw=g.sb.localStorage.getItem("cypher_os_save_story_v1");
     const defaults=g.run("defaultStats()");
     const fields=Object.keys(defaults).filter(key=>typeof defaults[key]==="number");
@@ -575,7 +578,7 @@ async function run(options = {}){
 
   await check("QA-02: legacy ausente/null migra números y booleanos sin heredar estado local", () => {
     const g=game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.snd=false;S.mus=false;S.player.credits=9999;S.best={level:99};');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.snd=false;S.mus=false;S.player.credits=9999;S.best={level:99};');
     const candidate=g.run('var legacy=nuevoEstado();legacy.snd=false;legacy.mus=false;legacy.player.stats={ice:2,speedrun:null};legacy.best={maxHeat:75,ghostRuns:2,cleanSrf:1,substationsUsed:4,totalSpent:345,speedrun:true};legacy;');
     g.sb.__candidate=candidate;
     assert.equal(g.run('importGameState(window.__candidate)'),true);
@@ -595,7 +598,7 @@ async function run(options = {}){
 
   await check("QA-02: best legacy y flags malformados no introducen corrupción al migrar", () => {
     const g=game();
-    g.run('S=nuevoEstado();ensureStateIntegrity();S.snd=false;S.mus=false;save();');
+    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.snd=false;S.mus=false;save();');
     const original=g.run("S"), raw=g.sb.localStorage.getItem("cypher_os_save_story_v1");
     const badBest={maxHeat:"dañado",ghostRuns:[],cleanSrf:{},substationsUsed:true,totalSpent:"345",speedrun:"true",finalDone:"false"};
     for(const [key,bad] of Object.entries(badBest)){

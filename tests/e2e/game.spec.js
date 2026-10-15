@@ -15,22 +15,22 @@ function vaultOffer(id, project, corp) {
   };
 }
 
-test('intro: solo COMENZAR inicia tras la BIOS integrada', async ({ page, game }) => {
+test('intro: COMENZAR abre el relato y la recuperacion activa la sesion', async ({ page, game }) => {
   expect(page.url()).toBe(GAME_URL);
   await expect(page).toHaveTitle(/CYPHER:\/\/OS.*v9\.2\.7/);
   await page.locator('#intro .intro-tag').click();
   await expect(page.locator('#intro')).toBeVisible();
-  await expect(page.locator('#boot')).toBeVisible();
+  await expect(page.locator('#boot')).toBeHidden();
   expect((await game.snapshot()).state).toBeNull();
   await expect(page.locator('#panel-scroll')).toBeEmpty();
 
   await page.locator('#intro-start').click();
-  await expect(page.locator('#intro')).toBeHidden();
+  await expect(page.locator('#story-entry')).toBeVisible();
   await game.skipBoot({ skip: 'keyboard' });
-  await expect(nav(page, 'inicio')).toHaveClass(/active/);
+  await expect(nav(page, 'archivos')).toHaveClass(/active/);
   await expect(page.locator('#h-cpu')).toHaveText('100/100');
   await expect(page.locator('#h-cc')).toHaveText('500');
-  await expect(page.locator('#cmd')).toBeFocused();
+  await expect(page.locator('#os')).toHaveJSProperty('inert',false);
 });
 
 test('smoke: todos los paneles, terminal y compras con autosave', async ({ page, game }) => {
@@ -122,7 +122,10 @@ test('HARDCORE: foco e inert, Tab, Ctrl+K/S, recarga y NUEVO REGISTRO cancelar/c
   await page.keyboard.press('Enter');
   await expect(page.locator('#confirm-overlay')).toBeHidden();
   await expect(page.locator('#flatline')).toBeHidden();
-  await expect(page.locator('#os')).toHaveJSProperty('inert', false);
+  await expect(page.locator('#os')).toHaveJSProperty('inert', true);
+  await expect(page.locator('#story-entry')).toBeVisible();
+  expect((await game.snapshot()).saved.narrative.entry).toBe('prologue');
+  await game.skipBoot();
   await expect(page.locator('#h-cpu')).toHaveText('100/100');
   const fresh = (await game.snapshot()).saved;
   expect(fresh.player).toMatchObject({ credits: 500, level: 1, xp: 0, skillPoints: 0, stats: { ice: 0, immerse: 0, jobsFailed: 0 } });
@@ -416,6 +419,7 @@ test('Núcleo: c08 solo prepara el siguiente DIP en calle y persiste tras recarg
   expect((await game.snapshot()).saved.nextDepth).toBe(5);
   await game.reload();
   expect((await game.snapshot()).state.nextDepth).toBe(5);
+  await nav(page, 'red').click();
   await action(page, 'dipGrid').click();
   await expect(page.locator('#gridcanvas')).toBeVisible();
   const next = await game.snapshot();

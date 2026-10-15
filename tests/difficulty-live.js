@@ -8,7 +8,7 @@ async function run(options={}) {
   async function check(label,fn) {
     const g=loadGame({timers:'virtual',seed:2093,strictDOM:true,canvas:'stub'});
     try {
-      g.run('S=nuevoEstado();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();');
+      g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();');
       await fn(g);passes++;console.log('  ✔ '+label);
     }catch(error){fails++;console.log('  ✖ '+label+': '+error.stack);}
     finally{g.dispose();}
@@ -65,6 +65,7 @@ async function run(options={}) {
     g.run('save();S.player.cpu=1;flatline();');assert.equal(g.run('S.difficulty'),'hardcore');
     assert.ok(!g.sb.document.getElementById('flatline').innerHTML.includes('RECONEXIÓN'));
     clickAction(g,'newRecord');clickAction(g,'confirmYes');
+    g.run('ACTIONS.storySkip();finishIntroBoot();ACTIONS.storyRecover();');
     assert.equal(g.run('S.difficulty'),'normal');
     g.run('renderEstado();');clickAction(g,'setDifficulty',{'data-diff':'hardcore'});g.run('resolveConfirm(true);');
     assert.equal(g.run('S.difficulty'),'hardcore');

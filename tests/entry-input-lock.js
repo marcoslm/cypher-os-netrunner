@@ -11,7 +11,7 @@ async function run(options={}){
   catch(e){fails++;console.log('  ✖ '+label+': '+e.stack);}
   finally{g.dispose();}
  }
- function live(g){g.run('S=nuevoEstado();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();document.getElementById("intro").classList.add("hidden");');}
+ function live(g){g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();document.getElementById("intro").classList.add("hidden");');}
  function returnIntro(g){clickAction(g,'backToIntro');clickAction(g,'confirmYes');}
  function keys(g,target){for(const key of ['g','k','1','2','3','4','5','6','7','8','9'])assert.equal(g.emitElement(target,'keydown',{key,ctrlKey:true}).defaultPrevented,true,key);}
  function clocks(g){return g.list().filter(t=>t.type==='interval'&&t.ms===1000);}
@@ -46,16 +46,16 @@ async function run(options={}){
   g.run('closeControlPanel();');assert.equal(g.sb.document.activeElement,b);
   assert.equal(g.run('gameInputLayer().id'),'intro');assert.equal(g.sb.document.getElementById('os').inert,true);
  });
- await check('BIOS integrada ignora atajos y omitir revela menú sin iniciar sesión',g=>{
-  g.run('_deckPrefs.animations=true;runBoot();');g.advance(600);
+ await check('BIOS tras hallazgo ignora atajos y omitir muestra diagnostico sin activar',g=>{
+  g.run('_deckPrefs.animations=true;beginIntro();ACTIONS.storySkip();');g.advance(600);
   assert.equal(g.run('entryMode()'),'boot');assert.equal(g.run('gameInputLayer().id'),'intro');
   keys(g,'intro-skip');g.emitElement('intro-skip','keydown',{key:'s',ctrlKey:true});
   assert.equal(g.run('entryMode()'),'boot');assert.equal(g.run('inImmersion'),null);
-  g.run('openControlPanel();beginIntro();');assert.equal(g.run('controlPanelOpen()'),false);assert.equal(g.run('S'),null);
+    g.run('openControlPanel();beginIntro();');assert.equal(g.run('controlPanelOpen()'),false);assert.equal(g.run('S.narrative.entry'),'diagnostic');
   g.emitElement('intro-skip','click');g.advance(520);
-  assert.equal(g.run('entryMode()'),'intro');assert.equal(g.sb.document.getElementById('os').inert,true);
-  assert.equal(clocks(g).length,0);assert.equal(g.run('S'),null);
-  g.emitElement('intro-start','click');assert.equal(clocks(g).length,1);
+    assert.equal(g.run('entryMode()'),'diagnostic');assert.equal(g.sb.document.getElementById('os').inert,true);
+    assert.equal(clocks(g).length,0);assert.equal(g.run('S.narrative.recoveryStage'),'not_started');
+    g.emitElement(g.sb.document.querySelector('[data-action="storyRecover"]'),'click');assert.equal(clocks(g).length,1);
  });
  await check('dos ciclos de retorno/entrada directa conservan un único reloj',g=>{
   live(g);

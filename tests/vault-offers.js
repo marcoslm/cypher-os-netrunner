@@ -17,7 +17,7 @@ async function run(options={}) {
   async function check(label,fn) {
     const g=loadGame({timers:'virtual',seed:2093,strictDOM:true,canvas:'stub'});
     try {
-      g.run('S=nuevoEstado();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();');
+      g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();');
       await fn(g); passes++; console.log('  ✔ '+label);
     } catch(error) { fails++; console.log('  ✖ '+label+': '+error.stack); }
     finally {g.dispose();}
@@ -93,6 +93,7 @@ async function run(options={}) {
   });
   await check('legacy sin snapshot conserva recuperación propia pendiente, incluso al siguiente DIP',g=>{
     const candidate=clone(g.run('nuevoEstado()'));
+    candidate.narrative=clone(g.run('S.narrative'));
     candidate._tutorialDone=true; candidate.jobs=[job('KURO','pendiente',{prog:{vaulted:true}})];
     candidate.offers=[offer()]; g.sb.__candidate=candidate;
     assert.equal(g.run('importGameState(window.__candidate)'),true);
@@ -163,10 +164,12 @@ async function run(options={}) {
   await check('importar sin progreso y NUEVO REGISTRO no heredan vaults de la sesión ni de best',g=>{
     g.run('unlockProjectDossier("KURO");S.best.finalDone=true;');
     const candidate=clone(g.run('nuevoEstado()')); candidate._tutorialDone=true; candidate.offers=[offer()];
+    candidate.narrative=clone(g.run('S.narrative'));
     g.sb.__candidate=candidate; assert.equal(g.run('importGameState(window.__candidate)'),true);
     assert.equal(g.run('projectRecovered("KURO")'),false); assert.equal(g.run('S.offers.length'),1);
     g.run('unlockProjectDossier("KURO");S.best.finalDone=true;');
     clickAction(g,'newRecord'); clickAction(g,'confirmYes');
+    g.run('ACTIONS.storySkip();finishIntroBoot();ACTIONS.storyRecover();');
     assert.equal(g.run('projectRecovered("KURO")'),false); assert.equal(g.run('S.best.finalDone'),true);
     assert.equal(g.run('PROYECTOS.filter(function(p){return !projectRecovered(p);}).length'),8,'RESET recupera todos los proyectos, no fuerza una oferta de vault en cada renovación');
   });

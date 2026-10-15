@@ -46,6 +46,23 @@ var SIM = {
   substation:"⌁", nucleo:"✦", signal:"◎", empty:"·"
 };
 
+var STORY_PROLOGUE = [
+  {title:"Lo que cabe en una bolsa", paragraphs:[
+    "La empresa perdió la concesión el lunes. El martes te retiraron el deck: equipo financiado, propiedad del proveedor. Sin él no puedes aceptar los trabajos que sabes hacer.",
+    "Cuando te echaron de la habitación, lo que te quedaba cabía en una bolsa.",
+    "Dejaste la llave sobre la mesa. No te preguntaron dónde ibas a dormir."
+  ]},
+  {title:"Hostal La Bajante", paragraphs:[
+    "El dueño del hostal todavía recuerda las sanciones que le ayudaste a recurrir.",
+    "«Una semana, Álex. No puedo darte más. A cambio me revisas las instalaciones. Te dejo la seis. Tomás salió hace unos días y no volvió a recoger sus cosas. Si queda algo que te sirva para trabajar, úsalo, pero no borres sus archivos. Si aparece, hablamos los tres»."
+  ]},
+  {title:"La habitación seis", paragraphs:[
+    "Junto a la cama hay un deck en el suelo. La pantalla sigue encendida.",
+    "Lo recoges. Reconoces las conexiones y el teclado, pero no las marcas de uso. Este equipo ha trabajado mucho.",
+    "Te extraña que haya dejado una herramienta así. Quizá se averió; no lo sabes.",
+    "En la pantalla hay un aviso."
+  ]}
+];
 var STORY_CHAPTERS = [
   {id:"c01", title:"LA FACTURA", depth:1, credits:140, xp:60, source:"Facturacion de La Bajante", files:["r_factura"]},
   {id:"c02", title:"EL ARCHIVO DE TOMAS", depth:2, credits:180, xp:80, source:"Respaldo de mantenimiento", files:["r_indice"]},
@@ -74,6 +91,14 @@ var STORY_FILES = [
   {id:"r_revocacion", origin:"network", title:"Permiso revocado", chapter:"c08"},
   {id:"r_copia_final", origin:"network", title:"Copia preservada", chapter:"c08"}
 ];
+var STORY_DOCUMENTS = {
+  l_estancia:{date:"03-10-2093",source:"Hostal La Bajante · copia del huésped",text:
+    "Tomás Egea. Habitación 6. Entrada: 03-10-2093. Abono inicial recibido.\n\nEl huésped conserva esta copia para justificar alojamiento durante trabajos de mantenimiento."},
+  l_revision:{date:"07-10-2093",source:"Nota local de T. Egea",text:
+    "La habitación seis tiene el conector de alimentación flojo. Cambiar el soporte antes de la siguiente revisión.\n\nHe comprobado la factura del edificio. El pago del siete de octubre consta recibido. Guardé la copia por si Berto vuelve a tener problemas con las lecturas.\n\n— T. Egea. 07-10-2093.\n\nADJUNTO · LB-2093-10\nPago recibido: 07-10-2093 18:12.\nReferencia: Hostal La Bajante."},
+  l_contacto:{date:"08-10-2093",source:"Correo enviado por Tomás · oficina de Inés Aro",text:
+    "Para: oficina de Inés Aro. Asunto: las versiones.\n\nInés: he encontrado otra diferencia. No te envío nombres por este canal. Cuando tengas un caso con las dos versiones, guarda también la hora de cada operación. Una copia sin fecha no nos servirá.\n\n— Tomás. 08-10-2093.\n\nARCHIVO DEL ANTERIOR USUARIO · copia enviada, sin ruta de respuesta.\nCanal público: oficina de reclamaciones de Inés Aro."}
+};
 var STORY_CONVERSATIONS = [
   {id:"m_berto_encargo", chapter:"c01", phase:"offered"},
   {id:"m_celia_alias", chapter:"c01", phase:"accepted"},
@@ -786,16 +811,16 @@ var MUSIC_TRACKS = {
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],
-  ["FIRMWARE v1.0 alpha · BUILD 66", "dim"],
+  ["FIRMWARE v1.0 alpha · BUILD 67", "dim"],
   ["memoria ................. 64K OK", "ok"],
   ["bus neural .............. OK", "ok"],
   ["interfaz del deck ....... OK", "ok"],
   ["reloj de calle .......... SINCRONIZADO", "ok"],
-  ["explorando el cable ..... BUSCANDO SEÑAL", "dim"],
-  ["  torre corporativa ..... 51%", "sig"],
-  ["  bar-club ÓCTAVA ........ 87%", "sig"],
-  ["  canal de datos ........ 100%", "ok"],
-  ["señal adquirida ......... ENLACE DISPONIBLE", "ok"]
+  ["archivo personal ........ CIERRE INTERRUMPIDO", "dim"],
+  ["  índice ................ DAÑADO", "sig"],
+  ["  bloques originales .... CONSERVADOS", "sig"],
+  ["enlace remoto ........... SIN CONEXIÓN", "dim"],
+  ["interfaz local .......... DISPONIBLE", "ok"]
 ];
 
 /* ---- combate: fases por tier (las consume cypher_os_combat.js) ---- */

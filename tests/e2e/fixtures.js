@@ -116,7 +116,9 @@ const test = base.extend({
         paused = false;
       },
       async skipBoot({ freeze = true } = {}) {
-        // Compatibilidad de callers: COMENZAR ya entra directamente, sin segunda BIOS.
+        if (await page.locator('[data-action="storySkip"]').isVisible()) await page.locator('[data-action="storySkip"]').click();
+        if (await page.locator('#intro-skip').isVisible()) await page.locator('#intro-skip').click();
+        if (await page.locator('[data-action="storyRecover"]').isVisible()) await page.locator('[data-action="storyRecover"]').click();
         await expect(page.locator('#intro')).toBeHidden();
         await expect(page.locator('#boot')).toBeHidden();
         await expect(page.locator('#panel-scroll')).not.toBeEmpty();
@@ -162,6 +164,9 @@ const test = base.extend({
           S.player.stats = { ...defaults.player.stats, ...player.stats };
           S.player.stats.iceByTier = { ...defaults.player.stats.iceByTier, ...player.stats?.iceByTier };
           S.history = { ...defaults.history, ...state.history };
+          if (!Object.prototype.hasOwnProperty.call(state, 'narrative')) {
+            S.narrative.entry = 'diagnostic'; storyBeginRecovery();
+          }
           // Device preferences are arranged independently from the save file.
           for (const key of ['snd', 'amb', 'mus']) _deckPrefs[key] = S[key];
           saveDeckPrefs();

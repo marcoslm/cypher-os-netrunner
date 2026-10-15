@@ -10,18 +10,21 @@ for(const viewport of [{width:1024,height:600},{width:768,height:1024},{width:76
       await expect(page.locator('#intro-menu')).toHaveCSS('opacity','1');
       const intro=await page.locator('#intro').evaluate(el=>({scroll:el.scrollTop,overflow:el.scrollHeight-el.clientHeight}));
       expect(intro.scroll).toBe(0);expect(intro.overflow).toBeLessThanOrEqual(1);
+      await page.screenshot({path:testInfo.outputPath('intro-tablet.png')});
+      await game.freeze();await page.locator('#intro-start').tap();await page.locator('[data-action="storySkip"]').tap();
+      await page.clock.runFor(5000);
       const cursor=await page.locator('#boot-body .line:last-child').evaluate(el=>{const s=getComputedStyle(el,'::after');return {content:s.content,color:s.color};});
       expect(cursor.content).toBe('"▌"');expect(cursor.color).toBe('rgb(77, 255, 166)');
       const colors=await page.locator('#boot-body .line').evaluateAll(els=>els.map(el=>getComputedStyle(el).color));
       expect(colors.length).toBe(11);
       await expect(page.locator('#intro-boot-status,.boot-footer')).toHaveCount(0);
       await expect(page.locator('#intro-memory-status')).toBeHidden();
-      await expect(page.locator('#boot-body .line').last()).toHaveText('señal adquirida ......... ENLACE DISPONIBLE');
-      await expect(page.locator('#boot-body')).toContainText('canal de datos');
+      await expect(page.locator('#boot-body .line').last()).toHaveText('interfaz local .......... DISPONIBLE');
+      await expect(page.locator('#boot-body')).toContainText('SIN CONEXIÓN');
       await expect(page.locator('#boot-body')).not.toContainText('alcantarilla');
       expect(colors.filter(color=>color==='rgb(77, 255, 166)').length).toBeGreaterThan(colors.length/2);
       for(const color of colors)expect(['rgb(77, 255, 166)','rgb(67, 223, 146)']).toContain(color);
-      await page.screenshot({path:testInfo.outputPath('intro-tablet.png')});
+      await expect(page.locator('[data-action="storyRecover"]')).toBeVisible();
       await game.setup({immersion:makeImmersion(),state:{offers:[]}}, {touch:true});
       await page.evaluate(()=>{S.player.cpu=20;S.player.heat=80;inImmersion.dataUsed=ramCap();updateTopbar();});
       const layout=await page.evaluate(()=>{

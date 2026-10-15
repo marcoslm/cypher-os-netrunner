@@ -6,17 +6,18 @@
    Variable global: HELP_HTML
    ============================================================ */
 
+'use strict';
 var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="sub"> cómo jugar · el cable no duerme · pulsa AYUDA o escribe AYUDA</div>'+
 
 /* ⓪ EL MUNDO EN 30 SEGUNDOS */
 '<div class="panel-h">⓪ EL MUNDO EN 30 SEGUNDOS · si no sabes nada, empieza aquí</div><div class="box helpbox">'+
 '<ol class="helpol">'+
-'<li><b>Eres CORVO-7</b>, un netrunner de calle: te conectas a la red con un ciberdeck para robar datos y cumplir contratos.</li>'+
-'<li><b>La red —"el cable"— lo es todo</b>: dinero, tráfico, vigilancia. Desde hace años está <b>viva</b>: nadie sabe si es una máquina, un organismo o un sueño.</li>'+
-'<li><b>El Núcleo</b> es lo que gobierna la red desde lo más profundo (capa 5). En 2091 alguien lo apagó 11 segundos… y desapareció. Ese misterio es la historia del juego.</li>'+
-'<li><b>Tu trabajo</b>: aceptar contratos de los fixers, bajar a la red, cumplir el objetivo y volver a la superficie a cobrar. El riesgo se mide en <b>calor</b> (tu rastro) y <b>CPU</b> (tu cordura dentro de la red).</li>'+
-'<li><b>La historia</b> se lee en INFORMES y cada uno empieza con una glosa en claro marcada con ▸. La serie <b>«Cómo llegamos aquí»</b> cuenta el mundo entero en 6 lecturas. Cada informe nuevo se anuncia con un aviso discreto, el índice marca <b>NUEVO</b> el último archivado y el punto del menú sigue encendido mientras tengas alguno <b>sin abrir</b>. Y lo que otros te mandan queda en <b>MENSAJES</b> (la bandeja del deck): si un aviso se te pasa en la línea inferior, siempre queda la carta.</li>'+
+'<li><b>Eres Álex Riba</b>, técnico de mantenimiento. Berto te deja usar el equipo de Tomás, ausente del Hostal La Bajante. CORVO-7 identifica al dispositivo; no has heredado las credenciales de su dueño.</li>'+
+'<li><b>La red —el cable—</b> conecta servicios, dinero y vigilancia. El Grid representa esas conexiones externas; no es el almacenamiento local del deck.</li>'+
+'<li><b>ARCHIVOS</b> conserva documentos anteriores y recuperados con su procedencia. Dañado significa falta de reconstrucción; cifrado significa falta de clave. Abrirlos no cobra ni resuelve un caso.</li>'+
+'<li><b>MENSAJES</b> distingue el correo enviado por Tomás de las cartas actuales. Una copia anterior no te convierte en su remitente. En AYUDA puedes releer el prólogo sin cambiar la partida.</li>'+
+'<li><b>Los trabajos genéricos</b> se aceptan en CONTACTOS y se evalúan al superficializar. El riesgo se mide en calor (tu rastro) y CPU (integridad de conexión).</li>'+
 '</ol>'+
 '<div class="callout cyan">💡 Toda la jerga está explicada en una línea en <b>GLOSARIO</b> (⑰, al final de esta pantalla) o escribe <b>glosario</b> en el terminal.</div>'+
 '</div>'+
@@ -206,7 +207,8 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="helprow-item"><span class="kbd">RESET</span><span class="muted">borra todo (con confirmación) · conserva tu mejor registro</span></div>'+
 '<div class="helprow-item"><span class="kbd">VOLVER A INTRO</span><span class="muted">guarda y vuelve a la intro para cambiar la dificultad sin recargar; solo en la calle —desde el Grid, superficializa primero— y COMENZAR reanuda tu partida intacta</span></div>'+
 '</div>'+
-'<div class="callout ambar">⚠ <b>FLATLINE</b> (CPU a 0): <b>RECONEXIÓN</b> recupera la última partida —pierdes los datos de la inmersión, CPU al ~50% y el calor baja— o <b>NUEVO REGISTRO</b> empieza desde cero (tu mejor registro se conserva aparte). En <b>HARDCORE</b> solo hay NUEVO REGISTRO.</div>'+
+'<div class="callout ambar">⚠ <b>FLATLINE</b> (CPU a 0): <b>RECONEXIÓN</b> conserva saldo, equipo y archivo consolidados, pero pierde la carga de la inmersión; CPU al ~50% y calor menor. <b>NUEVO REGISTRO</b> empieza otro prólogo desde cero, conservando el mejor registro. En <b>HARDCORE</b> no hay reconexión.</div>'+
+'<p class="help-p">El menú no inicia el diagnóstico por sí solo. COMENZAR reanuda la página guardada o la sesión activa; INICIAR RECUPERACIÓN es una acción separada. Los formatos anteriores de prueba no se convierten ni se borran.</p>'+
 '</div>'+
 
 /* ⑮ COMANDOS */
@@ -215,6 +217,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="lg-key">red / net / dip</span><span class="lg-desc">sumergirse en la red</span></div>'+
 '<div class="legend-row"><span class="lg-key">superficie</span><span class="lg-desc">volver a la superficie (resuelve trabajos)</span></div>'+
 '<div class="legend-row"><span class="lg-key">contactos / trabajos / tienda</span><span class="lg-desc">abrir cada sección (trabajos = jobs, tienda = shop)</span></div>'+
+'<div class="legend-row"><span class="lg-key">archivos</span><span class="lg-desc">consultar documentos anteriores y recuperados</span></div>'+
 '<div class="legend-row"><span class="lg-key">stats / intel / log</span><span class="lg-desc">estado / informes / registro (estado, informes y registro también valen)</span></div>'+
 '<div class="legend-row"><span class="lg-key">salir / back</span><span class="lg-desc">volver a INICIO</span></div>'+
 '<div class="legend-row"><span class="lg-key">nucleo</span><span class="lg-desc">acepta la misión EL NÚCLEO (nivel 5 y reputación con NIGHT-0X ≥ 3)</span></div>'+

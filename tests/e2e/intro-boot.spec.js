@@ -1,74 +1,130 @@
 'use strict';
-const {test,expect}=require('./fixtures');
-test.use({progressiveBoot:true});
-async function pauseBoot(page){
- // Pausar al primer segundo virtual, antes de revelar el menú.
- await page.clock.pauseAt(new Date('2030-01-01T00:00:01Z'));
+const { test, expect } = require('./fixtures');
+const action = (page, name) => page.locator(`[data-action="${name}"]`);
+async function diagnostic(page, game) {
+    await game.freeze();
+    await page.locator('#intro-start').click();
+    await action(page, 'storySkip').click();
+    if (await page.locator('#intro-skip').isVisible()) await page.locator('#intro-skip').click();
+    await expect(action(page, 'storyRecover')).toBeVisible();
 }
-test('ciberdeck: BIOS vertical anclada, menú final y entrada directa',async({page,game},testInfo)=>{
- await pauseBoot(page);
- await expect(page.locator('#intro-start')).toBeHidden();
- await expect(page.locator('#intro-skip')).toBeFocused();
- const first=page.locator('#boot-body .line').first();await expect(first).toBeVisible();
- const anchor=await first.boundingBox();
- const count=await page.locator('#boot-body .line').count();
- await page.clock.runFor(1000);
- expect(await page.locator('#boot-body .line').count()).toBeGreaterThan(count);
- expect((await first.boundingBox()).y).toBe(anchor.y);
- await page.screenshot({path:testInfo.outputPath('deck-boot.png')});
- await page.clock.runFor(4000);
- await expect(page.locator('#intro-start')).toBeVisible();await expect(page.locator('#intro-start')).toBeFocused();
- await expect(page.locator('#boot-body .line')).toHaveCount(11);
- await expect(page.locator('#boot-body .line').nth(1)).toHaveText(/^FIRMWARE v1\.0 alpha · BUILD [1-9]\d*$/);
- expect((await first.boundingBox()).y).toBe(anchor.y);
- expect((await game.snapshot()).state).toBeNull();
- await expect(page.locator('#os')).toHaveJSProperty('inert',true);
- await expect(page.locator('#intro-menu')).toHaveCSS('opacity','1');
- await page.screenshot({path:testInfo.outputPath('deck-ready.png')});
- await page.locator('#intro-start').click();
- await expect(page.locator('#intro')).toBeHidden();await expect(page.locator('#cmd')).toBeFocused();
- expect((await game.snapshot()).state.player.credits).toBe(500);
- expect(await page.evaluate(()=>_introBootTimer)).toBeNull();
+test('F2: menu, tres pasajes, POST local y recuperacion explicita', async ({ page, game }, testInfo) => {
+    await game.freeze();
+    await expect(page.locator('#intro .intro-logo')).toBeVisible();
+    await expect(page.locator('#boot')).toBeHidden();
+    expect((await game.snapshot()).state).toBeNull();
+    await page.locator('#intro-start').click();
+    await expect(page.locator('#story-heading')).toBeFocused();
+    await expect(page.locator('#story-entry')).toContainText('Dejaste la llave');
+    await action(page, 'storyContinue').click();
+    await expect(page.locator('#story-entry')).toContainText('Una semana, Álex');
+    await action(page, 'storyContinue').click();
+    await expect(page.locator('#story-entry')).toContainText('Quizá se averió');
+    await action(page, 'storyContinue').click();
+    await page.clock.runFor(320);
+    const first = page.locator('#boot-body .line').first();
+    await expect(first).toBeVisible();
+    const anchor = await first.boundingBox();
+    await page.clock.runFor(180);
+    expect((await first.boundingBox()).y).toBe(anchor.y);
+    await page.screenshot({ path: testInfo.outputPath('post-local.png') });
+    await page.locator('#intro-skip').click();
+    await expect(page.locator('#story-heading')).toBeFocused();
+    expect((await game.snapshot()).saved.narrative.recoveryStage).toBe('not_started');
+    expect(await page.evaluate(() => loopId)).toBeNull();
+    await action(page, 'storyRecover').click();
+    await expect(page.locator('#intro')).toBeHidden();
+    await expect(page.locator('#panel-scroll h1')).toHaveText('ARCHIVOS');
+    expect((await game.snapshot()).saved.narrative.aliasAcquired).toBe(false);
 });
-test('ciberdeck: atajos y clic de fondo no saltan BIOS; omitir solo abre opciones',async({page,game})=>{
- await pauseBoot(page);
- for(const key of ['Control+g','Control+k','Control+1','Control+s','Tab','Shift+Tab'])await page.keyboard.press(key);
- await expect(page.locator('#intro-skip')).toBeFocused();
- await page.locator('#boot').click();
- await expect(page.locator('#intro-start')).toBeHidden();
- await expect(page.locator('#controls-overlay')).toBeHidden();
- expect((await game.snapshot()).state).toBeNull();
- await page.locator('#intro-skip').focus();await page.keyboard.press('Enter');
- await expect(page.locator('#intro-start')).toBeVisible();
- expect((await game.snapshot()).state).toBeNull();
- await expect(page.locator('#os')).toHaveJSProperty('inert',true);
- await page.clock.runFor(5000);await expect(page.locator('#boot-body .line')).toHaveCount(11);
+test('F2: Ctrl+S, foco, recarga de pasaje y diagnostico sin repetir POST', async ({ page, game }) => {
+    await game.freeze(); await page.locator('#intro-start').click();
+    await action(page, 'storyContinue').click();
+    for (const key of ['Control+g', 'Control+k', 'Control+1', 'Tab', 'Shift+Tab', 'Control+s']) {
+        await page.keyboard.press(key);
+        expect(await page.locator('#intro').evaluate(el => el.contains(document.activeElement))).toBe(true);
+    }
+    expect((await game.snapshot()).saved.narrative.prologuePage).toBe(1);
+    await page.reload(); await page.locator('#intro-start').click();
+    await expect(page.locator('#story-heading')).toHaveText('Hostal La Bajante');
+    await expect(page.locator('#boot-body .line')).toHaveCount(0);
+    await action(page, 'storySkip').click();
+    await page.locator('#intro-skip').click();
+    await page.reload(); await page.locator('#intro-start').click();
+    await expect(action(page, 'storyRecover')).toBeVisible();
+    await expect(page.locator('#boot-body .line')).toHaveCount(0);
+    expect(await page.evaluate(() => loopId)).toBeNull();
+    expect((await game.snapshot()).immersion).toBeNull();
 });
-test('ciberdeck: movimiento reducido en curso termina POST sin cursor ni timers',async({page,game})=>{
- await pauseBoot(page);await page.emulateMedia({reducedMotion:'reduce'});
- await expect(page.locator('#intro-start')).toBeVisible();
- await expect(page.locator('#boot-body .line')).toHaveCount(11);
- await expect(page.locator('html')).toHaveClass(/motion-off/);
- expect(await page.evaluate(()=>_introBootTimer)).toBeNull();expect((await game.snapshot()).state).toBeNull();
- await page.clock.runFor(5000);await expect(page.locator('#boot-body .line')).toHaveCount(11);
+test('F2: reduccion de movimiento completa POST pero no recupera', async ({ page, game }) => {
+    await game.freeze(); await page.locator('#intro-start').click();
+    await action(page, 'storySkip').click();
+    await page.clock.runFor(500); await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(action(page, 'storyRecover')).toBeVisible();
+    expect(await page.evaluate(() => _introBootTimer)).toBeNull();
+    expect(await page.evaluate(() => loopId)).toBeNull();
+    expect((await game.snapshot()).state.narrative.entry).toBe('diagnostic');
 });
-test('ciberdeck: preferencia reducida al recargar muestra menú inmediatamente',async({page,game})=>{
- await page.emulateMedia({reducedMotion:'reduce'});await page.reload();
- await expect(page.locator('#intro-start')).toBeVisible();await expect(page.locator('#intro-skip')).toBeHidden();
- await expect(page.locator('#boot-body .line')).toHaveCount(11);
- expect(await page.evaluate(()=>_introBootTimer)).toBeNull();expect((await game.snapshot()).state).toBeNull();
+test('F2: archivos y correo anterior tienen una sola lectura, fuente y fecha', async ({ page, game }) => {
+    await diagnostic(page, game); await action(page, 'storyRecover').click();
+    const before = (await game.snapshot()).state.player;
+    await expect(action(page, 'openArchive')).toHaveCount(3);
+    await expect(page.locator('#panel-scroll')).toContainText('Falta reconstrucción');
+    await expect(page.locator('#panel-scroll')).not.toContainText('Registro de custodia');
+    await page.locator('#archive-filter').selectOption('pending');
+    await expect(page.locator('#archive-filter')).toBeFocused();
+    await expect(action(page, 'openArchive')).toHaveCount(0);
+    await expect(page.locator('#panel-scroll')).toContainText('Indice de mantenimiento');
+    await page.locator('#archive-filter').selectOption('all');
+    await page.locator('[data-action="openArchive"][data-id="l_revision"]').click();
+    await expect(page.locator('#archive-heading')).toBeFocused();
+    await expect(page.locator('.archive-document')).toContainText('LB-2093-10');
+    await expect(page.locator('.archive-document')).toContainText('07-10-2093 18:12');
+    await page.locator('.navbtn[data-view="mensajes"]').click();
+    await page.locator('[data-action="mailTab"][data-tab="previous"]').click();
+    await action(page, 'openArchive').click();
+    await expect(page.locator('.archive-document')).toContainText('copia enviada, sin ruta de respuesta');
+    const after = await game.snapshot();
+    expect(after.state.player).toEqual(before);
+    expect(after.saved.narrative.readFiles).toEqual(['l_revision', 'l_contacto']);
+    await action(page, 'closeArchive').click();
+    await expect(page.locator('[data-action="openArchive"][data-id="l_contacto"]')).toBeFocused();
+    await page.locator('[data-action="archiveTab"][data-tab="recovered"]').click();
+    await expect(page.locator('#panel-scroll')).toContainText('No hay archivos');
+    await game.reload();
+    await expect(page.locator('.navbtn[data-view="archivos"]')).toHaveClass(/active/);
+    expect((await game.snapshot()).saved.narrative.readFiles).toEqual(['l_revision', 'l_contacto']);
 });
-for(const width of [320,375,768]){
- test(`ciberdeck: ${width} px sin desbordamiento y controles accesibles`,async({page,game},testInfo)=>{
-  await page.setViewportSize({width,height:667});await pauseBoot(page);
-  await page.locator('#intro-skip').click();
-  const overflow=await page.locator('#intro').evaluate(el=>el.scrollWidth>el.clientWidth);
-  expect(overflow).toBe(false);
-  await page.locator('#intro-start').scrollIntoViewIfNeeded();await expect(page.locator('#intro-start')).toBeInViewport();
-  await expect(page.locator('#intro-menu')).toHaveCSS('opacity','1');
-  await page.screenshot({path:testInfo.outputPath(`deck-${width}.png`)});
-  await page.locator('#intro [data-action="openControls"]').click();await expect(page.locator('#controls-overlay')).toBeVisible();
-  await page.keyboard.press('Escape');await page.locator('#intro-start').click();
-  await expect(page.locator('#intro')).toBeHidden();expect((await game.snapshot()).state).not.toBeNull();
- });
+test('F2: relectura desde AYUDA pausa y no cambia la partida', async ({ page, game }) => {
+    await game.boot(); await page.locator('.navbtn[data-view="ayuda"]').click();
+    const before = (await game.snapshot()).state;
+    await action(page, 'replayPrologue').click();
+    await action(page, 'storyContinue').click();
+    await page.clock.runFor(12000);
+    expect(await page.evaluate(() => loopId)).toBeNull();
+    expect((await game.snapshot()).state).toEqual(before);
+    await action(page, 'storySkip').click();
+    await expect(action(page, 'replayPrologue')).toBeFocused();
+    expect((await game.snapshot()).state).toEqual(before);
+});
+for (const width of [320, 375, 768]) {
+    test(`F2: ${width}px entrada y archivo sin texto o controles solapados`, async ({ page, game }, testInfo) => {
+        await page.setViewportSize({ width, height: 667 });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await game.freeze();
+        await page.screenshot({ path: testInfo.outputPath(`menu-${width}.png`) });
+        await page.locator('#intro-start').click(); await action(page, 'storyContinue').click();
+        expect(await page.locator('#intro').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+        await expect(page.locator('#story-heading')).toBeVisible();
+        await page.screenshot({ path: testInfo.outputPath(`prologue-${width}.png`), fullPage: true });
+        await action(page, 'storyContinue').scrollIntoViewIfNeeded(); await action(page, 'storyContinue').click();
+        await action(page, 'storyContinue').click();
+        await expect(action(page, 'storyRecover')).toBeVisible();
+        await page.screenshot({ path: testInfo.outputPath(`diagnostic-${width}.png`) });
+        await action(page, 'storyRecover').click();
+        await page.locator('[data-action="openArchive"][data-id="l_contacto"]').click();
+        expect(await page.locator('#panel-scroll').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+        await expect(page.locator('.archive-document')).toContainText('ARCHIVO DEL ANTERIOR USUARIO');
+        await page.screenshot({ path: testInfo.outputPath(`archive-${width}.png`) });
+    });
 }

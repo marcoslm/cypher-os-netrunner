@@ -8,7 +8,7 @@ async function run(options={}){
  async function check(label,fn){
   const g=loadGame({timers:'virtual',strictDOM:true,canvas:'stub',seed:2093});
   try{
-   g.run('S=nuevoEstado();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();document.getElementById("intro").classList.add("hidden");');
+   g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();document.getElementById("intro").classList.add("hidden");');
    await fn(g);passes++;console.log('  ✔ '+label);
   }catch(e){fails++;console.log('  ✖ '+label+': '+e.stack);}
   finally{g.dispose();}
@@ -56,7 +56,7 @@ async function run(options={}){
  });
  await check('sin archivo previo, el fallo conserva la partida nueva en memoria',g=>{
   g.sb.localStorage.removeItem('cypher_os_save_story_v1');
-  g.run('S=nuevoEstado();ensureStateIntegrity();S.player.credits=777;');
+  g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.player.credits=777;');
   g.sb.localStorage.fail.setItem=true;
   returnIntro(g);continueGame(g);
   assert.equal(g.run('S.player.credits'),777);

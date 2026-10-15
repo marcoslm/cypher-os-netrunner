@@ -8,7 +8,7 @@ async function run(options={}) {
   async function check(label,fn) {
     const g=loadGame({timers:'virtual',seed:2093,strictDOM:true,canvas:'stub'});
     try {
-      g.run('S=nuevoEstado();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();');
+      g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();');
       await fn(g);passes++;console.log('  ✔ '+label);
     } catch(error) {fails++;console.log('  ✖ '+label+': '+error.stack);}
     finally {g.dispose();}
@@ -33,7 +33,8 @@ async function run(options={}) {
     assert.equal(close.className,panelClose.className);
     assert.equal(close.textContent,panelClose.textContent);
     assert.equal(d.getElementById('save-tools-buttons').contains(close),false);
-    assert.equal(d.querySelectorAll('.navbtn[data-view]').length,11);
+    assert.equal(d.querySelectorAll('.navbtn[data-view]').length,12);
+    assert.equal(g.run('VIEW_ORDER[11]'),'archivos');
   });
   await check('PARTIDA abre y cierra el diálogo; el segundo pulso y el ✕ devuelven el foco al botón',g=>{
     const d=g.sb.document,dialog=d.getElementById('save-tools'),toggle=d.getElementById('save-tools-toggle');
