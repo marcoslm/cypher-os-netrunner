@@ -17,20 +17,22 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<li><b>La red —el cable—</b> conecta servicios, dinero y vigilancia. El Grid representa esas conexiones externas; no es el almacenamiento local del deck.</li>'+
 '<li><b>ARCHIVOS</b> conserva documentos anteriores y recuperados con su procedencia. Dañado significa falta de reconstrucción; cifrado significa falta de clave. Abrirlos no cobra ni resuelve un caso.</li>'+
 '<li><b>MENSAJES</b> distingue el correo enviado por Tomás de las cartas actuales. Una copia anterior no te convierte en su remitente. En AYUDA puedes releer el prólogo sin cambiar la partida.</li>'+
-'<li><b>Los trabajos genéricos</b> se aceptan en CONTACTOS y se evalúan al superficializar. El riesgo se mide en calor (tu rastro) y CPU (integridad de conexión).</li>'+
+'<li><b>LA FACTURA</b> se acepta en TRABAJOS. VEYRA abre un canal nuevo para Álex; no usas la cuenta de Tomás. Tras verificar la entrega se abren los trabajos genéricos de CONTACTOS. El riesgo se mide en calor (tu rastro) y CPU (integridad de conexión).</li>'+
 '</ol>'+
 '<div class="callout cyan">💡 Toda la jerga está explicada en una línea en <b>GLOSARIO</b> (⑰, al final de esta pantalla) o escribe <b>glosario</b> en el terminal.</div>'+
 '</div>'+
 
 /* ① BUCLE */
 '<div class="panel-h">① EL BUCLE DEL CABLE</div><div class="box helpbox">'+
+'<p class="help-p"><b>Primer caso:</b> acepta LA FACTURA en TRABAJOS, conecta con facturación, retira la defensa del archivador y copia el historial. El paquete ocupa una unidad de RAM, no se vende. Vuelve al puerto y superficializa para conservarlo; después pulsa ENTREGAR HISTORIAL en TRABAJOS. Solo esa verificación paga 140₡ y 60 XP una vez. Retirarte sin la prueba o perderla en FLATLINE permite reintentar. La defensa conserva su XP normal.</p>'+
+'<p class="help-p"><b>Contratos genéricos, disponibles después de la factura:</b></p>'+
 '<ol class="helpol">'+
 '<li><b>Pide un trabajo</b> en CONTACTOS. Cada contrato tiene un objetivo (recoger datos, destruir ICE, etc.) y una recompensa.</li>'+
 '<li><b>Baja a la red</b> con ◈ DIP AL GRID. El trabajo se "carga" en tu mochila dentro del grid.</li>'+
 '<li><b>Cumple el objetivo</b> mientras estás dentro: muévete por los nodos y haz exactamente lo que pide el contrato.</li>'+
 '<li><b>Vuelve a la superficie</b> con el botón SUPERFICIE (o pulsando <b>F</b>). Ahí es cuando el trabajo se <b>resuelve</b>.</li>'+
 '</ol>'+
-'<div class="callout ambar">⚠ Los trabajos NO se resuelven por entrar o salir: se evalúan en el instante en que <b>superficializas</b>. Si al volver (superficializar) todavía no lo has cumplido, marca <b>FRACASADO</b> y sube el calor (+8). Asegúrate de completar el objetivo antes de volver a la superficie.</div>'+
+'<div class="callout ambar">⚠ Los contratos genéricos se evalúan al <b>superficializar</b>. Si todavía no cumples su objetivo, quedan <b>FRACASADOS</b> y sube el calor (+8 por contrato). Esta penalización no se aplica al caso de la factura pendiente.</div>'+
 '</div>'+
 
 /* ② CAPAS */

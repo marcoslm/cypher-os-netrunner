@@ -11,7 +11,7 @@ async function run(options={}){
   catch(e){fails++;console.log('  ✖ '+label+': '+e.stack);}
   finally{g.dispose();}
  }
- function live(g){g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();document.getElementById("intro").classList.add("hidden");');}
+ function live(g){g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();document.getElementById("intro").classList.add("hidden");');}
  function returnIntro(g){clickAction(g,'backToIntro');clickAction(g,'confirmYes');}
  function keys(g,target){for(const key of ['g','k','1','2','3','4','5','6','7','8','9'])assert.equal(g.emitElement(target,'keydown',{key,ctrlKey:true}).defaultPrevented,true,key);}
  function clocks(g){return g.list().filter(t=>t.type==='interval'&&t.ms===1000);}

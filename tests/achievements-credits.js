@@ -8,7 +8,7 @@ async function run(options={}) {
   async function check(label,fn) {
     const g=loadGame({timers:'virtual',seed:2093,strictDOM:true,canvas:'stub'});
     try {
-      g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;');
+      g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;');
       await fn(g);passes++;console.log('  ✔ '+label);
     }catch(error){fails++;console.log('  ✖ '+label+': '+error.stack);}
     finally{g.dispose();}

@@ -14,7 +14,7 @@ async function run(options={}) {
   async function check(label,fn) {
     const g=loadGame({timers:'virtual',seed:2093,strictDOM:true,canvas:'stub'});
     try {
-      g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();');
+      g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();_deckPrefs.snd=false;_deckPrefs.mus=false;S._tutorialDone=true;save();afterBoot();');
       await fn(g);passes++;console.log('  ✔ '+label);
     } catch(error) {fails++;console.log('  ✖ '+label+': '+error.stack);}
     finally {g.dispose();}
@@ -182,7 +182,7 @@ async function run(options={}) {
     assert.equal(g.run('importGameState(window.__candidate)'),true);
     assert.deepEqual(clone(g.run('_gridHudPrefs')),{explorationOpen:false,jobsOpen:false});
     g.run('resetDeckPrefs();restoreImmersion(null);showView("inicio");');
-    clickAction(g,'newRecord');clickAction(g,'confirmYes');g.run('ACTIONS.storySkip();finishIntroBoot();ACTIONS.storyRecover();startImmersion(4);');
+    clickAction(g,'newRecord');clickAction(g,'confirmYes');g.run('ACTIONS.storySkip();finishIntroBoot();ACTIONS.storyRecover();__invoiceResolvedFixture();startImmersion(4);');
     for(const id of ['grid-exploration','grid-jobs'])assert.equal(g.sb.document.getElementById(id).hasAttribute('open'),false);
     assert.deepEqual(JSON.parse(g.sb.localStorage.getItem(hudKey)),{explorationOpen:false,jobsOpen:false});
   });

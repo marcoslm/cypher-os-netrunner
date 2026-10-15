@@ -7,7 +7,7 @@ En fase alpha: jugable pero sin probar a fondo. Pueden aparecer bugs sin identif
 
 ## Revision Narrativa En Desarrollo
 
-El codigo de desarrollo incorpora el nuevo estado de historia y su formato de partida. La llegada ya incluye prologo, diagnostico y recuperacion explicita de tres piezas locales, con archivo y correo anterior separados. Puedes releer el prologo desde AYUDA sin modificar la partida. Los casos de investigacion todavia estan pendientes de conectar; este avance no es una campaña narrativa nueva completa. Los minijuegos actuales se mantienen.
+El codigo de desarrollo incorpora la llegada con prologo, diagnostico y recuperacion explicita de tres piezas locales, con archivo y correo anterior separados. El primer caso, LA FACTURA, ya se puede jugar de principio a fin: encargo de Berto, canal nuevo de VEYRA, historial protegido en el Grid y entrega verificada por Ines. Los trabajos genericos se abren al cerrar esa entrega. Puedes releer el prologo y las comunicaciones sin modificar premios. Los otros siete casos siguen pendientes; no es una campaña narrativa nueva completa. Los minijuegos actuales se mantienen.
 
 Esta revision requiere una partida nueva. Los guardados anteriores de prueba no se cargan ni se convierten, pero tampoco se eliminan. Los archivos exportados anteriores pueden conservarse como respaldo; los ajustes de audio y pantalla siguen siendo preferencias del dispositivo, independientes de la partida.
 

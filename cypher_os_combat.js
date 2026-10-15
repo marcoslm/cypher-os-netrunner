@@ -75,6 +75,7 @@ function renderCombatEncounter(){
     '<h2 class="combat-title" id="encounter-title">'+escapeHtml(n.name||kind)+'</h2>'+
     '<dl class="encounter-facts"><div><dt>TIPO</dt><dd>'+kind+' · T'+COM.tier+'</dd></div>'+
     '<div><dt>COMBATE</dt><dd>'+label+'</dd></div></dl>'+
+    (inImmersion && n.id==="1_0" && inImmersion.grid.nodes.some(function(node){ return node.storyChapter==="c01"; })?'<p class="encounter-note">El archivador limita el historial con acceso de huésped. El deck ha encontrado una ventana para enviar la consulta.</p>':'')+
     (gear.length ? '<div class="encounter-gear"><div class="encounter-label">EQUIPO DISPONIBLE</div><ul>'+gear.map(function(item){return '<li>'+item+'</li>';}).join('')+'</ul></div>' : '')+
     (boss ? '<div class="encounter-note ambar">SIN HUIDA</div>' : '')+
     '<div class="encounter-actions"><button class="btn" id="combat-enter">ENTRAR AL COMBATE</button>'+

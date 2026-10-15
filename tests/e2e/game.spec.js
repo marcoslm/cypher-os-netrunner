@@ -5,6 +5,11 @@ const { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat,
 const nav = (page, view) => page.locator(`.navbtn[data-view="${view}"]`);
 const action = (page, name) => page.locator(`[data-action="${name}"]`);
 const clone = value => JSON.parse(JSON.stringify(value));
+async function invoiceMove(page, id) {
+  const index = await page.evaluate(id => currentNeighbors().findIndex(node => node.id === id), id);
+  expect(index).toBeGreaterThanOrEqual(0);
+  await page.locator('#adjlist .adj-node').nth(index).click();
+}
 
 function vaultOffer(id, project, corp) {
   return {
@@ -32,6 +37,113 @@ test('intro: COMENZAR abre el relato y la recuperacion activa la sesion', async 
   await expect(page.locator('#h-cc')).toHaveText('500');
   await expect(page.locator('#os')).toHaveJSProperty('inert',false);
 });
+
+test('F3: factura completa, paquete persistente y verificacion unica sin lectura obligatoria', async ({ page, game }) => {
+  await game.boot();
+  await nav(page, 'trabajos').click();
+  await expect(action(page, 'acceptInvoice')).toBeVisible();
+  expect((await game.snapshot()).state.narrative.readFiles).toEqual([]);
+  await nav(page, 'contactos').click();
+  await expect(action(page, 'acceptJob')).toHaveCount(0);
+  await nav(page, 'trabajos').click();
+  await action(page, 'acceptInvoice').click();
+  await expect(page.locator('#conversation-heading')).toBeFocused();
+  await expect(page.locator('#panel-scroll')).toContainText('No uses las credenciales de Tomás');
+  expect((await game.snapshot()).state.narrative.aliasAcquired).toBe(true);
+  await game.reload();
+  await expect(action(page, 'acceptInvoice')).toHaveCount(0);
+  await action(page, 'dipGrid').click();
+  await expect(page.locator('#grid-job-items')).toContainText('Servicio de facturación');
+  await invoiceMove(page, '1_0');
+  await expect(page.locator('#combat')).toContainText('acceso de huésped');
+  await page.locator('#combat-enter').click();
+  await solveCodeCombat(page);
+  await invoiceMove(page, '1_1');
+  const transit = await game.snapshot();
+  expect(transit.immersion.narrativePayload).toMatchObject({ chapter: 'c01', files: ['r_factura'] });
+  expect(transit.immersion.dataUsed).toBe(1);
+  expect(transit.immersion.data).toEqual([]);
+  expect(transit.state.narrative.files.r_factura).toBe('unknown');
+  await page.keyboard.press('Control+s');
+  await game.reload();
+  expect((await game.snapshot()).immersion).toEqual(transit.immersion);
+  await action(page, 'doSuperficie').click();
+  expect((await game.snapshot()).immersion).not.toBeNull();
+  await invoiceMove(page, '1_0');
+  await invoiceMove(page, '0_0');
+  await action(page, 'doSuperficie').click();
+  await action(page, 'closeResume').click();
+  expect((await game.snapshot()).state.narrative.chapters.c01).toBe('returned');
+  expect((await game.snapshot()).state.player.credits).toBe(500);
+  await game.reload();
+  await action(page, 'deliverInvoice').click();
+  await expect(page.locator('#conversation-heading')).toBeFocused();
+  await expect(page.locator('#panel-scroll')).toContainText('corte queda suspendido');
+  await action(page, 'closeStoryConversation').click();
+  await expect(page.locator('#panel-scroll')).toContainText('SIN CONFIRMAR');
+  const resolved = await game.snapshot();
+  expect(resolved.state.player.credits).toBe(640);
+  expect(resolved.state.player.xp).toBe(76);
+  expect(resolved.state.player.stats.data).toBe(0);
+  expect(resolved.state.narrative.chapters).toMatchObject({ c01: 'resolved', c02: 'offered' });
+  await expect(action(page, 'deliverInvoice')).toHaveCount(0);
+  await nav(page, 'archivos').click();
+  await page.locator('[data-action="archiveTab"][data-tab="recovered"]').click();
+  await page.locator('[data-action="openArchive"][data-id="r_factura"]').click();
+  await expect(page.locator('.archive-text')).toContainText('23:11');
+  await expect(page.locator('.archive-text')).toContainText('23:13');
+  await expect(page.locator('.archive-meta')).toContainText('hora de sesión');
+  await nav(page, 'contactos').click();
+  await expect(action(page, 'acceptJob').first()).toBeVisible();
+  await page.locator('[data-action="openStoryConversation"][data-id="m_celia_alias"]').click();
+  expect((await game.snapshot()).state.player.credits).toBe(640);
+});
+
+test('F3: retirada y muerte no pierden el encargo ni fabrican la prueba', async ({ page, game }) => {
+  await game.boot(); await nav(page, 'trabajos').click();
+  await action(page, 'acceptInvoice').click(); await action(page, 'closeStoryConversation').click(); await action(page, 'dipGrid').click();
+  await action(page, 'doSuperficie').click(); await action(page, 'closeResume').click();
+  expect((await game.snapshot()).state.narrative.chapters.c01).toBe('accepted');
+  await nav(page, 'trabajos').click(); await action(page, 'dipGrid').click();
+  await invoiceMove(page, '1_0');
+  await page.locator('#combat-enter').click(); await solveCodeCombat(page);
+  await invoiceMove(page, '1_1');
+  await game.fatal();
+  await page.locator('#flatline [data-action="reconnect"]').click();
+  const retry = await game.snapshot();
+  expect(retry.state.narrative.chapters.c01).toBe('accepted');
+  expect(retry.state.narrative.files.r_factura).toBe('unknown');
+  expect(retry.state.player.credits).toBe(500);
+  await nav(page, 'trabajos').click(); await action(page, 'dipGrid').click();
+  expect((await game.snapshot()).immersion.grid.nodes.find(node => node.storyChapter === 'c01').done).toBe(false);
+});
+
+for (const width of [320, 768]) {
+  test(`F3: factura legible y operable a ${width} px`, async ({ page, game }, testInfo) => {
+    await page.setViewportSize({ width, height: width === 320 ? 740 : 1024 });
+    await game.boot(); await nav(page, 'trabajos').click();
+    const fits = async () => {
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+      expect(await page.locator('#panel-scroll').evaluate(element => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+    };
+    await fits(); await page.screenshot({ path: testInfo.outputPath(`invoice-offer-${width}.png`) });
+    await action(page, 'acceptInvoice').focus(); await page.keyboard.press('Enter');
+    await expect(page.locator('#conversation-heading')).toBeFocused();
+    await fits(); await page.screenshot({ path: testInfo.outputPath(`invoice-channel-${width}.png`) });
+    await action(page, 'closeStoryConversation').click(); await action(page, 'dipGrid').click();
+    await invoiceMove(page, '1_0');
+    const card = await page.locator('.encounter-card').boundingBox();
+    expect(card.x).toBeGreaterThanOrEqual(0); expect(card.x + card.width).toBeLessThanOrEqual(width + 1);
+    await page.screenshot({ path: testInfo.outputPath(`invoice-defense-${width}.png`) });
+    await page.locator('#combat-enter').click(); await solveCodeCombat(page);
+    await invoiceMove(page, '1_1'); await invoiceMove(page, '1_0'); await invoiceMove(page, '0_0');
+    await action(page, 'doSuperficie').click(); await action(page, 'closeResume').click();
+    await action(page, 'deliverInvoice').click();
+    await fits(); await page.screenshot({ path: testInfo.outputPath(`invoice-delivery-${width}.png`) });
+    await action(page, 'closeStoryConversation').click();
+    await expect(page.locator('#panel-scroll')).toContainText('Fin del tramo');
+  });
+}
 
 test('smoke: todos los paneles, terminal y compras con autosave', async ({ page, game }) => {
   await game.boot({ skip: 'click' });

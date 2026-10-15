@@ -72,6 +72,16 @@ function spawnParticle(init){
   particles.push(pt);
 }
 
+function generateInvoiceGrid(){
+  var depth=S._legendaryTierBoost?2:1;
+  var port={id:"0_0",layer:0,x:90,y:270,type:"puerto",tier:0,data:0,name:"ACCESO DEL HOSTAL",done:false,_done:false,_used:false};
+  var guard={id:"1_0",layer:1,x:470,y:180,type:"ice",tier:S._legendaryTierBoost?2:1,data:0,name:"ARCHIVADOR DE FACTURACIÓN",done:false,_done:false,_used:false};
+  guard.tierName="T"+guard.tier;
+  var proof={id:"1_1",layer:depth,x:820,y:270,type:"data",tier:0,data:0,name:"HISTORIAL LB-2093-10",storyChapter:"c01",storyDefense:guard.id,done:false,_done:false,_used:false};
+  var alternative={id:"1_2",layer:1,x:470,y:390,type:"empty",tier:0,data:0,name:"CONSULTA DE CONTADOR",done:false,_done:false,_used:false};
+  return {nodes:[port,guard,proof,alternative],adj:{"0_0":["1_0","1_2"],"1_0":["0_0","1_1"],"1_1":["1_0"],"1_2":["0_0"]},byLayer:depth===1?[[port],[guard,proof,alternative]]:[[port],[guard,alternative],[proof]],entry:port.id,maxDepth:depth};
+}
+
 // Generación procedural del grid.
 // spawnBoss=true solo en la misión final: solo ahí existe ✦ EL NÚCLEO en capa 5.
 function generateGrid(maxDepth, spawnBoss){
@@ -307,6 +317,9 @@ function announceGridCompletion(inm,status){
 }
 
 function startImmersion(depth){
+  if(S.narrative.chapters.c01==="offered" || S.narrative.chapters.c01==="returned"){
+    msg("LA FACTURA ▸ acepta el encargo o verifica la entrega en TRABAJOS antes de conectar.","ambar"); return;
+  }
   if(inImmersion || combatActive){
     msg("ya estás en una inmersión. El grid actual se conserva.","ambar"); return;
   }
@@ -341,7 +354,9 @@ function startImmersion(depth){
   } else {
     S._legendaryTierBoost=false;
   }
-  var g = generateGrid(depth, finalMission);
+  var invoice=S.narrative.chapters.c01==="accepted";
+  var g = invoice ? generateInvoiceGrid() : generateGrid(depth, finalMission);
+  depth=g.maxDepth;
   /* informantes: revelar nodos en capas 1-2 del próximo grid */
   if(S._revealNextGrid){
     for(var ri=0;ri<g.nodes.length;ri++){
@@ -357,7 +372,7 @@ function startImmersion(depth){
     visited:[g.entry], visitsPartial:false, exploredNotified:false, exhaustedNotified:false
   };
   addLog("DIP ▸ conexión establecida (capa 0).");
-  msg(pickFresh("dip", FRASES_DIP),"cyan");
+  msg(invoice?"Enlace con el servicio de facturación. La copia del hostal está en el deck; recupera el historial y vuelve al puerto."+(S._legendaryTierBoost?" LEGENDARIO: profundidad 2 y defensa T2.":""):pickFresh("dip", FRASES_DIP),"cyan");
   /* efecto de dip: sonido + flash */
   sound.dip();
   var osEl = document.getElementById("os");
@@ -468,6 +483,7 @@ function pickGridEvent(){
 
 function tryGridEvent(){
   if(!inImmersion) return;
+  if(inImmersion.grid.nodes.some(function(node){ return node.storyChapter==="c01"; })) return;
   /* cooldown: mínimo 3 movimientos entre eventos */
   if(!S.player._gridEventCooldown) S.player._gridEventCooldown=0;
   if(S.player._gridEventCooldown>0){ S.player._gridEventCooldown--; }
@@ -522,6 +538,7 @@ function recordImmersionEnemy(n){
 }
 
 function tryScavenger(){
+  if(inImmersion && inImmersion.grid.nodes.some(function(node){ return node.storyChapter==="c01"; })) return false;
   var base = 6 + S.player.heat*0.18 - S.player.sigilo*5;
   var chance = clamp(base, 2, 40)/100;
   /* calor >= 95: rastreadores casi garantizados */
@@ -556,6 +573,14 @@ function tryScavenger(){
 
 function enterNode(n){
   if(n.done){ msg(pickFresh("nodo-limpio", FRASES_NODO_LIMPIO),"gris"); renderGridHud(); return; }
+  if(n.storyChapter){
+    if(storyCollectProof(n)){
+      addLog("PRUEBA ▸ historial LB-2093-10 copiado. Pendiente de retorno.");
+      msg("Historial copiado a la memoria de tránsito. Procedencia: servicio de facturación. Vuelve al puerto para conservarlo y entregarlo.","cyan");
+      sound.cool(); updateTopbar(); save();
+    } else msg("Historial protegido: retira la defensa del archivador antes de copiarlo.","ambar");
+    renderGridHud(); return;
+  }
   if(n.type==="puerto"){ msg(pickFresh("puerto", FRASES_PUERTO),"cyan"); renderGridHud(); return; }
   if(n.type==="substation"){ useSubstation(n); return; }
   if(n.type==="data"){ collectData(n); return; }
@@ -713,6 +738,9 @@ function typeInto(el, text, speed){
 /* ---- superficializar ---- */
 function superficializar(){
   if(!inImmersion || combatActive) return;
+  if(inImmersion.narrativePayload && inImmersion.current!==inImmersion.grid.entry){
+    msg("Vuelve al puerto de acceso con el paquete antes de superficializar.","ambar"); return;
+  }
   /* avisar SOLO si algún contrato activo quedaría FRACASADO al volver ahora:
      los que ya cumplan su objetivo (jobComplete) se pagan sin preguntar */
   var pending = S.jobs.filter(function(j){ return !j.done && !jobComplete(j); });
@@ -747,6 +775,8 @@ function superficializar(){
 function doSuperficializar(){
   var inm = inImmersion;
   if(!inm) return;
+  if(inm.narrativePayload && !storyReturnCase(inm.narrativePayload.chapter)) return;
+  var invoiceReturned=S.narrative.chapters.c01==="returned";
   /* capturar datos antes de limpiar */
   var dataCollected=inm.data.length;
   var moves=inm.moves;
@@ -796,6 +826,7 @@ function doSuperficializar(){
      pertenece a la siguiente inmersión y no debe descartarse aquí. */
 
   stopGridRender(); inImmersion=null;
+  if(invoiceReturned) _storyConversation=null;
   // Limitar S.jobs: conservar solo los 15 más recientes para evitar crecimiento indefinido.
   if(S.jobs.length>15){
     var activeJobs=S.jobs.filter(function(j){ return !j.done; });
@@ -803,7 +834,7 @@ function doSuperficializar(){
     S.jobs=activeJobs.concat(recentDone);
   }
   updateBest(); updateTopbar();
-  showView("inicio", true);
+  showView(invoiceReturned?"trabajos":"inicio", true);
   checkUnlocks();
   checkMensajes();
   advanceTutorial();
@@ -820,6 +851,7 @@ function doSuperficializar(){
   var heatDiff=heatAfter-heatBefore;
   var resumeHtml=
     '<h2 class="cyan glow">RESUMEN DE LA INMERSIÓN</h2>'+
+    (invoiceReturned?'<p>Historial LB-2093-10 conservado en ARCHIVOS. Verificación pendiente con Berto e Inés; no se ha cobrado la entrega.</p>':'')+
     '<div class="box">'+
     '<div class="resume-row"><span class="rk">Datos recogidos</span><span class="rv">'+dataCollected+'</span></div>'+
     '<div class="resume-row"><span class="rk">Créditos ganados</span><span class="rv">₡'+sellTotal+'</span></div>'+
@@ -1397,11 +1429,13 @@ function updateGridHud(){
   }
   var jobs=S.jobs.filter(function(j){ return !j.done; });
   var jobItems=document.getElementById("grid-job-items"), jobSummary=document.getElementById("grid-jobs-summary");
-  if(jobItems) jobItems.innerHTML=jobs.length?jobs.map(gridJobHudHtml).join(""):'<div class="muted">Sin contratos activos.</div>';
+  var invoice=inm.grid.nodes.some(function(node){ return node.storyChapter==="c01"; });
+  var caseHtml=invoice?'<div class="grid-job"><b>LA FACTURA</b><span>DESTINO · Servicio de facturación</span><span>OBJETIVO · Historial LB-2093-10</span><span class="cyan">'+(inm.narrativePayload?'Copia en tránsito · vuelve al puerto':'Retira la defensa y recupera el historial')+'</span></div>':'';
+  if(jobItems) jobItems.innerHTML=caseHtml+(jobs.length?jobs.map(gridJobHudHtml).join(""):invoice?'':'<div class="muted">Sin contratos activos.</div>');
   if(jobSummary){
     var ready=jobs.filter(jobComplete).length;
-    var summaryText=jobs.length?"TRABAJOS "+ready+"/"+jobs.length+" listos para cobrar al superficializar":"TRABAJOS · sin contratos activos";
-    var counter=document.getElementById("grid-job-ready"),counterText=jobs.length?ready+"/"+jobs.length:"0";
+    var summaryText=invoice?"LA FACTURA · "+(inm.narrativePayload?"copia en tránsito":"historial pendiente"):(jobs.length?"TRABAJOS "+ready+"/"+jobs.length+" listos para cobrar al superficializar":"TRABAJOS · sin contratos activos");
+    var counter=document.getElementById("grid-job-ready"),counterText=invoice?"1 caso":jobs.length?ready+"/"+jobs.length:"0";
     if(counter && counter.textContent!==counterText) counter.textContent=counterText;
     if(jobSummary.getAttribute("aria-label")!==summaryText){
       jobSummary.setAttribute("aria-label",summaryText); jobSummary.title=summaryText;

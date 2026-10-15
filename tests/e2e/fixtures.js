@@ -166,6 +166,9 @@ const test = base.extend({
           S.history = { ...defaults.history, ...state.history };
           if (!Object.prototype.hasOwnProperty.call(state, 'narrative')) {
             S.narrative.entry = 'diagnostic'; storyBeginRecovery();
+            S.narrative.chapters.c01 = 'resolved'; S.narrative.chapters.c02 = 'offered';
+            S.narrative.aliasAcquired = true; S.narrative.awarded = ['c01'];
+            S.narrative.files.r_factura = 'readable';
           }
           // Device preferences are arranged independently from the save file.
           for (const key of ['snd', 'amb', 'mus']) _deckPrefs[key] = S[key];

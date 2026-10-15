@@ -57,6 +57,10 @@ async function run(options = {}) {
     game.run('inImmersion={depth:1,current:"proof",grid:{nodes:[{id:"guard",type:"ice",done:false},{id:"proof",done:false,storyChapter:"c01",storyDefense:"guard"}]},dataUsed:0,data:[]};');
     assert.equal(game.run('storyCollectProof(inImmersion.grid.nodes[1])'), false);
     game.run('inImmersion.grid.nodes[0].done=true;');
+    game.run('inImmersion.dataUsed=ramCap();');
+    assert.equal(game.run('storyCollectProof(inImmersion.grid.nodes[1])'), false);
+    assert.equal(game.run('inImmersion.grid.nodes[1].done'), false);
+    game.run('inImmersion.dataUsed=0;');
     assert.equal(game.run('storyCollectProof(inImmersion.grid.nodes[1])'), true);
     assert.equal(game.run('inImmersion.dataUsed'), 1);
     assert.equal(game.run('inImmersion.data.length'), 0);
@@ -72,6 +76,28 @@ async function run(options = {}) {
     assert.equal(game.run('S.player.xp'), 60);
     assert.equal(game.run('load().narrative.chapters.c01'), 'resolved');
     assert.equal(game.run('load().player.credits'), 640);
+  });
+  check('plantilla de factura exige defensa y retorno sin vender ni pagar', game => {
+    activate(game); invoke(game, 'storyAcceptCase', 'c01');
+    game.run('window.invoice=generateInvoiceGrid();inImmersion={depth:1,current:"1_1",grid:window.invoice,dataUsed:0,data:[]};');
+    const grid = clone(game.run('window.invoice'));
+    assert.equal(grid.nodes.length, 4);
+    for (const [node, neighbors] of Object.entries(grid.adj)) {
+      for (const neighbor of neighbors) assert.ok(grid.adj[neighbor].includes(node));
+    }
+    assert.equal(game.run('storyCollectProof(nodeById("1_1"))'), false);
+    game.run('nodeById("1_0").done=true;');
+    assert.equal(game.run('storyCollectProof(nodeById("1_1"))'), true);
+    assert.equal(game.run('inImmersion.dataUsed+storyReservedRam()'), 1);
+    assert.equal(game.run('S.player.stats.data'), 0);
+    assert.equal(invoke(game, 'storyReturnCase', 'c01'), false);
+    game.run('inImmersion.current=inImmersion.grid.entry;');
+    assert.equal(invoke(game, 'storyReturnCase', 'c01'), true);
+    assert.equal(game.run('S.player.credits'), 500);
+    game.run('inImmersion=null;');
+    assert.equal(invoke(game, 'storyResolveCase', 'c01'), true);
+    assert.equal(invoke(game, 'storyResolveCase', 'c01'), false);
+    assert.equal(game.run('S.player.credits'), 640);
   });
   check('clave por permiso, no nivel o espera', game => {
     activate(game);
@@ -183,7 +209,7 @@ async function run(options = {}) {
   });
   check('snapshot real conserva paquete y rechaza defensa o archivos fabricados', game => {
     activate(game); invoke(game, 'storyAcceptCase', 'c01');
-    game.run('startImmersion(1);var proof=inImmersion.grid.nodes[1],guard=inImmersion.grid.nodes[2];guard.type="ice";guard.tier=1;guard.done=true;proof.type="data";proof.data=0;proof.done=false;proof._done=false;proof.storyChapter="c01";proof.storyDefense=guard.id;inImmersion.current=proof.id;');
+    game.run('startImmersion(1);var proof=nodeById("1_1"),guard=nodeById("1_0");guard.done=true;inImmersion.current=proof.id;');
     assert.equal(game.run('storyCollectProof(proof)'), true);
     game.run('save();');
     const candidate = clone(game.run('load()'));
@@ -198,8 +224,8 @@ async function run(options = {}) {
       state => { state._inImmersion.narrativePayload.files.push('r_revocacion'); },
       state => { state._inImmersion.narrativePayload.reward = 99999; },
       state => { state._inImmersion.narrativePayload.chapter = 'c02'; },
-      state => { state._inImmersion.grid.nodes[1].storyDefense = 'missing'; },
-      state => { state._inImmersion.grid.nodes[2].done = false; }
+      state => { state._inImmersion.grid.nodes[2].storyDefense = 'missing'; },
+      state => { state._inImmersion.grid.nodes[1].done = false; }
     ];
     for (const mutate of mutations) {
       const broken = clone(candidate); mutate(broken);
@@ -209,6 +235,72 @@ async function run(options = {}) {
     assert.equal(invoke(game, 'storyReturnCase', 'c01'), true);
     game.run('inImmersion=null;');
     assert.equal(invoke(game, 'storyResolveCase', 'c01'), true);
+  });
+  check('acciones publicas aceptan sin lecturas y cierran la factura una vez', game => {
+    activate(game); game.run('ensureStateIntegrity();generateOffers();activateStorySession(false);showView("trabajos");');
+    const click = action => game.emitElement(game.sb.document.querySelector('[data-action="' + action + '"]'), 'click');
+    assert.equal(game.run('S.narrative.readFiles.length'), 0);
+    assert.equal(game.sb.document.querySelector('[data-action="acceptJob"]'), null);
+    click('acceptInvoice');
+    assert.equal(game.run('S.narrative.aliasAcquired'), true);
+    assert.match(game.sb.document.getElementById('panel-scroll').textContent, /No uses las credenciales de Tomás/);
+    click('closeStoryConversation');
+    click('dipGrid');
+    game.run('moveToNode("1_0");');
+    assert.equal(game.run('COM.stage'), 'encounter');
+    assert.match(game.sb.document.getElementById('combat').textContent, /acceso de huésped/);
+    game.run('cancelActiveCombat();onNodeDefeated({node:nodeById("1_0")});moveToNode("1_1");');
+    assert.equal(game.run('S.narrative.files.r_factura'), 'unknown');
+    assert.equal(game.run('inImmersion.data.length'), 0);
+    game.run('superficializar();');
+    assert.notEqual(game.run('inImmersion'), null);
+    game.run('moveToNode("1_0");moveToNode("0_0");superficializar();closeOverlay();');
+    assert.equal(game.run('S.narrative.chapters.c01'), 'returned');
+    assert.equal(game.run('S.player.credits'), 500);
+    click('deliverInvoice');
+    const closed = clone(game.run('S'));
+    assert.equal(closed.player.credits, 640);
+    assert.equal(closed.player.xp, 76);
+    assert.equal(closed.narrative.chapters.c02, 'offered');
+    assert.match(game.sb.document.getElementById('panel-scroll').textContent, /corte queda suspendido/);
+    assert.equal(game.run('S._storyAcquired.r_factura'), game.run('S.clock'));
+    assert.equal(game.run('validImportState(S)'), true);
+    for (const acquired of [{ missing: 12 }, { r_factura: -1 }, { r_factura: 1440 }, { r_factura: '12' }]) {
+      const broken = clone(game.run('S')); broken._storyAcquired = acquired;
+      assert.equal(game.run('validImportState(' + JSON.stringify(broken) + ')'), false);
+    }
+    click('closeStoryConversation');
+    game.run('ACTIONS.deliverInvoice();');
+    assert.equal(game.run('S.player.credits'), 640);
+    game.run('showView("contactos");');
+    assert.ok(game.sb.document.querySelector('[data-action="acceptJob"]'));
+    assert.equal(game.sb.document.querySelector('[data-action="acceptCase"]'), null);
+  });
+  check('retirada y reconexion de factura permiten reintentar sin premio', game => {
+    activate(game); invoke(game, 'storyAcceptCase', 'c01');
+    game.run('ensureStateIntegrity();activateStorySession(false);startImmersion(1);superficializar();closeOverlay();');
+    assert.equal(game.run('S.narrative.chapters.c01'), 'accepted');
+    assert.equal(game.run('S.player.stats.jobsFailed'), 0);
+    game.run('startImmersion(1);nodeById("1_0").done=true;inImmersion.current="1_1";storyCollectProof(nodeById("1_1"));S.player.cpu=0;flatline();');
+    assert.equal(game.run('S.narrative.files.r_factura'), 'unknown');
+    game.run('ACTIONS.reconnect();');
+    assert.equal(game.run('inImmersion'), null);
+    assert.equal(game.run('S.narrative.chapters.c01'), 'accepted');
+    assert.equal(game.run('S.player.credits'), 500);
+    game.run('startImmersion(1);');
+    assert.equal(game.run('nodeById("1_1").done'), false);
+  });
+  check('factura LEGENDARIO conserva profundidad, paquete y ausencia de azar', game => {
+    activate(game); invoke(game, 'storyAcceptCase', 'c01');
+    game.run('S.difficulty="legendario";ensureStateIntegrity();activateStorySession(false);startImmersion(1);');
+    assert.equal(game.run('inImmersion.depth'), 2);
+    assert.equal(game.run('nodeById("1_0").tier'), 2);
+    game.run('Math.random=function(){return 0;};tryGridEvent();');
+    assert.equal(game.run('tryScavenger()'), false);
+    assert.equal(game.run('combatActive'), false);
+    game.run('nodeById("1_0").done=true;inImmersion.current="1_1";inImmersion.maxDepthReached=2;storyCollectProof(nodeById("1_1"));save();');
+    assert.ok(game.run('load()'));
+    assert.equal(game.run('load()._inImmersion.narrativePayload.chapter'), 'c01');
   });
   console.log(`Narrativa: ${passes} correctas, ${fails} fallos`);
   return options.summary ? { passes, fails, total: passes + fails } : fails;

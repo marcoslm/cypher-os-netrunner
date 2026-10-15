@@ -567,6 +567,11 @@ function createSandbox(options = {}){
 /* internals expuestos al terminar la carga (inocuo: solo se inyecta en las pruebas).
    Con ámbito global compartido basta ejecutarlo al final: ve todos los globals. */
 const INJECT = `
+;window.__invoiceResolvedFixture=function(){
+  storyFinishPrologue();storyBeginRecovery();
+  S.narrative.chapters.c01="resolved";S.narrative.chapters.c02="offered";
+  S.narrative.aliasAcquired=true;S.narrative.awarded=["c01"];S.narrative.files.r_factura="readable";
+};
 ;window.__T={getS:function(){return S;},setS:function(v){S=v;},setInm:function(v){inImmersion=v;},
  INTEL:INTEL,GRID_EVENTS:GRID_EVENTS,TICKER_FRASES:TICKER_FRASES,CONTACT_DIALOGUES:CONTACT_DIALOGUES,
  WHY_JOBS:WHY_JOBS,CMD:CMD,ACTIONS:ACTIONS,RISK_TXT:RISK_TXT,PROYECTO_CORP:PROYECTO_CORP,

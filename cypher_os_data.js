@@ -64,7 +64,7 @@ var STORY_PROLOGUE = [
   ]}
 ];
 var STORY_CHAPTERS = [
-  {id:"c01", title:"LA FACTURA", depth:1, credits:140, xp:60, source:"Facturacion de La Bajante", files:["r_factura"]},
+  {id:"c01", title:"LA FACTURA", depth:1, credits:140, xp:60, source:"Servicio de facturación del edificio", files:["r_factura"]},
   {id:"c02", title:"EL ARCHIVO DE TOMAS", depth:2, credits:180, xp:80, source:"Respaldo de mantenimiento", files:["r_indice"]},
   {id:"c03", title:"LAS DOS VERSIONES", depth:2, credits:260, xp:120, source:"Servicio de cobertura", files:["r_caso"]},
   {id:"c04", title:"LOS ONCE SEGUNDOS", depth:3, credits:320, xp:150, source:"Controlador local de 2091", files:["r_parpadeo"]},
@@ -97,7 +97,19 @@ var STORY_DOCUMENTS = {
   l_revision:{date:"07-10-2093",source:"Nota local de T. Egea",text:
     "La habitación seis tiene el conector de alimentación flojo. Cambiar el soporte antes de la siguiente revisión.\n\nHe comprobado la factura del edificio. El pago del siete de octubre consta recibido. Guardé la copia por si Berto vuelve a tener problemas con las lecturas.\n\n— T. Egea. 07-10-2093.\n\nADJUNTO · LB-2093-10\nPago recibido: 07-10-2093 18:12.\nReferencia: Hostal La Bajante."},
   l_contacto:{date:"08-10-2093",source:"Correo enviado por Tomás · oficina de Inés Aro",text:
-    "Para: oficina de Inés Aro. Asunto: las versiones.\n\nInés: he encontrado otra diferencia. No te envío nombres por este canal. Cuando tengas un caso con las dos versiones, guarda también la hora de cada operación. Una copia sin fecha no nos servirá.\n\n— Tomás. 08-10-2093.\n\nARCHIVO DEL ANTERIOR USUARIO · copia enviada, sin ruta de respuesta.\nCanal público: oficina de reclamaciones de Inés Aro."}
+    "Para: oficina de Inés Aro. Asunto: las versiones.\n\nInés: he encontrado otra diferencia. No te envío nombres por este canal. Cuando tengas un caso con las dos versiones, guarda también la hora de cada operación. Una copia sin fecha no nos servirá.\n\n— Tomás. 08-10-2093.\n\nARCHIVO DEL ANTERIOR USUARIO · copia enviada, sin ruta de respuesta.\nCanal público: oficina de reclamaciones de Inés Aro."},
+  r_factura:{date:"14-10-2093",source:"Servicio de facturación · historial LB-2093-10",text:
+    "FACTURA LB-2093-10 · HISTORIAL DE OPERACIONES\n07-10-2093 18:12 · pago recibido; saldo pendiente 0\n14-10-2093 23:11 · orden de corte emitida por falta de pago\n14-10-2093 23:13 · revisión de estado: pago no reconocido\nREFERENCIA DE REVISIÓN: conciliación central"}
+};
+var STORY_DIALOGUES = {
+  m_berto_encargo:{speaker:"Berto Salas",channel:"COMUNICACIÓN LOCAL · Hostal La Bajante",text:
+    "Han ordenado cortar el suministro del edificio. Si lo cortan, no puedo mantener abiertas las habitaciones. No te pido que borres una deuda. Te pido que encuentres el pago que hice. Tomás lo comprobó hace una semana. Si consta, la oficina de reclamaciones puede parar el corte."},
+  m_celia_alias:{speaker:"VEYRA · Celia Ronda",channel:"CANAL NUEVO · Álex Riba",text:
+    "Corvo-7... Ese es el equipo, no tu nombre. ¿Álex? Berto me ha avisado. Voy a abrirte un canal a tu nombre. No uses las credenciales de Tomás. El edificio tiene acceso de consulta; lo que necesitas está detrás del archivo de facturación."},
+  m_berto_entrega:{speaker:"Berto Salas",channel:"COMUNICACIÓN LOCAL · factura LB-2093-10",text:
+    "Ese es mi pago. Si estaba recibido, no podían justificar el corte con una deuda. Mándalo a la oficina de Inés; yo confirmo que es nuestra factura."},
+  m_ines_corte:{speaker:"Inés Aro",channel:"OFICINA DE RECLAMACIONES · canal de Álex",text:
+    "La reclamación está admitida y el corte queda suspendido. La revisión llegó después de la orden. No sé todavía si fue un error o una alteración deliberada. Tomás me estaba enseñando a comparar esto. ¿Tienes su equipo?\n\nBerto me ha dicho que no volvió. Llevo días sin respuesta. Si encuentras algo que explique por qué no ha vuelto, avísame."}
 };
 var STORY_CONVERSATIONS = [
   {id:"m_berto_encargo", chapter:"c01", phase:"offered"},
@@ -811,7 +823,7 @@ var MUSIC_TRACKS = {
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],
-  ["FIRMWARE v1.0 alpha · BUILD 67", "dim"],
+  ["FIRMWARE v1.0 alpha · BUILD 68", "dim"],
   ["memoria ................. 64K OK", "ok"],
   ["bus neural .............. OK", "ok"],
   ["interfaz del deck ....... OK", "ok"],

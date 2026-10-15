@@ -196,7 +196,7 @@ function storyCollectProof(node){
   if(!S || S.player.cpu<=0 || !inImmersion || combatActive || !node || node.done || inImmersion.narrativePayload) return false;
   var chapter=storyItem(STORY_CHAPTERS,node.storyChapter);
   if(!chapter || !S.narrative || S.narrative.chapters[chapter.id]!=="accepted" ||
-      nodeById(node.id)!==node || inImmersion.current!==node.id || inImmersion.depth!==chapter.depth ||
+      nodeById(node.id)!==node || inImmersion.current!==node.id || inImmersion.depth<chapter.depth ||
       inImmersion.dataUsed>=ramCap() || !node.storyDefense) return false;
     var defense=nodeById(node.storyDefense);
     if(!defense || defense.id===node.id || defense.done!==true ||
@@ -260,6 +260,8 @@ function storyReturnCase(id){
   var item=storyItem(STORY_CHAPTERS,id), narrative=S.narrative;
   if(!item || narrative.chapters[id]!=="accepted" || inImmersion.narrativePayload.chapter!==id) return false;
   item.files.forEach(function(fileId){ narrative.files[fileId]="readable"; });
+  if(!S._storyAcquired) S._storyAcquired={};
+  item.files.forEach(function(fileId){ S._storyAcquired[fileId]=S.clock; });
   narrative.chapters[id]="returned";
   delete inImmersion.narrativePayload; inImmersion.dataUsed--;
   save();

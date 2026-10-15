@@ -13,7 +13,7 @@ async function run(options = {}) {
   async function check(label, fn) {
     const g=loadGame({ timers:'virtual', seed:2093, strictDOM:true, canvas:'stub' });
     try {
-      g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();S.snd=false;S.mus=false;S._tutorialDone=true;startImmersion(4);');
+      g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.snd=false;S.mus=false;S._tutorialDone=true;startImmersion(4);');
       await fn(g); passes++; console.log('  ✔ '+label);
     } catch(error) { fails++; console.log('  ✖ '+label+': '+error.stack); }
     finally { g.dispose(); }
@@ -246,7 +246,7 @@ async function run(options = {}) {
     assert.equal(g.run('inImmersion.visited.length'),1);
     assert.equal(g.run('inImmersion.visitsPartial'),false);
     assert.equal(g.run('inImmersion.exhaustedNotified'),false);
-    g.run('S=nuevoEstado();storyFinishPrologue();storyBeginRecovery();ensureStateIntegrity();'); assert.equal(g.run('S.intel.length'),0);
+    g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();'); assert.equal(g.run('S.intel.length'),0);
   });
   console.log(`Expedientes/HUD: ${passes} correctas · ${fails} fallos`);
   return options.summary ? {passes,fails,total:passes+fails} : fails;
