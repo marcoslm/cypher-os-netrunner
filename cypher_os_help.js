@@ -248,7 +248,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 /* ⑯ ATAJOS GLOBALES */
 '<div class="panel-h">⑯ ATAJOS GLOBALES</div><div class="box helpbox">'+
 '<div class="legend">'+
-'<div class="legend-row"><span class="lg-key">Ctrl+1..9</span><span class="lg-desc">cambiar a la vista correspondiente del sidebar</span></div>'+
+'<div class="legend-row"><span class="lg-key">Ctrl+1..9</span><span class="lg-desc">destinos fijos: 1 INICIO, 2 RED, 3 CONTACTOS, 4 MENSAJES, 5 TRABAJOS, 6 MERCADO NEGRO, 7 ESTADO, 8 INFORMES y 9 REGISTRO. No dependen de la posición en el menú.</span></div>'+
 '<div class="legend-row"><span class="lg-key">Ctrl+G</span><span class="lg-desc">dip al grid (si no hay inmersión activa)</span></div>'+
 '<div class="legend-row"><span class="lg-key">Ctrl+S</span><span class="lg-desc">guardar partida (funciona siempre; no abre el "guardar página" del navegador)</span></div>'+
 '<div class="legend-row"><span class="lg-key">Ctrl+K</span><span class="lg-desc">foco en el terminal de comandos</span></div>'+

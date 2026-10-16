@@ -5,6 +5,34 @@ const sidebar=page=>page.locator('#sidebar');
 const key='cypher_os_layout_v1';
 const preference=page=>page.locator('body').evaluate((element,storageKey)=>JSON.parse(localStorage.getItem(storageKey)),key);
 
+for(const viewport of [{width:320,height:600},{width:1280,height:900}]){
+  test(`lateral: orden por uso, Tab y atajos conservados a ${viewport.width}px`,async({page,game},testInfo)=>{
+    await page.setViewportSize(viewport);await game.setup({state:{offers:[]}});
+    const order=['inicio','red','trabajos','contactos','mensajes','archivos','informes','tienda','estado','logros','registro','ayuda'];
+    const navigation=page.locator('#sidebar .navbtn[data-view]');
+    expect(await navigation.evaluateAll(elements=>elements.map(element=>element.getAttribute('data-view')))).toEqual(order);
+    await navigation.first().focus();
+    for(const view of order){
+      await expect(page.locator(`#sidebar [data-view="${view}"]`)).toBeFocused();
+      await page.keyboard.press('Tab');
+    }
+    await expect(page.locator('#save-tools-toggle')).toBeFocused();
+    await page.locator('#sidebar [data-view="archivos"]').click();
+    await expect(page.locator('#panel-scroll h1')).toHaveText('ARCHIVOS');
+    await expect(page.locator('#sidebar [data-view="archivos"]')).toHaveClass(/active/);
+    const shortcuts=['inicio','red','contactos','mensajes','trabajos','tienda','estado','informes','registro'];
+    for(const [index,view] of shortcuts.entries()){
+      await page.keyboard.press(`Control+${index+1}`);
+      await expect(page.locator(`#sidebar [data-view="${view}"]`)).toHaveClass(/active/);
+    }
+    await page.locator('#sidebar [data-view="archivos"]').click();
+    await navigation.first().focus();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+    expect(await sidebar(page).evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:testInfo.outputPath(`sidebar-order-${viewport.width}.png`)});
+  });
+}
+
 test('lateral F05B: botón y teclado recuperan espacio sin cambiar canvas, red o progreso',async({page,game})=>{
   await page.setViewportSize({width:768,height:1024});
   await game.setup({immersion:makeImmersion(),state:{offers:[]}});
