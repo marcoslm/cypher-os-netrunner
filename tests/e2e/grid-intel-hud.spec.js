@@ -1,5 +1,5 @@
 'use strict';
-const { test, expect, makeImmersion, solveCodeCombat, downloadJSON } = require('./fixtures');
+const { test, expect, makeImmersion, solveCodeCombat, downloadJSON, openGridControls } = require('./fixtures');
 const nav = (page, view) => page.locator(`.navbtn[data-view="${view}"]`);
 function trackedImmersion() {
   const inm=makeImmersion();
@@ -12,6 +12,7 @@ function job(type, n, progress=0) {
   return {id:type,title:type,desc:type,type,n,contact:'doctorSudario',reward:100,xp:10,risk:'med',done:false,failed:false,prog:{[field]:progress}};
 }
 async function move(page, game, id) {
+  await openGridControls(page);
   const inm=(await game.snapshot()).immersion;
   const index=inm.grid.adj[inm.current].indexOf(id);
   expect(index).toBeGreaterThanOrEqual(0);
@@ -187,7 +188,7 @@ test('HUD: visitas, ICE, tres contratos y avisos persistentes de exploración y 
   await game.reload();
   expect((await game.snapshot()).immersion.visited).toEqual(after.immersion.visited);
   expect((await game.snapshot()).state.log.filter(e=>e.text.startsWith('GRID AGOTADO'))).toHaveLength(1);
-  await page.locator('[data-action="doSuperficie"]').click();
+  await openGridControls(page);await page.locator('[data-action="doSuperficie"]').click();
   await expect(page.locator('#overlay')).toContainText('Trabajos completados');
   expect((await game.snapshot()).state.jobs.every(j=>j.done&&!j.failed)).toBe(true);
 });
@@ -208,6 +209,7 @@ for(const viewport of [{width:768,height:1024},{width:1024,height:600}]) {
   test(`tablet ${viewport.width}x${viewport.height}: HUD plegable y memoria sin caja redundante`, async ({page,game}) => {
     await page.setViewportSize(viewport);
     await game.setup({immersion:trackedImmersion(),state:{offers:[],jobs:[job('recoleta',1),job('carrera',1),job('rompehielas',1)]}});
+    await openGridControls(page);
     await expect(page.locator('#grid-jobs')).toHaveAttribute('open','');
     await page.locator('#grid-jobs-summary').click();
     await expect(page.locator('#grid-jobs')).not.toHaveAttribute('open','');

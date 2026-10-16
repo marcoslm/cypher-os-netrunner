@@ -15,6 +15,18 @@ async function run(options={}) {
     finally {g.dispose();}
   }
   console.log('\nLATERAL · preferencia local, foco y reflow…');
+  await check('RED conserva el aviso de inmersion fuera del mapa y lo retira al superficializar',g=>{
+    const red=g.sb.document.querySelector('.navbtn[data-view="red"]');
+    assert.equal(red.classList.contains('has-immersion'),false);
+    g.run('startImmersion(4);showView("tienda");');
+    assert.equal(red.classList.contains('has-immersion'),true);
+    assert.equal(red.classList.contains('active'),false);
+    assert.equal(red.getAttribute('aria-label'),'RED · inmersión activa');
+    g.run('showView("red");');assert.equal(red.classList.contains('has-immersion'),true);
+    g.run('superficializar();updateTopbar();');
+    assert.equal(g.run('inImmersion'),null);assert.equal(red.classList.contains('has-immersion'),false);
+    assert.equal(red.getAttribute('aria-label'),'RED');
+  });
   await check('fábrica muestra lateral y botón con nombre/estado accesibles',g=>{
     assert.equal(g.run('_sidebarCollapsed'),false);
     const button=g.sb.document.getElementById('h-sidebar');assert.ok(button);

@@ -1,6 +1,6 @@
 'use strict';
 
-const { test, expect, downloadJSON } = require('./fixtures');
+const { test, expect, downloadJSON, openGridControls } = require('./fixtures');
 
 function ambushImmersion() {
   const nodes = [
@@ -88,6 +88,7 @@ test('rastreador: huir refresca el nodo y los vecinos del HUD antes de otra elec
   }
   await expect(page.locator('#combat')).toBeHidden();
   await page.clock.runFor(1000); // normal frames/clock must not leave a stale HUD
+  await openGridControls(page);
   const afterEscape = await game.snapshot();
   const header = await page.locator('#grid-current').innerText();
   const visible = await page.locator('#adjlist .adj-node').allTextContents();

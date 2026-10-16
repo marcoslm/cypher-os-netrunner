@@ -20,13 +20,22 @@ async function run(options={}) {
     finally {g.dispose();}
   }
   console.log('\nGRID / LAYOUT · área navegable, tamaño y limpieza…');
-  await check('canvas y tooltip comparten mapa; HUD y controles quedan fuera del área navegable',g=>{
+  await check('canvas y tooltip comparten mapa; HUD superpuesto cerrado de fabrica con foco y estado accesibles',g=>{
     g.run('startImmersion(4);');const d=g.sb.document;
     const canvas=d.getElementById('gridcanvas'),stage=d.getElementById('grid-stage'),hud=d.getElementById('grid-overlay');
     assert.ok(stage);assert.equal(canvas.parentNode.id,'grid-map');
     assert.equal(canvas.parentNode.parentNode,stage);
     assert.equal(d.getElementById('grid-tooltip').parentNode,canvas.parentNode);
-    assert.equal(hud.parentNode.id,'gridwrap');assert.ok(!stage.contains(hud));
+    assert.equal(hud.parentNode,stage);assert.ok(stage.contains(hud));
+    assert.equal(hud.hasAttribute('hidden'),true);
+    const toggle=d.getElementById('grid-controls-toggle'),before=clone(g.run('inImmersion'));
+    assert.equal(toggle.getAttribute('aria-expanded'),'false');
+    clickAction(g,'toggleGridControls');assert.equal(hud.hasAttribute('hidden'),false);
+    assert.equal(toggle.getAttribute('aria-expanded'),'true');
+    assert.equal(d.activeElement.getAttribute('data-action'),'doSuperficie');
+    g.emitElement(stage,'keydown',{key:'Escape'});
+    assert.equal(hud.hasAttribute('hidden'),true);assert.equal(d.activeElement,toggle);
+    assert.deepEqual(clone(g.run('inImmersion')),before);
     assert.ok(hud.querySelector('[data-action="doSuperficie"]'));
     const info=d.getElementById('grid-info'),actions=d.getElementById('grid-actions');
     assert.equal(info.parentNode,hud);assert.equal(actions.parentNode,hud);
@@ -87,25 +96,20 @@ async function run(options={}) {
     const smaller=g.run('gridToLogical(230,255)');
     assert.equal(smaller.x,480);assert.equal(smaller.y,495);
   });
-  await check('el presupuesto geométrico elige el mapa mayor, sin depender de trabajos ni detalles',g=>{
-    g.run('startImmersion(4);');const wrap=g.sb.document.getElementById('gridwrap');
-    for(const [w,h,font,side] of [[1400,600,16,true],[450,900,16,false],[560,220,24,true],[240,460,16,false]]) {
-      g.sb.__w=w;g.sb.__h=h;g.sb.__font=font;
-      const m=g.run('gridLayoutMetrics(window.__w,window.__h,window.__font,8,true,false)');
-      assert.equal(m.side,side);assert.ok((side?m.sideScale:m.bottomScale)>0);
-      wrap.clientWidth=w;wrap.clientHeight=h;wrap.style.fontSize=font+'px';g.run('layoutGrid();');
-      assert.equal(wrap.classList.contains('grid-side'),side);
-      const height=wrap.style.getPropertyValue('--grid-hud-height'),width=wrap.style.getPropertyValue('--grid-hud-width');
+  await check('el mapa usa todo el presupuesto 16:9, sin depender de controles, trabajos ni detalles',g=>{
+    g.run('startImmersion(4);');const stage=g.sb.document.getElementById('grid-stage'),canvas=g.sb.document.getElementById('gridcanvas');
+    for(const [width,height] of [[1400,600],[450,900],[560,220],[240,460]]) {
+      stage.clientWidth=width;stage.clientHeight=height;g.run('resizeGridCanvas();');
+      const canvasWidth=canvas.style.width,canvasHeight=canvas.style.height;
+      assert.equal(parseFloat(canvasWidth),Math.min(width,height*960/540));
       const before=clone(g.run('inImmersion'));
+      clickAction(g,'toggleGridControls');
       g.sb.document.getElementById('grid-jobs').setAttribute('open','');
       g.sb.document.getElementById('grid-exploration').setAttribute('open','');
-      g.run('updateGridHud();layoutGrid();');
-      assert.equal(wrap.style.getPropertyValue('--grid-hud-height'),height);assert.equal(wrap.style.getPropertyValue('--grid-hud-width'),width);
+      g.run('updateGridHud();resizeGridCanvas();');
+      assert.equal(canvas.style.height,canvasHeight);assert.equal(canvas.style.width,canvasWidth);
       assert.deepEqual(clone(g.run('inImmersion')),before);
     }
-    const idle=g.run('gridLayoutMetrics(1400,600,16,8,false,false)');assert.equal(idle.side,false);assert.equal(idle.hudHeight,56);
-    const near=g.run('gridLayoutMetrics(1000,500,16,8,true,true)');
-    if(near.side) assert.ok(near.sideScale>=near.bottomScale*.98);
   });
   await check('indicadores del deck usan umbrales reales, CPU relativa y RAM llena sin alarma de daño',g=>{
     const d=g.sb.document;

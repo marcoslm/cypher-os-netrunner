@@ -1,5 +1,5 @@
 'use strict';
-const { test, expect, makeImmersion, solveCodeCombat, downloadJSON } = require('./fixtures');
+const { test, expect, makeImmersion, solveCodeCombat, downloadJSON, openGridControls } = require('./fixtures');
 const nav = (page, view) => page.locator(`.navbtn[data-view="${view}"]`);
 function job(type,n) {
   const field=type==='recoleta'?'gathered':'iceT2';
@@ -94,6 +94,7 @@ test('exportar/reset/importar cuatro veces conserva datos, ICE vencido, subestac
   immersion.grid.adj['3_0'].push(alive.id); immersion.grid.adj[alive.id]=['3_0'];
   await game.setup({player:{sigilo:5,_gridEventCooldown:10000},state:{jobs:[job('recoleta',2),job('rompehielas',2)]},immersion});
   async function move(id,consumed=false) {
+    await openGridControls(page);
     const state=await game.snapshot();
     const index=state.immersion.grid.adj[state.immersion.current].indexOf(id);
     expect(index).toBeGreaterThanOrEqual(0);
@@ -156,13 +157,13 @@ test('economía F-05: la subestación suma ingresos históricos y desbloquea FOR
     n.type='substation';n.name='SUBESTACIÓN';n._used=false;
     renderGridHud();
   });
-  await page.locator('#adjlist .adj-node[data-idx="0"]').click();
+  await openGridControls(page);await page.locator('#adjlist .adj-node[data-idx="0"]').click();
   const after=await game.snapshot();
   // El histórico parte de 49998 y el saldo de 0: el ingreso nuevo debe coincidir en ambos.
   expect(after.state.player.stats.credits).toBeGreaterThanOrEqual(50013);
   expect(after.state.player.stats.credits-49998).toBe(after.state.player.credits);
   // Los logros económicos se celebran al volver a la calle, como el resto.
-  await page.locator('[data-action="doSuperficie"]').click();
+  await openGridControls(page);await page.locator('[data-action="doSuperficie"]').click();
   const surfaced=await game.snapshot();
   expect(surfaced.state.achievements).toContain('fortune50k');
   await game.reload();

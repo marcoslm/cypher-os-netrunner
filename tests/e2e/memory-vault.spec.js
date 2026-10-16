@@ -1,6 +1,6 @@
 'use strict';
 
-const { test, expect, makeImmersion, solveCodeCombat } = require('./fixtures');
+const { test, expect, makeImmersion, solveCodeCombat, openGridControls } = require('./fixtures');
 
 // These cases advance up to 75s of real game callbacks with rendering enabled.
 // A slower test machine must not confuse that workload with an action timeout.
@@ -139,7 +139,7 @@ async function reenterChallenge(page, game) {
     const before = await game.snapshot();
     const index = before.immersion.grid.adj[before.immersion.current].indexOf(target);
     expect(index).toBeGreaterThanOrEqual(0);
-    await page.locator(`#adjlist .adj-node[data-idx="${index}"]`).click();
+    await openGridControls(page);await page.locator(`#adjlist .adj-node[data-idx="${index}"]`).click();
     if (await page.locator('#combat-enter').isVisible()) await page.locator('#combat-enter').click();
     const battle = (await minigames(page)).combat;
     if (battle?.scavenger) {
@@ -256,7 +256,7 @@ test('vault: memorizar y ordenar recupera KURO; el contrato se paga una sola vez
   expect(targetNode(recovered.saved._inImmersion).done).toBe(true);
   expect(await minigames(page)).toMatchObject({ combatActive: false, combat: null, vault: null, timerHandle: false, cancelRegistered: false });
 
-  await action(page, 'doSuperficie').click();
+  await openGridControls(page);await action(page, 'doSuperficie').click();
   await expect(page.locator('#overlay')).toContainText('RESUMEN DE LA INMERSIÓN');
   await expect(page.locator('.resume-row').filter({ hasText: 'Trabajos completados' }).locator('.rv')).toHaveText('1');
   const paid = (await game.snapshot()).saved;
@@ -267,7 +267,7 @@ test('vault: memorizar y ordenar recupera KURO; el contrato se paga una sola vez
   await action(page, 'closeResume').click();
   await action(page, 'dipGrid').click();
   expect((await game.snapshot()).immersion.grid.nodes.filter(node => node.type === 'vault')).toEqual([]);
-  await action(page, 'doSuperficie').click();
+  await openGridControls(page);await action(page, 'doSuperficie').click();
   await expect(page.locator('.resume-row').filter({ hasText: 'Trabajos completados' }).locator('.rv')).toHaveText('0');
   await action(page, 'closeResume').click();
   await page.keyboard.press('Control+s');

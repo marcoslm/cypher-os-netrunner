@@ -1,5 +1,5 @@
 'use strict';
-const {test,expect,makeImmersion,downloadJSON,solveCodeCombat}=require('./fixtures');
+const {test,expect,makeImmersion,downloadJSON,solveCodeCombat,openGridControls}=require('./fixtures');
 const nav=(page,view)=>page.locator(`.navbtn[data-view="${view}"]`);
 function offer(project='KURO',id='vault-kuro',contact='doctorSudario') {
   const corp=project==='MIRAJE'?'CAUCE':'MALLA';
@@ -12,7 +12,7 @@ function job(project='KURO',id='vault-kuro',extra={}) {
 async function moveToVault(page,game) {
   const before=await game.snapshot(), index=before.immersion.grid.adj[before.immersion.current].indexOf('2_0');
   expect(index).toBeGreaterThanOrEqual(0);
-  await page.locator(`#adjlist .adj-node[data-idx="${index}"]`).click();
+  await openGridControls(page);await page.locator(`#adjlist .adj-node[data-idx="${index}"]`).click();
   if ((await game.snapshot()).combat?.mode==='rastreo') {
     // Un rastreador aleatorio puede preceder al puzzle. Resolver sus fases reales.
     await solveCodeCombat(page);
@@ -58,7 +58,7 @@ test('vault F02: resolver elimina ofertas inmediatamente, importar conserva cobr
   expect(restored.state.jobs[0]).toMatchObject({done:false,prog:{vaulted:true}});
   expect(restored.state.player).toEqual(recovered.state.player);
   expect(restored.state.offers.some(o=>o.project==='KURO')).toBe(false);
-  await page.locator('[data-action="doSuperficie"]').click();
+  await openGridControls(page);await page.locator('[data-action="doSuperficie"]').click();
   await page.locator('[data-action="closeResume"]').click();
   expect((await game.snapshot()).state.player.credits).toBe(600);
   expect((await game.snapshot()).state.player.stats.jobsCompleted).toBe(1);
@@ -137,7 +137,7 @@ test('vault F02: recuperación legítima sin snapshot conserva el cobro al sigui
   const generated=await game.snapshot();
   expect(generated.state.jobs[0]).toMatchObject({done:false,prog:{vaulted:true}});
   expect(generated.immersion.grid.nodes.some(n=>n.type==='vault')).toBe(false);
-  await page.locator('[data-action="doSuperficie"]').click(); await page.locator('[data-action="closeResume"]').click();
+  await openGridControls(page);await page.locator('[data-action="doSuperficie"]').click(); await page.locator('[data-action="closeResume"]').click();
   const paid=await game.snapshot();
   expect(paid.state.player.credits).toBe(600); expect(paid.state.player.stats.jobsCompleted).toBe(1);
   expect(paid.state.jobs[0]).toMatchObject({done:true,failed:false});

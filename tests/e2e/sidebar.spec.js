@@ -1,11 +1,28 @@
 'use strict';
-const {test,expect,makeImmersion}=require('./fixtures');
+const {test,expect,makeImmersion,openGridControls}=require('./fixtures');
 const button=page=>page.locator('#h-sidebar');
 const sidebar=page=>page.locator('#sidebar');
 const key='cypher_os_layout_v1';
 const preference=page=>page.locator('body').evaluate((element,storageKey)=>JSON.parse(localStorage.getItem(storageKey)),key);
 
 for(const viewport of [{width:320,height:600},{width:1280,height:900}]){
+  test(`lateral: inmersion activa visible desde otra seccion a ${viewport.width}px`,async({page,game},testInfo)=>{
+    await page.setViewportSize(viewport);await game.setup({immersion:makeImmersion(),state:{offers:[]}});
+    const red=page.locator('#sidebar [data-view="red"]');
+    await expect(red).toHaveClass(/has-immersion/);
+    await page.locator('#sidebar [data-view="tienda"]').click();
+    await expect(red).not.toHaveClass(/\bactive\b/);
+    await expect(red).toHaveAccessibleName('RED · inmersión activa');
+    await expect(red.locator('.immersion-mark')).toBeVisible();
+    expect(await red.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:testInfo.outputPath(`inmersion-lateral-${viewport.width}.png`)});
+    await game.reload();await expect(red).toHaveClass(/has-immersion/);
+    await red.click();await openGridControls(page);
+    await page.locator('[data-action="doSuperficie"]').click();
+    await expect(red).not.toHaveClass(/has-immersion/);await expect(red).toHaveAccessibleName('RED');
+    await expect(red.locator('.immersion-mark')).toBeHidden();
+    expect((await game.snapshot()).immersion).toBeNull();
+  });
   test(`lateral: orden por uso, Tab y atajos conservados a ${viewport.width}px`,async({page,game},testInfo)=>{
     await page.setViewportSize(viewport);await game.setup({state:{offers:[]}});
     const order=['inicio','red','trabajos','contactos','mensajes','archivos','informes','tienda','estado','logros','registro','ayuda'];

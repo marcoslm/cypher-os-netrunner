@@ -371,4 +371,10 @@ async function downloadJSON(download) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
-module.exports = { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat, solveRoutePhase, scannerState, solveScanner, downloadJSON };
+async function openGridControls(page) {
+  const toggle = page.locator('#grid-controls-toggle');
+  if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+  await expect(page.locator('#grid-overlay')).toBeVisible();
+}
+
+module.exports = { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat, solveRoutePhase, scannerState, solveScanner, downloadJSON, openGridControls };

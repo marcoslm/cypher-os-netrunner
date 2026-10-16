@@ -1,11 +1,12 @@
 'use strict';
 
-const { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat, solveScanner, downloadJSON } = require('./fixtures');
+const { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat, solveScanner, downloadJSON, openGridControls } = require('./fixtures');
 
 const nav = (page, view) => page.locator(`.navbtn[data-view="${view}"]`);
 const action = (page, name) => page.locator(`[data-action="${name}"]`);
 const clone = value => JSON.parse(JSON.stringify(value));
 async function invoiceMove(page, id) {
+  await openGridControls(page);
   const index = await page.evaluate(id => currentNeighbors().findIndex(node => node.id === id), id);
   expect(index).toBeGreaterThanOrEqual(0);
   await page.locator('#adjlist .adj-node').nth(index).click();
@@ -110,11 +111,11 @@ test('F3: factura completa, paquete persistente y verificacion unica sin lectura
   await page.keyboard.press('Control+s');
   await game.reload();
   expect((await game.snapshot()).immersion).toEqual(transit.immersion);
-  await action(page, 'doSuperficie').click();
+  await openGridControls(page);await action(page, 'doSuperficie').click();
   expect((await game.snapshot()).immersion).not.toBeNull();
   await invoiceMove(page, '1_0');
   await invoiceMove(page, '0_0');
-  await action(page, 'doSuperficie').click();
+  await openGridControls(page);await action(page, 'doSuperficie').click();
   await action(page, 'closeResume').click();
   expect((await game.snapshot()).state.narrative.chapters.c01).toBe('returned');
   expect((await game.snapshot()).state.player.credits).toBe(500);
@@ -146,7 +147,7 @@ test('F3: factura completa, paquete persistente y verificacion unica sin lectura
 test('F3: retirada y muerte no pierden el encargo ni fabrican la prueba', async ({ page, game }) => {
   await game.boot(); await nav(page, 'trabajos').click();
   await action(page, 'acceptInvoice').click(); await action(page, 'closeStoryConversation').click(); await action(page, 'dipGrid').click();
-  await action(page, 'doSuperficie').click(); await action(page, 'closeResume').click();
+  await openGridControls(page);await action(page, 'doSuperficie').click(); await action(page, 'closeResume').click();
   expect((await game.snapshot()).state.narrative.chapters.c01).toBe('accepted');
   await nav(page, 'trabajos').click(); await action(page, 'dipGrid').click();
   await invoiceMove(page, '1_0');
@@ -181,7 +182,7 @@ for (const width of [320, 768]) {
     await page.screenshot({ path: testInfo.outputPath(`invoice-defense-${width}.png`) });
     await page.locator('#combat-enter').click(); await solveCodeCombat(page);
     await invoiceMove(page, '1_1'); await invoiceMove(page, '1_0'); await invoiceMove(page, '0_0');
-    await action(page, 'doSuperficie').click(); await action(page, 'closeResume').click();
+    await openGridControls(page);await action(page, 'doSuperficie').click(); await action(page, 'closeResume').click();
     await action(page, 'deliverInvoice').click();
     await fits(); await page.screenshot({ path: testInfo.outputPath(`invoice-delivery-${width}.png`) });
     await action(page, 'closeStoryConversation').click();
@@ -232,7 +233,7 @@ for (const width of [320, 1280]) {
       await game.reload();
       expect((await game.snapshot()).immersion).toEqual(transit.immersion);
       await storyRoute(page,transit.immersion.grid.entry);
-      await action(page,'doSuperficie').click(); await action(page,'closeResume').click();
+      await openGridControls(page);await action(page,'doSuperficie').click(); await action(page,'closeResume').click();
       const returned = await game.snapshot();
       expect(returned.state.narrative.chapters[id]).toBe('returned');
       await scoped('deliverStoryCase',id).click();
@@ -325,7 +326,7 @@ for (const width of [320,1280]) {
       await game.importFile(jsonFile((await game.snapshot()).saved)); await game.reload();
       expect((await game.snapshot()).immersion).toEqual(transit.immersion);
       await storyRoute(page,transit.immersion.grid.entry);
-      await action(page,'doSuperficie').click(); await action(page,'closeResume').click();
+      await openGridControls(page);await action(page,'doSuperficie').click(); await action(page,'closeResume').click();
       const returned=await game.snapshot();
       expect(returned.state.narrative.chapters[id]).toBe('returned');
       for(const file of files) expect(returned.state.narrative.files[file]).toBe('readable');
@@ -405,7 +406,7 @@ for(const width of [320,1280]){
       await storyRoute(page,proof.id);await page.keyboard.press('Control+s');
       const transit=await game.snapshot();await game.importFile(jsonFile(transit.saved));await game.reload();
       expect((await game.snapshot()).immersion).toEqual(transit.immersion);
-      await storyRoute(page,transit.immersion.grid.entry);await action(page,'doSuperficie').click();await action(page,'closeResume').click();
+      await storyRoute(page,transit.immersion.grid.entry);await openGridControls(page);await action(page,'doSuperficie').click();await action(page,'closeResume').click();
       const returned=await game.snapshot();expect(returned.state.history.finalDone).toBe(false);
       await scoped('deliverStoryCase',id).click();
       expect((await game.snapshot()).state.player.credits).toBe(returned.state.player.credits+(id==='c07'?750:5000));
@@ -449,7 +450,7 @@ test('F6: campana completa desde nueva partida sin contratos ni compras obligato
     try{await action(page,'dipGrid').click();}finally{await page.evaluate(()=>{Math.random=window.__storyRng;delete window.__storyRng;});}
     const entered=await game.snapshot(),proof=entered.immersion.grid.nodes.find(node=>node.storyChapter===id);
     await storyRoute(page,proof.storyDefense);await storyRoute(page,proof.id);await storyRoute(page,entered.immersion.grid.entry);
-    await action(page,'doSuperficie').click();await action(page,'closeResume').click();
+    await openGridControls(page);await action(page,'doSuperficie').click();await action(page,'closeResume').click();
     if(id==='c06'){await action(page,'confirmStoryCustody').click();await action(page,'closeStoryConversation').click();}
     if(id==='c01')await action(page,'deliverInvoice').click();else await scoped('deliverStoryCase',id).click();
     if(id!=='c08')await action(page,'closeStoryConversation').click();
@@ -548,14 +549,74 @@ for(const width of [320,768,1280]){
     await expect(page.locator('.panel-back [data-action="closeArchive"]')).toHaveText('VOLVER A MENSAJES');
     await action(page,'closeArchive').click();await expect(nav(page,'mensajes')).toHaveClass(/active/);
     await expect(page.locator('[data-action="openArchive"][data-id="l_contacto"]')).toBeFocused();
-    await nav(page,'red').click();await expect(page.locator('#panel-scroll h1')).toHaveText('RED');
-    await expect(page.locator('.panel-actions [data-action="dipGrid"]')).toBeVisible();
+    await nav(page,'red').click();await expect(page.locator('#panel-scroll h1')).toHaveCount(0);
+    await expect(page.locator('#grid-connect [data-action="dipGrid"]')).toBeVisible();
     await expect(page.locator('#grid-overlay')).toHaveCount(0);await expect(page.locator('#gridcanvas')).toBeVisible();
     await fits();await page.screenshot({path:testInfo.outputPath(`red-${width}.png`)});
     for(const view of ['tienda','estado','informes','registro','logros','ayuda']){await nav(page,view).click();await fits();}
     await nav(page,'registro').click();await page.locator('[data-action="logFilter"][data-cat="lore"]').click();
     await expect(page.locator('[data-action="logFilter"][data-cat="lore"]')).toBeFocused();
     await expect(page.locator('[data-action="logFilter"][aria-pressed="true"]')).toHaveCount(1);
+  });
+}
+
+for(const density of [1,1.25,2]){
+  test.describe(`contorno de pestanas a DPR ${density}`,()=>{
+    test.use({deviceScaleFactor:density});
+    test('diagonal continua y foco sobre el mismo poligono',async({page,game},testInfo)=>{
+      await page.emulateMedia({reducedMotion:'reduce'});await game.setup();
+      await page.locator('#h-controls').click();
+      for(const preference of ['crt','glow','animations']){
+        const toggle=page.locator(`#controls-overlay [data-pref="${preference}"]`);
+        if(await toggle.getAttribute('aria-pressed')==='true')await toggle.click();
+      }
+      await page.locator('#controls-overlay .control-close').click();
+      for(const view of ['trabajos','contactos','mensajes','archivos']){
+        await nav(page,view).click();await page.mouse.move(0,0);
+        const tab=page.locator('.archive-tabs [aria-pressed="true"]');
+        const contour=await tab.evaluate(element=>{
+          const css=getComputedStyle(element,'::after');
+          return {clip:css.clipPath,transform:css.transform,border:getComputedStyle(element).borderTopColor};
+        });
+        expect(contour.clip).toContain('evenodd');expect(contour.transform).toBe('none');
+        expect(contour.border).toBe('rgba(0, 0, 0, 0)');
+        const screenshot=await tab.screenshot();
+        const pixels=await page.evaluate(async encoded=>{
+          const image=new Image();image.src='data:image/png;base64,'+encoded;await image.decode();
+          const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
+          const context=canvas.getContext('2d');context.drawImage(image,0,0);
+          const {data}=context.getImageData(0,0,image.width,image.height),scale=devicePixelRatio;
+          const isEdge=(column,row)=>{
+            if(column<0||row<0||column>=image.width||row>=image.height)return false;
+            const offset=(row*image.width+column)*4;
+            return data[offset+1]>100&&data[offset+2]>140&&data[offset+2]>data[offset]*1.6;
+          };
+          const connected=new Set(),pending=[];
+          for(let column=image.width-Math.round(18*scale);column<image.width-Math.round(12*scale);column++){
+            for(let row=0;row<Math.ceil(2*scale);row++)if(isEdge(column,row))pending.push([column,row]);
+          }
+          while(pending.length){
+            const [column,row]=pending.pop(),key=row*image.width+column;
+            if(connected.has(key)||!isEdge(column,row))continue;
+            connected.add(key);
+            for(let horizontal=-1;horizontal<=1;horizontal++)for(let vertical=-1;vertical<=1;vertical++){
+              const nextColumn=column+horizontal,nextRow=row+vertical;
+              if(nextColumn>=image.width-20*scale&&nextColumn<image.width&&nextRow>=0&&nextRow<20*scale)pending.push([nextColumn,nextRow]);
+            }
+          }
+          let reachesRight=false;
+          for(let column=image.width-Math.ceil(2*scale);column<image.width;column++){
+            for(let row=Math.ceil(12*scale);row<Math.ceil(18*scale);row++)if(connected.has(row*image.width+column))reachesRight=true;
+          }
+          return {connectedPixels:connected.size,reachesRight};
+        },screenshot.toString('base64'));
+        expect(pixels.connectedPixels).toBeGreaterThan(10*density);expect(pixels.reachesRight).toBe(true);
+        await testInfo.attach(`${view}-contorno`,{body:screenshot,contentType:'image/png'});
+        await tab.focus();await page.keyboard.press('Tab');await page.keyboard.press('Shift+Tab');
+        await expect(tab).toBeFocused();
+        expect(await tab.evaluate(element=>getComputedStyle(element).getPropertyValue('--tab-stroke').trim())).toBe('2px');
+      }
+    });
   });
 }
 
@@ -818,7 +879,7 @@ test('árbol: Tab y Enter desbloquean, guardan y Escape cierra sin focus() artif
 test('inmersión: recoger con input, GUARDAR/exportar, recargar y vender datos una vez', async ({ page, game }) => {
   // A real saved cooldown suppresses unrelated grid events; no random function is replaced.
   await game.setup({ player: { _gridEventCooldown: 3 }, immersion: makeImmersion() });
-  await page.locator('#adjlist .adj-node[data-idx="0"]').click();
+  await openGridControls(page);await page.locator('#adjlist .adj-node[data-idx="0"]').click();
   // A legitimate random ambush remains possible: resolve it through actual code input.
   if ((await game.snapshot()).combatActive) await solveCodeCombat(page);
   await expect(page.locator('#h-ram')).toHaveText('1/6');
@@ -840,7 +901,7 @@ test('inmersión: recoger con input, GUARDAR/exportar, recargar y vender datos u
   await expect(page.locator('#gridcanvas')).toBeVisible();
   await expect(page.locator('#h-ram')).toHaveText('1/6');
   expect((await game.snapshot()).immersion).toEqual(exported._inImmersion);
-  await action(page, 'doSuperficie').click();
+  await openGridControls(page);await action(page, 'doSuperficie').click();
   await expect(page.locator('#overlay')).toContainText('RESUMEN DE LA INMERSIÓN');
   await expect(page.locator('.resume-row').filter({ hasText: 'Datos recogidos' }).locator('.rv')).toHaveText('1');
   await expect(page.locator('.resume-row').filter({ hasText: 'Créditos ganados' }).locator('.rv')).toHaveText('₡77');
@@ -911,7 +972,7 @@ test('vault: solo se acepta en la calle, uno activo y un objetivo en el siguient
   await expect(kuro.locator('[data-action="acceptJob"]')).toHaveCount(0);
   expect((await game.snapshot()).state.jobs).toEqual([]);
   await nav(page, 'red').click();
-  await action(page, 'doSuperficie').click();
+  await openGridControls(page);await action(page, 'doSuperficie').click();
   await action(page, 'closeResume').click();
   await nav(page, 'contactos').click();
   await page.locator('[data-action="acceptJob"][data-id="vault-kuro"]').click();
@@ -938,7 +999,7 @@ test('Núcleo: c08 conecta desde la calle y conserva un único jefe tras recarga
   expect((await game.snapshot()).saved.nextDepth).toBeNull();
   expect((await game.snapshot()).immersion.grid).toEqual(oldGrid.grid);
   await nav(page, 'red').click();
-  await action(page, 'doSuperficie').click();
+  await openGridControls(page);await action(page, 'doSuperficie').click();
   await action(page, 'closeResume').click();
   await expect(action(page, 'acceptNucleo')).toBeVisible();
   await action(page, 'acceptNucleo').click();

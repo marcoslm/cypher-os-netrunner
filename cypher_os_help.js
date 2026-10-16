@@ -43,11 +43,11 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 /* ② CAPAS */
 '<div class="panel-h">② EL GRID · LAS CAPAS</div><div class="box helpbox">'+
 '<p class="help-p">Al entrar, ves una grilla con <b>capas</b> (columnas verticales). La <b>capa 0</b> es tu <b>puerto de entrada</b> (a la izquierda, ⌂). Cada capa más a la derecha es <b>más profunda</b>: más peligrosa, pero con más datos y los trabajos más difíciles.</p>'+
-'<div class="helprow">'+
-'<div class="helprow-item"><span class="sym cyan">CAPA 0</span><span class="muted">tu entrada · puerto de calle</span></div>'+
-'<div class="helprow-item"><span class="sym cyan">CAPAS 1-2</span><span class="muted">ICE débil (T1) · datos · primeros daemons</span></div>'+
-'<div class="helprow-item"><span class="sym ambar">CAPAS 3-4</span><span class="muted">ICE fuerte (T2/T3) · daemon T3 · VAULT</span></div>'+
-'<div class="helprow-item"><span class="sym magenta">CAPA 5</span><span class="muted">solo la misión final · allí vive EL NÚCLEO</span></div>'+
+'<div class="helprow help-layers">'+
+'<div class="helprow-item"><span class="help-layer cyan">CAPA 0</span><span class="muted">tu entrada · puerto de calle</span></div>'+
+'<div class="helprow-item"><span class="help-layer cyan">CAPAS 1-2</span><span class="muted">ICE débil (T1) · datos · primeros daemons</span></div>'+
+'<div class="helprow-item"><span class="help-layer ambar">CAPAS 3-4</span><span class="muted">ICE fuerte (T2/T3) · daemon T3 · VAULT</span></div>'+
+'<div class="helprow-item"><span class="help-layer magenta">CAPA 5</span><span class="muted">solo la misión final · allí vive EL NÚCLEO</span></div>'+
 '</div>'+
 '<p class="help-p">Moverse a nodos profundos genera <b>calor</b>. Cuanto más profundo bajes, mejor recompensa… pero más riesgo. Usa las <b>subestaciones</b> (⌁) para bajar calor y obtener algo de crédito.</p>'+
 '</div>'+
@@ -74,7 +74,8 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 /* ④ MOVERSE */
 '<div class="panel-h">④ MOVERSE POR EL GRID</div><div class="box helpbox">'+
 '<p class="help-p">Solo puedes moverte a nodos <b>conectados</b> a tu posición actual. <b>Clic</b> en el nodo al que quieres ir. También puedes pulsar las <b>teclas 1-9</b> (según el orden en que aparecen en el HUD).</p>'+
-'<p class="help-p">El HUD está separado del mapa: no tapa los nodos y se coloca abajo o al lado para dejar más espacio al Grid. CPU, calor y RAM están en la barra superior. EXPLORACIÓN y TRABAJOS empiezan desplegados; pliégalos o despliégalos como prefieras: el deck recuerda cada sección en este dispositivo, también al recargar. Sus detalles se desplazan sin encoger el mapa. Nodo actual, vecinos, SUPERFICIE y AYUDA permanecen accesibles. Girar la pantalla o redimensionar ajusta el canvas sin cambiar tu red ni el progreso.</p>'+
+'<p class="help-p">RED dedica toda su área al mapa. Antes de conectar, DIP AL GRID aparece sobre el canvas. Durante la inmersión, el botón de menú del mapa abre los controles superpuestos: SUPERFICIE, AYUDA, nodo actual, vecinos, EXPLORACIÓN y TRABAJOS. Pulsa de nuevo el botón o Escape desde el panel para cerrarlo y despejar los nodos; abrirlo no encoge el mapa ni pausa la partida. CPU, calor y RAM siguen en la barra superior. EXPLORACIÓN y TRABAJOS empiezan desplegados y recuerdan su elección en este dispositivo; el panel completo empieza cerrado al entrar en RED. Girar la pantalla o redimensionar no cambia tu red ni el progreso.</p>'+
+'<p class="help-p">Si visitas otra sección durante una inmersión, RED conserva una marca cyan en el lateral: INMERSIÓN en escritorio y un punto en el menú compacto. La marca desaparece al salir de la red; no es la selección de la sección actual.</p>'+
 '<p class="help-p">El HUD cuenta ICE (incluidos rastreadores), daemons y nodos <b>visitados en esta inmersión</b>. Revelar un mapa no cuenta como visitarlo. <b>GRID EXPLORADO</b> significa que has visitado todos los nodos; <b>GRID AGOTADO</b>, que tampoco quedan objetivos fijos por resolver. La RAM llena y los vaults bloqueados siguen siendo pendientes. Los eventos y rastreadores no desaparecen: superficializa cuando te convenga. Los guardados antiguos indican <b>parcial</b> si falta historial.</p>'+
 '<div class="helprow">'+
 '<div class="helprow-item"><span class="kbd">Clic en nodo</span><span class="muted">moverse a un nodo vecino conectado</span></div>'+

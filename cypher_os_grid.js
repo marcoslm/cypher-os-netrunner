@@ -972,31 +972,6 @@ function stopGridRender(){
   particles=[]; particleGrid=[];
   gridFx=[]; _fxLast=0; gridHoverNode=null;
 }
-/* Presupuesto independiente del contenido: compara el tamaño 16:9 real.
-   Una pequeña histéresis evita cambiar de orientación por redondeos de píxel. */
-function gridLayoutMetrics(width,height,font,gap,immersed,wasSide){
-  var hudHeight=Math.min(font*(immersed?10.5:3.5),height*.75);
-  /* El lateral solo se ensancha con el margen que sobra al mapa limitado por alto. */
-  var hudWidth=Math.min(font*19,Math.max(font*11,width-height*960/540-gap));
-  var bottomScale=Math.max(0,Math.min(width/960,(height-hudHeight-gap)/540));
-  var sideScale=Math.max(0,Math.min((width-hudWidth-gap)/960,height/540));
-  var sideAllowed=immersed && width-hudWidth-gap>=font*6 && height>=font*8.5;
-  var side=sideAllowed && (wasSide?sideScale>=bottomScale*.98:sideScale>bottomScale*1.02);
-  return {side:!!side,hudHeight:hudHeight,hudWidth:hudWidth,bottomScale:bottomScale,sideScale:sideScale};
-}
-function layoutGrid(){
-  var wrap=document.getElementById("gridwrap"); if(!wrap) return;
-  var width=wrap.clientWidth,height=wrap.clientHeight;
-  if(width<1 || height<1) return;
-  var styles=window.getComputedStyle(wrap);
-  var font=parseFloat(styles.fontSize)||16, gap=parseFloat(styles.rowGap)||8;
-  var metrics=gridLayoutMetrics(width,height,font,gap,!!inImmersion,wrap.classList.contains("grid-side"));
-  var cssHeight=metrics.hudHeight+"px",cssWidth=metrics.hudWidth+"px";
-  if(wrap.style.getPropertyValue("--grid-hud-height")!==cssHeight) wrap.style.setProperty("--grid-hud-height",cssHeight);
-  if(wrap.style.getPropertyValue("--grid-hud-width")!==cssWidth) wrap.style.setProperty("--grid-hud-width",cssWidth);
-  wrap.classList.toggle("grid-side",metrics.side);
-  wrap.classList.toggle("grid-tight",height<font*12);
-}
 function watchGridLayout(){
   if(_gridLayoutObserver){ _gridLayoutObserver.disconnect(); _gridLayoutObserver=null; }
   var stage=document.getElementById("grid-stage");
@@ -1013,7 +988,6 @@ function watchGridLayout(){
 }
 function resizeGridCanvas(){
   if(!canvas || currentView!=="red") return;
-  layoutGrid();
   var stage=document.getElementById("grid-stage"); if(!stage) return;
   /* Mantener el bitmap lógico: un refresco del HUD no debe borrarlo. */
   var bitmapChanged=canvas.width!==960 || canvas.height!==540;
@@ -1036,14 +1010,6 @@ function drawGridIdle(){
   x.strokeStyle="rgba(31,92,70,0.4)"; x.lineWidth=1;
   for(var i=0;i<9;i++){ var px=80+i*((960-160)/8); x.beginPath(); x.moveTo(px,50); x.lineTo(px,490); x.stroke(); }
   for(var j=0;j<6;j++){ var py=70+j*((540-120)/5); x.beginPath(); x.moveTo(80,py); x.lineTo(880,py); x.stroke(); }
-  x.textAlign="center";
-  x.fillStyle="rgba(77,216,255,0.9)"; x.font="bold 32px monospace";
-  x.fillText("◈ SIN SEÑAL", 480, 250);
-  x.fillStyle="rgba(210,235,255,0.8)"; x.font="17px monospace";
-  x.fillText("dip al grid para sumergirte en la red", 480, 292);
-  x.fillStyle="rgba(255,196,77,0.85)"; x.font="15px monospace";
-  x.fillText("· pulsa ◈ DIP AL GRID para conectar ·", 480, 326);
-  x.textAlign="start";
 }
 
 function loopGrid(){
@@ -1366,25 +1332,23 @@ function renderGridHud(){
     : '<button class="btn cyan" data-action="dipGrid">◈ DIP AL GRID</button>';
   /* Conservar cualquier toggle pendiente antes de sustituir el DOM del HUD. */
   captureGridHudPrefs();
-  /* El HUD ocupa su propio espacio. Mapa y tooltip comparten origen,
-     incluso cuando el canvas queda centrado en una zona más grande. */
   adm.innerHTML =
-    (immersed?'':'<h1 class="title">RED</h1><div class="sub">Enlace remoto · desconectado</div><div class="panel-actions">'+btn+'</div>')+
     '<div id="gridwrap"'+(immersed?'':' class="grid-idle"')+'>'+
       '<div id="grid-stage"><div id="grid-map">'+
         '<canvas id="gridcanvas"></canvas>'+
+        (immersed?'':'<div id="grid-connect">'+btn+'</div>')+
         '<div id="grid-tooltip" class="hidden"></div>'+
-      '</div></div>'+
-      (immersed?'<div id="grid-overlay" class="grid-immersed">'+
-        (immersed ? '<div id="grid-context"><div id="gridhud"></div><span id="grid-completion"></span><div id="grid-current"></div></div>'+
+      '</div>'+
+      (immersed?'<button class="btn" id="grid-controls-toggle" data-action="toggleGridControls" aria-label="Mostrar controles del Grid" title="Mostrar controles del Grid" aria-expanded="false" aria-controls="grid-overlay">☰</button><div id="grid-overlay" class="grid-immersed" role="region" aria-label="Controles del Grid" hidden>'+
+        '<div id="grid-context"><div id="gridhud"></div><span id="grid-completion"></span><div id="grid-current"></div></div>'+
           '<div id="grid-navigation"><div id="adjlist" role="group" aria-label="Nodos vecinos"></div></div>'+
           '<div id="grid-info"><details id="grid-exploration"'+(_gridHudPrefs.explorationOpen?' open':'')+'>'+
             '<summary title="Movimientos, enemigos, visitas y objetivos pendientes"><span class="grid-summary-label">EXPLORACIÓN</span></summary><div id="grid-location"></div><div id="grid-stats"></div><div id="grid-status" role="status"></div>'+
           '</details><details id="grid-jobs"'+(_gridHudPrefs.jobsOpen?' open':'')+'>'+
             '<summary id="grid-jobs-summary"><span class="grid-summary-label">TRABAJOS</span> <b id="grid-job-ready">0</b></summary><div id="grid-job-items"></div>'+
-          '</details></div>' : '')+
+          '</details></div>'+
         '<div id="grid-actions">'+btn+'</div>'+
-      '</div>':'')+
+      '</div>':'')+'</div>'+
     '</div>';
   // Re-adquirir referencia del canvas tras reconstruir el DOM.
   canvas = document.getElementById("gridcanvas");
@@ -1403,12 +1367,34 @@ function renderGridHud(){
     canvas.addEventListener("touchstart", onGridTouch, {passive:false});
   }
   if(immersed) updateGridHud();
+  var stage=document.getElementById("grid-stage");
+  if(stage) stage.addEventListener("keydown",function(e){
+    var controls=document.getElementById("grid-overlay");
+    if(e.key==="Escape" && controls && !controls.hasAttribute("hidden")){
+      e.preventDefault(); e.stopPropagation(); setGridControls(false);
+    }
+  });
   ["grid-exploration","grid-jobs"].forEach(function(id){
     var el=document.getElementById(id);
     if(el) el.addEventListener("toggle",onGridHudToggle);
   });
   watchGridLayout(); resizeGridCanvas();
 }
+function setGridControls(open){
+  var controls=document.getElementById("grid-overlay"), toggle=document.getElementById("grid-controls-toggle");
+  if(!controls || !toggle) return;
+  if(open) controls.removeAttribute("hidden"); else controls.setAttribute("hidden","");
+  toggle.setAttribute("aria-expanded",open?"true":"false");
+  var label=(open?"Ocultar":"Mostrar")+" controles del Grid";
+  toggle.setAttribute("aria-label",label); toggle.setAttribute("title",label);
+  if(open){ var first=controls.querySelector('[data-action="doSuperficie"]'); if(first) first.focus(); }
+  else toggle.focus();
+  hideGridTooltip();
+}
+ACTIONS.toggleGridControls=function(){
+  var controls=document.getElementById("grid-overlay");
+  if(controls) setGridControls(controls.hasAttribute("hidden"));
+};
 function gridJobHudHtml(j){
   var value=jobProgressValue(j), target=j.type==="vault"?1:j.n;
   var pct=clamp(Math.round(value/target*100),0,100), ready=jobComplete(j);

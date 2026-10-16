@@ -1,6 +1,6 @@
 'use strict';
 
-const { test, expect, makeImmersion, solveCodeCombat, scannerState, solveScanner } = require('./fixtures');
+const { test, expect, makeImmersion, solveCodeCombat, scannerState, solveScanner, openGridControls } = require('./fixtures');
 const action = (page, name) => page.locator(`[data-action="${name}"]`);
 
 function bossImmersion() {
@@ -130,7 +130,7 @@ test('Núcleo F1: cuatro claves consumen defensa sin pagar ni cerrar el caso', a
   await clickCurrentNode(page);
   await expect(page.locator('#combat')).toBeHidden();
   expect((await game.snapshot()).state.player.credits).toBe(500);
-  await action(page, 'doSuperficie').click();
+  await openGridControls(page);await action(page, 'doSuperficie').click();
   await action(page, 'closeResume').click();
   await expect(action(page, 'startEndless')).toHaveCount(0);
   expect((await game.snapshot()).state.history.finalDone).toBe(false);

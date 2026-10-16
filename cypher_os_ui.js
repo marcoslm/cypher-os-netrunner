@@ -690,7 +690,6 @@ function showView(v, skipLog){
   /* transición de fade en el panel */
   var ps = document.getElementById("panel-scroll");
   if(ps){
-    /* RED reserva zonas independientes para mapa y HUD, con padding mínimo. */
     ps.classList.toggle("grid-mode", v==="red");
     if(v!=="red") window.removeEventListener("resize", resizeGridCanvas);
     if(!skipLog){
@@ -745,6 +744,13 @@ function updateTopbar(){
   }
   if(xpLabel) xpLabel.textContent = "XP "+p.xp+"/"+xpParaNivel();
   var clk = document.getElementById("h-clock"); if(clk) clk.textContent = timeStr(S.clock);
+  var redNav=document.querySelector('.navbtn[data-view="red"]');
+  if(redNav){
+    var immersed=!!inImmersion;
+    redNav.classList.toggle("has-immersion",immersed);
+    var redLabel=immersed?"RED · inmersión activa":"RED";
+    if(redNav.getAttribute("aria-label")!==redLabel){ redNav.setAttribute("aria-label",redLabel); redNav.setAttribute("title",redLabel); }
+  }
   syncControlPanel();
   /* El peligro se señala en cada indicador sin animar toda la barra. */
   /* visual de body cuando calor >= 80 */
