@@ -633,6 +633,25 @@ button.btn{
 .combat-card{width:min(560px,92vw);border:1px solid var(--rojo);border-radius:6px;
   background:linear-gradient(180deg,#150709,#0a0305);padding:18px 20px;
   box-shadow:0 0 40px rgba(255,93,106,.35);animation:popIn .15s;}
+.combat-card{max-height:96vh;max-height:96dvh;overflow-y:auto;overflow-wrap:anywhere;}
+.combat-identity{display:flex;align-items:center;gap:12px;margin:8px 0;color:var(--cyan);}
+.combat-avatar{display:block;width:60px;height:54px;flex:none;}
+.avatar-shell{fill:currentColor;fill-opacity:.2;stroke:currentColor;stroke-width:1.5;}
+.avatar-damage{fill:var(--rojo);}
+.avatar-caption{font-size:10px;color:var(--gris);letter-spacing:0;}
+.avatar-caption b{display:block;color:var(--rojo);font-size:14px;font-variant-numeric:tabular-nums;}
+.combat-identity[data-family="daemon"]{color:var(--magenta);}
+.combat-identity[data-family="central"]{color:var(--ambar);}
+.combat-identity[data-family="rastreador"]{color:var(--verde);}
+.trace-dump{font-size:13px;letter-spacing:0;line-height:1.6;white-space:pre-line;}
+#traceReply{white-space:normal;min-height:44px;}
+#traceReply[hidden]{display:none;}
+.route-board{display:grid;grid-template-columns:repeat(3,minmax(44px,64px));justify-content:center;gap:6px;margin:10px 0;}
+.route-tile{height:52px;padding:0;font:32px var(--fuente);color:var(--cyan);background:#061511;border:1px solid var(--borde);border-radius:3px;cursor:pointer;}
+.route-tile:focus-visible{outline:2px solid var(--ambar);outline-offset:2px;}
+.route-tile.route-end{border-color:var(--ambar);}
+.route-status{font-size:12px;line-height:1.5;color:var(--ambar);text-align:center;min-height:36px;}
+#routeSend{display:block;margin:8px auto;min-height:44px;}
 .encounter-card{width:min(480px,92vw);max-height:90vh;max-height:90dvh;overflow-y:auto;overflow-wrap:anywhere;}
 .encounter-card h2{font-weight:normal;margin:0 0 16px;}
 .encounter-event{line-height:1.5;}

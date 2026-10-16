@@ -1,13 +1,13 @@
 'use strict';
-const {test,expect}=require('./fixtures');
+const {test,expect,solveCodeCombat,solveRoutePhase}=require('./fixtures');
 
-for(const enemy of [{type:'ice',tier:1,mode:'claves'},{type:'ice',tier:3,mode:'scanner'},{type:'daemon',tier:3,mode:'memoria'}]){
+for(const enemy of [{type:'ice',tier:1,mode:'claves'},{type:'ice',tier:3,mode:'scanner'},{type:'daemon',tier:3,mode:'memoria'},{type:'ice',tier:2,mode:'ruta'},{type:'ice',tier:2,scavenger:true,mode:'rastreo'}]){
   test('ficha permanente y pausa: '+enemy.mode,async({page,game})=>{
     await game.setup({player:{heat:60,virus:1}});
     await game.startCombat({...enemy,encounter:true});
     await expect(page.locator('#combat-enter')).toBeVisible();
-    await expect(page.locator('#encounter-detail')).toHaveText(enemy.type==='daemon'?'HAS ENTRADO EN UN NODO DAEMON':'HAS ENTRADO EN UN NODO ICE');
-    await expect(page.locator('.encounter-facts dd').nth(1)).toHaveText({claves:'CLAVES HEX',memoria:'MEMORIA HEX',scanner:'ESCÁNER'}[enemy.mode]);
+    await expect(page.locator('#encounter-detail')).toHaveText(enemy.scavenger?'TE HA DETECTADO UN RASTREADOR':enemy.type==='daemon'?'HAS ENTRADO EN UN NODO DAEMON':'HAS ENTRADO EN UN NODO ICE');
+    await expect(page.locator('.encounter-facts dd').nth(1)).toHaveText({claves:'CLAVES HEX',memoria:'MEMORIA HEX',scanner:'ESCÁNER',ruta:'DESVÍO',rastreo:'RASTREO'}[enemy.mode]);
     await expect(page.locator('.encounter-card')).not.toContainText(/Memoriza|Introduce|Toca la zona|daño por fallo|s por fase|El reloj/);
     await expect(page.locator('#os')).toHaveJSProperty('inert',true);
     const before=await game.snapshot();
@@ -27,6 +27,8 @@ for(const enemy of [{type:'ice',tier:1,mode:'claves'},{type:'ice',tier:3,mode:'s
     expect(await page.evaluate(()=>COM.stage)).toBe('combat');
     if(enemy.mode==='memoria') await expect(page.locator('#memSeq')).not.toBeEmpty();
     else if(enemy.mode==='scanner') await expect(page.locator('#scanZone')).toBeVisible();
+    else if(enemy.mode==='ruta') await expect(page.locator('[data-route="0"]')).toBeFocused();
+    else if(enemy.mode==='rastreo') await expect(page.locator('#traceReply')).toBeFocused();
     else await expect(page.locator('#codeInput')).toBeFocused();
   });
 }
@@ -75,13 +77,14 @@ test('rastreador: contexto de detección y ficha técnica, sin instrucciones',as
   await expect(page.locator('#encounter-title')).toHaveText('RASTREADOR · PERRO');
   await expect(page.locator('.encounter-facts dd').first()).toHaveText('RASTREADOR · ICE · T2');
   await expect(page.locator('.encounter-gear')).toHaveCount(0);
-  await expect(page.locator('.encounter-card p')).toHaveCount(0);
+  await expect(page.locator('.encounter-note')).toContainText('persigue esta sesión');
+  await expect(page.locator('.encounter-facts dd').nth(1)).toHaveText('RASTREO');
 });
 
 test('equipo: lista solo existencias útiles sin consumirlas al leer',async({page,game},testInfo)=>{
   await game.setup({player:{decoys:2,virus:1,breakerUp:1,fwUp:1}});
   await game.startCombat({tier:2,encounter:true});
-  await expect(page.locator('.encounter-gear li')).toHaveText(['DECOY ×2','VIRUS ×1','ROMPEHIELOS +1','FIREWALL +10']);
+  await expect(page.locator('.encounter-gear li')).toHaveText(['DECOY ×2','VIRUS ×1','FIREWALL +10']);
   await page.screenshot({path:testInfo.outputPath('encounter-equipment.png')});
   expect((await game.snapshot()).state.player).toMatchObject({decoys:2,virus:1,breakerUp:1,fwUp:1});
   await page.locator('#combat-enter').click();
@@ -105,4 +108,84 @@ test('Núcleo informa que no permite huir',async({page,game})=>{
   await expect(page.locator('#combat-enter')).toBeVisible();
   await page.locator('#combat-enter').click();
   await expect(page.locator('#codeInput')).toBeFocused();
+});
+
+for(const width of [320,1280]){
+  test('F7: desvío por input real, avatar y layout a '+width+' px',async({page,game},testInfo)=>{
+    await page.setViewportSize({width,height:720});
+    await game.setup();
+    await game.startCombat({tier:2,encounter:true});
+    await expect(page.locator('.encounter-facts')).toContainText('DESVÍO');
+    const silhouette=await page.locator('.avatar-shell').getAttribute('d');
+    await page.locator('#combat-enter').click();
+    await expect(page.locator('.avatar-shell')).toHaveAttribute('d',silhouette);
+    await expect(page.locator('[data-route]')).toHaveCount(9);
+    const first=page.locator('[data-route="0"]');
+    const initial=await first.getAttribute('data-mask');
+    await expect(first).toBeFocused();
+    await page.keyboard.press('Space');
+    expect(await first.getAttribute('data-mask')).not.toBe(initial);
+    await expect(first).toBeFocused();
+    await page.screenshot({path:testInfo.outputPath('desvio.png')});
+    expect(await page.locator('.combat-card').evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    await expect(page.locator('.combat-avatar')).toHaveCSS('width','60px');
+    await expect(page.locator('.combat-avatar')).toHaveCSS('height','54px');
+    await solveRoutePhase(page);
+    await expect(page.locator('#enemyDamage')).toHaveText('50%');
+    await expect(page.locator('.avatar-damage')).toHaveAttribute('height','36');
+    await page.screenshot({path:testInfo.outputPath('desvio-damage.png')});
+    await solveCodeCombat(page);
+    await expect(page.locator('#combat')).toBeHidden();
+    const once=(await game.snapshot()).state.player.stats.totalDamageDealt;
+    await page.clock.runFor(60000);
+    expect((await game.snapshot()).state.player.stats.totalDamageDealt).toBe(once);
+  });
+}
+
+test('F7: rastreo cierra lectura, fallo cambia dirección y no duplica victoria',async({page,game},testInfo)=>{
+  await game.setup({player:{maxCpu:200,cpu:200}});
+  await page.evaluate(()=>startCombat({node:{type:'ice',tier:2,scavenger:true,name:'RASTREADOR'}}));
+  await page.locator('#combat-enter').click();
+  await expect(page.locator('#codeInput')).toBeDisabled();
+  const code=(await page.locator('#codeTarget').innerText()).match(/0x([0-9A-F]+)/)[1];
+  await page.locator('#traceReply').click();
+  await expect(page.locator('#codeTarget')).not.toContainText(code);
+  await expect(page.locator('#codeInput')).toBeFocused();
+  const before=(await game.snapshot()).state.player.cpu;
+  await page.keyboard.press('Enter');
+  expect((await game.snapshot()).state.player.cpu).toBeLessThan(before);
+  await expect(page.locator('#traceReply')).toBeVisible();
+  await expect(page.locator('#codeInput')).toBeDisabled();
+  await page.screenshot({path:testInfo.outputPath('rastreo.png')});
+  await solveCodeCombat(page);
+  await expect(page.locator('#combat')).toBeHidden();
+});
+
+test('F7: timeout, huida y callbacks retirados con movimiento reducido',async({page,game})=>{
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await page.setViewportSize({width:320,height:600});
+  await game.setup({player:{maxCpu:500,cpu:500,sigilo:20}});
+  await game.startCombat({tier:2});
+  const cpu=(await game.snapshot()).state.player.cpu;
+  const duration=await page.evaluate(()=>COM.time);
+  await page.clock.runFor(duration);
+  const damaged=(await game.snapshot()).state.player.cpu;
+  expect(damaged).toBeLessThan(cpu);
+  await expect(page.locator('[data-route="0"]')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#combat')).toBeHidden();
+  await game.startCombat({tier:2,scavenger:true,encounter:true});
+  await page.clock.runFor(60000);
+  expect((await game.snapshot()).state.player.cpu).toBe(damaged);
+  await expect(page.locator('#enemyDamage')).toHaveText('0%');
+  await page.locator('#combat-enter').click();
+  await page.clock.runFor(await page.evaluate(()=>COM.time));
+  await expect(page.locator('#traceReply')).toBeFocused();
+  await expect(page.locator('#codeInput')).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#combat')).toBeHidden();
+  const escaped=(await game.snapshot()).state.player.cpu;
+  await page.clock.runFor(60000);
+  expect((await game.snapshot()).state.player.cpu).toBe(escaped);
+  expect(await page.evaluate(()=>combatTimer)).toBeNull();
 });

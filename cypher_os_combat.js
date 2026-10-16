@@ -1,7 +1,7 @@
 /* ============================================================
    CYPHER://OS  ·  cypher_os_combat.js — COMBATE Y VAULT
-   Combate en 3 modos (claves hex, memoria para daemons, scanner para
-   ICE T3) y puzzle del vault.
+  Combate en cinco modos: claves, rastreo, desvío, memoria y escáner;
+  familias visuales y puzzle del vault.
    Orden de carga de los .js (scripts clásicos sin módulos, ámbito global
    compartido; ver AGENTS.md §4):
      1/6 data → 2/6 core → 3/6 audio → 4/6 grid → 5/6 combat → 6/6 ui
@@ -13,6 +13,35 @@
    ============================================================ */
 
 var COM=null; var combatTimer=null;
+
+function combatFamily(node){
+  return node.boss || node.type==="nucleo" ? "central" : node.scavenger ? "rastreador" : node.type==="daemon" ? "daemon" : node.tier===3 ? "barrera" : node.tier===2 ? "desviador" : "archivador";
+}
+function combatAvatarHtml(){
+  var family=combatFamily(COM.node), damage=Math.round(clamp((COM.phase-1)/COM.phases*100,0,100));
+  var shapes={
+    archivador:"M24 8H56L64 24V62H50V42H30V62H16V24ZM32 16V28H48V16Z",
+    rastreador:"M36 6H44L50 20L70 28L62 42L49 38L56 66H44L40 48L36 66H24L31 38L18 42L10 28L30 20Z",
+    barrera:"M22 8H58L70 28L60 66H44V44H36V66H20L10 28ZM30 18V30H50V18Z",
+    desviador:"M10 12H30L40 24L50 12H70V30L54 38L64 64H46L40 48L34 64H16L26 38L10 30ZM30 30V38H50V30Z",
+    daemon:"M16 8L32 18H48L64 8L60 32L70 48L54 66L40 54L26 66L10 48L20 32ZM30 26V36H50V26Z",
+    central:"M28 4H52L58 16H70V52L56 68H46V48H34V68H24L10 52V16H22ZM28 24V34H52V24Z"
+  };
+  return '<div class="combat-identity" data-family="'+family+'"><svg class="combat-avatar" viewBox="0 0 80 72" aria-hidden="true" focusable="false">'+
+    '<defs><clipPath id="combat-silhouette"><path d="'+shapes[family]+'" fill-rule="evenodd"/></clipPath></defs>'+
+    '<path class="avatar-shell" d="'+shapes[family]+'" fill-rule="evenodd"/>'+
+    '<rect class="avatar-damage" x="0" y="'+(72-damage*0.72)+'" width="80" height="'+(damage*0.72)+'" clip-path="url(#combat-silhouette)"/>'+
+    '</svg><span class="avatar-caption">PROGRAMA · DAÑO RECIBIDO <b id="enemyDamage">'+damage+'%</b></span></div>';
+}
+function combatContext(){
+  if(COM.node.scavenger) return "El rastreador persigue esta sesión. Interrumpir su rutina libera el paso; no recupera archivos ni paga contratos.";
+  if(COM.node.type==="nucleo") return "Esta defensa protege la escritura central. Recuperar y entregar la revocación sigue siendo necesario después.";
+  if(inImmersion && COM.node.id==="1_0" && inImmersion.grid.nodes.some(function(node){ return node.storyChapter==="c01"; })) return COM.mode==="ruta" ? "El acceso de huésped al historial está cerrado por un desviador. Reorientar el enlace permite consultar la factura; no modifica ni entrega su contenido." : "El archivador limita el historial con acceso de huésped. El deck obtiene una clave de consulta, pero el canal exige confirmación manual; no puede escribir directamente en él.";
+  if(COM.node.type==="daemon") return "El daemon retiene un patrón de acceso. Reconstruirlo libera este nodo, no confirma el contenido de sus archivos.";
+  if(COM.node.tier===3) return "La barrera filtra las ventanas del enlace. Intervenir en sus huecos libera el acceso, no verifica los documentos al otro lado.";
+  if(COM.node.tier===2) return "El desviador mantiene cerrado un enlace. Reorientar sus conexiones abre el paso sin alterar el documento protegido.";
+  return "El archivador solicita una clave de consulta. El deck la obtiene por lectura, pero el canal exige confirmación manual antes de abrir el acceso.";
+}
 
 /* Escape funciona también durante la revelación y con foco fuera del input.
    Captura evita que una misma pulsación llegue a otro handler de huida. */
@@ -40,10 +69,11 @@ function startCombat(ctx){
   var useVirus=S.player.virus>0 && phases>1;
   if(useVirus) phases--;
   /* modo de combate: memoria para daemons, scanner para ICE T3, claves para el resto */
-  var mode = n.type==="daemon" ? "memoria" : (n.type==="ice" && n.tier===3) ? "scanner" : "claves";
+  var mode = n.boss || n.type==="nucleo" ? "claves" : n.scavenger ? "rastreo" : n.type==="daemon" ? "memoria" : (n.type==="ice" && n.tier===3) ? "scanner" : (n.type==="ice" && n.tier===2) ? "ruta" : "claves";
   var phaseTime=2600+tier*700+S.player.hack*500+(S.difficulty==="hardcore"?0:2000);
   /* el escáner exige varios aciertos por fase: margen de tiempo extra */
   if(mode==="scanner") phaseTime=Math.round(phaseTime*1.6);
+  if(mode==="ruta") phaseTime=Math.max(18000,phaseTime*3);
   COM = { ctx:ctx, node:n, tier:tier, phases:phases, phase:1,
     length:codeLen(tier), time:phaseTime, remaining:0, code:"", alive:true,
     player:S.player, mode:mode,
@@ -62,20 +92,21 @@ function renderCombatEncounter(){
   var kind=boss ? "NÚCLEO" : n.scavenger ? "RASTREADOR · ICE" : n.type==="daemon" ? "DAEMON" : "ICE";
   var event=boss ? "HAS LLEGADO AL NÚCLEO" : n.scavenger ? "TE HA DETECTADO UN RASTREADOR" : n.type==="daemon" ? "HAS ENTRADO EN UN NODO DAEMON" : "HAS ENTRADO EN UN NODO ICE";
   var mode=COM.mode;
-  var label=mode==="memoria" ? "MEMORIA HEX" : mode==="scanner" ? "ESCÁNER" : "CLAVES HEX";
+  var label=mode==="memoria" ? "MEMORIA HEX" : mode==="scanner" ? "ESCÁNER" : mode==="rastreo" ? "RASTREO" : mode==="ruta" ? "DESVÍO" : "CLAVES HEX";
   /* Solo recursos disponibles y aplicables; las habilidades no son inventario. */
   var p=S.player, gear=[];
   if(p.decoys>0) gear.push("DECOY ×"+p.decoys);
   if(COM.useVirus) gear.push("VIRUS ×"+p.virus);
-  if(mode==="claves" && p.breakerUp>0 && COM.length<Math.max(3,codeLenBase(COM.tier)-p.hack)) gear.push("ROMPEHIELOS +"+p.breakerUp);
+  if((mode==="claves" || mode==="rastreo") && p.breakerUp>0 && COM.length<Math.max(3,codeLenBase(COM.tier)-p.hack)) gear.push("ROMPEHIELOS +"+p.breakerUp);
   if(p.fwUp>0) gear.push("FIREWALL +"+(p.fwUp*10));
   el.classList.add("show");
   el.innerHTML='<div class="combat-card encounter-card" role="dialog" aria-modal="true" aria-labelledby="encounter-title" aria-describedby="encounter-detail">'+
     '<div class="combat-sub encounter-event" id="encounter-detail">'+event+'</div>'+
     '<h2 class="combat-title" id="encounter-title">'+escapeHtml(n.name||kind)+'</h2>'+
+    combatAvatarHtml()+
     '<dl class="encounter-facts"><div><dt>TIPO</dt><dd>'+kind+' · T'+COM.tier+'</dd></div>'+
     '<div><dt>COMBATE</dt><dd>'+label+'</dd></div></dl>'+
-    (inImmersion && n.id==="1_0" && inImmersion.grid.nodes.some(function(node){ return node.storyChapter==="c01"; })?'<p class="encounter-note">El archivador limita el historial con acceso de huésped. El deck ha encontrado una ventana para enviar la consulta.</p>':n.type==="nucleo"?'<p class="encounter-note">Esta defensa protege la escritura central. Los servicios locales ya están preparados. La revocación requiere recuperar el registro y verificarlo al volver.</p>':'')+
+    '<p class="encounter-note">'+combatContext()+'</p>'+
     (gear.length ? '<div class="encounter-gear"><div class="encounter-label">EQUIPO DISPONIBLE</div><ul>'+gear.map(function(item){return '<li>'+item+'</li>';}).join('')+'</ul></div>' : '')+
     (boss ? '<div class="encounter-note ambar">SIN HUIDA</div>' : '')+
     '<div class="encounter-actions"><button class="btn" id="combat-enter">ENTRAR AL COMBATE</button>'+
@@ -102,6 +133,8 @@ function beginCombat(){
     renderCombatMemoria(); startMemoriaPhase();
   } else if(mode==="scanner"){
     renderCombatScanner(); COM.memPhase="input"; startScannerPhase();
+  } else if(mode==="ruta"){
+    renderCombatRoute(); startRoutePhase();
   } else {
     renderCombat(); newCode(); combatLoop();
   }
@@ -138,6 +171,7 @@ function renderCombat(){
     '<div class="combat-card">'+
       '<div class="combat-title" id="ct-title"></div>'+
       '<div class="combat-sub" id="ct-sub">FASE 1/'+COM.phases+'</div>'+
+      combatAvatarHtml()+
       '<div class="combat-bars">'+
         '<div class="combat-bar-lbl"><span>TU CPU</span><span id="cpuPct">100%</span></div>'+
         '<div class="bar"><i id="cpuBar" style="width:100%"></i><div class="bar-txt" id="cpuTxt">100/100</div></div>'+
@@ -163,6 +197,14 @@ function renderCombat(){
   /* bind teclado hex virtual */
   initHexKeyboard();
   document.getElementById("ct-title").textContent="⚠ "+(COM.node.name||"ICE")+" · T"+COM.tier;
+  if(COM.mode==="rastreo"){
+    document.getElementById("codeTarget").classList.add("trace-dump");
+    var target=document.getElementById("codeTarget");
+    target.insertAdjacentHTML("afterend",'<button class="btn small" id="traceReply">CERRAR LECTURA Y RESPONDER</button>');
+    var battle=COM, replyButton=document.getElementById("traceReply");
+    replyButton.addEventListener("click",function(){ if(COM===battle && replyButton.isConnected) traceReply(); });
+    inp.setAttribute("aria-label","Dirección de la rutina rastreadora");
+  }
 }
 /* teclado hex virtual: bind de eventos */
 function initHexKeyboard(){
@@ -176,7 +218,7 @@ function initHexKeyboard(){
   if(enterBtn) enterBtn.addEventListener("click",onHexEnter);
 }
 function onHexKeyClick(e){
-  if(!COM||!COM.alive) return;
+  if(!COM||!COM.alive || (COM.mode==="rastreo" && COM.traceStage!=="reply")) return;
   var ch=e.currentTarget.getAttribute("data-hex");
   var inp=document.getElementById("codeInput");
   if(!inp) return;
@@ -197,7 +239,7 @@ function onHexDel(){
   inp.value=inp.value.slice(0,-1);
 }
 function onHexEnter(){
-  if(!COM||!COM.alive) return;
+  if(!COM||!COM.alive || (COM.mode==="rastreo" && COM.traceStage!=="reply")) return;
   var inp=document.getElementById("codeInput");
   if(!inp) return;
   var v=inp.value.replace(/\s+/g,"").toUpperCase();
@@ -209,8 +251,20 @@ function newCode(){
   COM.code=s; COM.remaining=COM.time;
   var t=document.getElementById("codeTarget"), inp=document.getElementById("codeInput");
   if(t) t.textContent=s.split("").join(" ");
-  if(inp){ inp.value=""; inp.focus(); }
+  if(COM.mode==="rastreo"){
+    COM.traceStage="read";
+    if(t) t.textContent="TRAZA LOCAL · SESIÓN\nLECTURA 0x"+s+"\nRUTINA ACTIVA · CANAL AISLADO";
+    var reply=document.getElementById("traceReply"); if(reply){ reply.hidden=false; reply.focus(); }
+  }
+  if(inp){ inp.value=""; inp.disabled=COM.mode==="rastreo"; if(!inp.disabled) inp.focus(); }
   updateCombatBars();
+}
+function traceReply(){
+  if(!COM || !COM.alive || COM.mode!=="rastreo" || COM.traceStage!=="read") return;
+  COM.traceStage="reply";
+  document.getElementById("codeTarget").textContent="LECTURA CERRADA · DIRECCIÓN DE "+COM.code.length+" CARACTERES";
+  document.getElementById("traceReply").hidden=true;
+  var input=document.getElementById("codeInput"); input.disabled=false; input.focus();
 }
 function updateCombatBars(){
   var cpuBar=document.getElementById("cpuBar"), cpuTxt=document.getElementById("cpuTxt");
@@ -222,21 +276,26 @@ function updateCombatBars(){
   if(cpuTxt) cpuTxt.textContent=Math.round(COM.player.cpu)+"/"+COM.player.maxCpu;
   if(iceBar) iceBar.style.width=(COM.phase<=COM.phases?100-(COM.phase-1)*(100/COM.phases):0)+"%";
   if(icePct) icePct.textContent=Math.round((COM.phases-COM.phase+1)/COM.phases*100)+"%";
+  var damage=Math.round(clamp((COM.phase-1)/COM.phases*100,0,100));
+  var avatar=document.querySelector(".combat-avatar .avatar-damage"), caption=document.getElementById("enemyDamage");
+  if(avatar){ avatar.setAttribute("y",72-damage*0.72); avatar.setAttribute("height",damage*0.72); }
+  if(caption) caption.textContent=damage+"%";
   if(timerBar) timerBar.style.width=clamp(COM.remaining/COM.time*100,0,100)+"%";
   if(timerLbl) timerLbl.textContent="T-"+(COM.remaining/1000).toFixed(1)+"s";
 }
 function combatLoop(){
   if(!COM||!COM.alive) return;
   clearInterval(combatTimer);
-  combatTimer=setInterval(function(){
-    if(!COM||!COM.alive){ clearInterval(combatTimer); return; }
+  var battle=COM, timer=setInterval(function(){
+    if(COM!==battle || !battle.alive){ clearInterval(timer); return; }
     COM.remaining-=100;
     if(COM.remaining<=0){ COM.remaining=0; failCombat(); }
     if(COM && COM.alive) updateCombatBars();
   },100);
+  combatTimer=timer;
 }
 function onCodeInput(e){
-  if(!COM||!COM.alive) return;
+  if(!COM||!COM.alive || (COM.mode==="rastreo" && COM.traceStage!=="reply")) return;
   /* filtrar caracteres que no sean hex ni espacios */
   var clean=e.target.value.replace(/[^0-9a-fA-F\s]/g,"");
   if(clean!==e.target.value) e.target.value=clean;
@@ -244,7 +303,7 @@ function onCodeInput(e){
   else sound.type();
 }
 function onCodeKey(e){
-  if(!COM||!COM.alive) return;
+  if(!COM||!COM.alive || (COM.mode==="rastreo" && COM.traceStage!=="reply")) return;
   if(e.key==="Enter"){
     var v=e.target.value.replace(/\s+/g,"").toUpperCase();
     if(v===COM.code){ e.preventDefault(); winPhase(); }
@@ -279,6 +338,7 @@ function failCombat(){
   }
   /* en memoria: reiniciar fase con nueva secuencia */
   if(COM.mode==="memoria"){ clearInterval(combatTimer); startMemoriaPhase(); return; }
+  if(COM.mode==="ruta"){ startRoutePhase(); return; }
   /* en claves: generar nueva clave (resetea timer, comportamiento original) */
   newCode();
 }
@@ -336,7 +396,7 @@ function doEscape(){
       }
       updateCombatBars();
       /* en scanner/memoria: no generar nueva clave (el timer no se resetea) */
-      if(COM.mode!=="scanner" && COM.mode!=="memoria") newCode();
+      if(COM.mode==="claves" || COM.mode==="rastreo") newCode();
     }
   }
 }
@@ -381,6 +441,82 @@ function cancelActiveCombat(){
 }
 
 
+function rotateRoute(mask){ return ((mask<<1)&15)|((mask>>3)&1); }
+function routeConnected(route){
+  if(!(route.tiles[route.source]&8) || !(route.tiles[route.target]&2)) return false;
+  var pending=[route.source], seen={}, steps=[{bit:1,back:4,delta:-3},{bit:2,back:8,delta:1},{bit:4,back:1,delta:3},{bit:8,back:2,delta:-1}];
+  while(pending.length){
+    var current=pending.shift();
+    if(current===route.target) return true;
+    if(seen[current]) continue;
+    seen[current]=true;
+    steps.forEach(function(step){
+      var next=current+step.delta;
+      if(next<0 || next>=9 || ((step.bit===2 || step.bit===8) && Math.floor(current/3)!==Math.floor(next/3))) return;
+      if((route.tiles[current]&step.bit) && (route.tiles[next]&step.back) && !seen[next]) pending.push(next);
+    });
+  }
+  return false;
+}
+function routeTileLabel(mask,index){
+  var ports=[];
+  [{bit:1,name:"norte"},{bit:2,name:"este"},{bit:4,name:"sur"},{bit:8,name:"oeste"}].forEach(function(port){ if(mask&port.bit) ports.push(port.name); });
+  return "Conexión "+(index+1)+": "+ports.join(", ")+". Girar un cuarto de vuelta";
+}
+function renderCombatRoute(){
+  var el=document.getElementById("combat");
+  el.classList.add("show");
+  el.innerHTML='<div class="combat-card" role="dialog" aria-modal="true" aria-labelledby="ct-title">'+
+    '<h2 class="combat-title" id="ct-title">'+escapeHtml(COM.node.name||"DESVIADOR")+'</h2>'+
+    '<div class="combat-sub" id="ct-sub"></div>'+combatAvatarHtml()+
+    '<div class="combat-bar-lbl"><span>TU CPU</span><span id="cpuPct"></span></div>'+
+    '<div class="bar"><i id="cpuBar"></i><div class="bar-txt" id="cpuTxt"></div></div>'+
+    '<div class="route-status" id="routeStatus"></div><div class="route-board" id="routeBoard" role="group" aria-label="Conexiones del desviador"></div>'+
+    '<button class="btn cyan" id="routeSend">ENRUTAR</button><div class="combat-log" id="combatLog" role="status"></div>'+
+    '<div class="timer-lbl" id="timerLbl"></div><div class="timer-bar"><i id="timerBar"></i></div>'+
+    '<div class="center mt-2"><button class="btn ambar small" id="escapeBtn">HUIR [ESC]</button></div></div>';
+  document.getElementById("escapeBtn").addEventListener("click",doEscape);
+  var battle=COM, sendButton=document.getElementById("routeSend");
+  sendButton.addEventListener("click",function(){ if(COM===battle && sendButton.isConnected) submitRoute(); });
+}
+function startRoutePhase(){
+  if(!COM || !COM.alive || COM.mode!=="ruta") return;
+  var tiles=[10,10,12,6,10,9,3,10,10], flipped=Math.random()<0.5;
+  if(flipped){
+    tiles=tiles.slice(6).concat(tiles.slice(3,6),tiles.slice(0,3)).map(function(mask){ return (mask&10)|((mask&1)<<2)|((mask&4)>>2); });
+  }
+  COM.route={source:flipped?6:0,target:flipped?2:8,tiles:tiles.map(function(mask){
+    var turns=randInt(0,3); while(turns--){ mask=rotateRoute(mask); } return mask;
+  })};
+  if(routeConnected(COM.route)) COM.route.tiles[COM.route.source]=rotateRoute(COM.route.tiles[COM.route.source]);
+  document.getElementById("ct-sub").textContent="DESVÍO · FASE "+COM.phase+"/"+COM.phases;
+  document.getElementById("routeStatus").textContent="ENTRADA: oeste "+(COM.route.source+1)+" → SALIDA: este "+(COM.route.target+1);
+  var glyphs={3:"└",6:"┌",9:"┘",12:"┐",5:"│",10:"─"}, board=document.getElementById("routeBoard");
+  board.innerHTML=COM.route.tiles.map(function(mask,index){
+    return '<button class="route-tile'+(index===COM.route.source || index===COM.route.target?' route-end':'')+'" data-route="'+index+'" data-mask="'+mask+'" aria-label="'+routeTileLabel(mask,index)+'" title="'+routeTileLabel(mask,index)+'">'+glyphs[mask]+'</button>';
+  }).join("");
+  Array.prototype.forEach.call(board.querySelectorAll("[data-route]"),function(button){ button.addEventListener("click",function(){
+    if(!COM || !COM.alive || COM.mode!=="ruta" || !button.isConnected) return;
+    var index=Number(button.getAttribute("data-route")), mask=rotateRoute(COM.route.tiles[index]);
+    COM.route.tiles[index]=mask;
+    button.textContent=glyphs[mask]; button.setAttribute("data-mask",mask);
+    button.setAttribute("aria-label",routeTileLabel(mask,index)); button.setAttribute("title",routeTileLabel(mask,index));
+    sound.type();
+  }); });
+  COM.remaining=COM.time; updateCombatBars(); combatLoop();
+  var first=board.querySelector("button"); if(first) first.focus();
+}
+function submitRoute(){
+  if(!COM || !COM.alive || COM.mode!=="ruta" || COM.stage!=="combat") return;
+  if(!routeConnected(COM.route)){ failCombat(); return; }
+  sound.success();
+  S.player.stats.totalDamageDealt=(S.player.stats.totalDamageDealt||0)+COM.tier*8;
+  COM.phase++;
+  if(COM.phase>COM.phases){ winCombat(); return; }
+  setCombatLog("enlace desviado · siguiente protección.","verde");
+  startRoutePhase();
+}
+
 /* ============================================================
    8b. COMBATE MEMORIA (daemons) — mostrar secuencia, repetir
    ============================================================ */
@@ -392,6 +528,7 @@ function renderCombatMemoria(){
     '<div class="combat-card">'+
       '<div class="combat-title" id="ct-title"></div>'+
       '<div class="combat-sub" id="ct-sub">MEMORIA HEX · FASE 1/'+COM.phases+'</div>'+
+      combatAvatarHtml()+
       '<div class="combat-bars">'+
         '<div class="combat-bar-lbl"><span>TU CPU</span><span id="cpuPct">100%</span></div>'+
         '<div class="bar"><i id="cpuBar" style="width:100%"></i><div class="bar-txt" id="cpuTxt">100/100</div></div>'+
@@ -551,6 +688,7 @@ function renderCombatScanner(){
     '<div class="combat-card">'+
       '<div class="combat-title" id="ct-title"></div>'+
       '<div class="combat-sub" id="ct-sub">ESCÁNER · FASE 1/'+COM.phases+'</div>'+
+      combatAvatarHtml()+
       '<div class="combat-bars">'+
         '<div class="combat-bar-lbl"><span>TU CPU</span><span id="cpuPct">100%</span></div>'+
         '<div class="bar"><i id="cpuBar" style="width:100%"></i><div class="bar-txt" id="cpuTxt">100/100</div></div>'+

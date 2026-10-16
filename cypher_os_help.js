@@ -57,7 +57,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="sym cyan">⌂</span><span class="lg-key">PUERTO</span><span class="lg-desc">tu entrada. explora las capas.</span></div>'+
 '<div class="legend-row"><span class="sym verde">◆</span><span class="lg-key">DATOS</span><span class="lg-desc">cógelos: te llenan la RAM y pagan ₡. Para RECOLECTA.</span></div>'+
 '<div class="legend-row"><span class="sym verde">▣ T1</span><span class="lg-key">ICE T1</span><span class="lg-desc">defensa débil · combate de claves.</span></div>'+
-'<div class="legend-row"><span class="sym ambar">▣ T2</span><span class="lg-key">ICE T2</span><span class="lg-desc">defensa media · combate de claves.</span></div>'+
+'<div class="legend-row"><span class="sym ambar">▣ T2</span><span class="lg-key">ICE T2</span><span class="lg-desc">desviador de enlaces · conexiones rotables.</span></div>'+
 '<div class="legend-row"><span class="sym rojo">▣ T3</span><span class="lg-key">ICE T3</span><span class="lg-desc">defensa dura · combate de escáner.</span></div>'+
 '<div class="legend-row"><span class="sym magenta">Ω</span><span class="lg-key">DAEMON</span><span class="lg-desc">habitante del cable · combate de memoria.</span></div>'+
 '<div class="legend-row"><span class="sym ambar">⬢</span><span class="lg-key">VAULT</span><span class="lg-desc">proyecto corporativo · puzzle de símbolos. Para trabajos VAULT.</span></div>'+
@@ -99,15 +99,17 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '</div>'+
 
 /* ⑥ COMBATE */
-'<div class="panel-h">⑥ COMBATE · los tres duelos</div><div class="box helpbox">'+
-'<p class="help-p">Cada encuentro con ICE, rastreador, daemon o Núcleo muestra primero una <b>ficha en pausa</b>: qué ha ocurrido, nombre y tipo del enemigo, modo de combate y equipo útil disponible. No incluye instrucciones del minijuego. Puedes leer sin límite; el reloj y el calor se detienen. Pulsa <b>ENTRAR AL COMBATE</b> para iniciar el reto o <b>HUIR</b>: éxito = calor +5; fallo = un golpe y comienza el combate. SIGILO mejora la huida y DECOY absorbe el golpe. Del Núcleo no se huye. Esta ficha aparece siempre, no solo al aprender. Hay <b>tres modos</b> y un puzzle especial para los vaults:</p>'+
+'<div class="panel-h">⑥ COMBATE · defensas y enlaces</div><div class="box helpbox">'+
+'<p class="help-p">Cada encuentro con ICE, rastreador, daemon o Núcleo muestra primero una <b>ficha en pausa</b>: qué ha ocurrido, qué protege o amenaza, silueta de su familia, modo de combate y equipo útil disponible. Puedes leer sin límite; el reloj y el calor se detienen. Pulsa <b>ENTRAR AL COMBATE</b> para iniciar el reto o <b>HUIR</b>: éxito = calor +5; fallo = un golpe y comienza el combate. SIGILO mejora la huida y DECOY absorbe el golpe. Del Núcleo no se huye. Esta ficha aparece siempre, no solo al aprender. Hay <b>cinco modos</b> y un puzzle especial para los vaults:</p>'+
 '<div class="legend">'+
-'<div class="legend-row"><span class="sym ambar">▣</span><span class="lg-key">CLAVES · ICE T1/T2</span><span class="lg-desc">escribe la clave hexadecimal y pulsa ENTER. Se ignoran espacios y mayúsculas.</span></div>'+
+'<div class="legend-row"><span class="sym ambar">▣</span><span class="lg-key">CLAVES · archivador T1 / Núcleo</span><span class="lg-desc">el deck obtiene una clave de consulta, pero el canal separado requiere confirmación manual. Escribe la clave hexadecimal; se ignoran espacios y mayúsculas.</span></div>'+
+'<div class="legend-row"><span class="sym verde">◉</span><span class="lg-key">RASTREO · perseguidor</span><span class="lg-desc">retén la dirección 0x del volcado local ficticio; CERRAR LECTURA Y RESPONDER retira el volcado y habilita el teclado hex. Envía solo la dirección. Lectura y respuesta comparten el tiempo de fase; un fallo o timeout abre otra lectura.</span></div>'+
+'<div class="legend-row"><span class="sym cyan">▦</span><span class="lg-key">DESVÍO · ICE T2</span><span class="lg-desc">conecta la entrada oeste con la salida este indicadas. Cada conexión gira un cuarto de vuelta con clic, toque, Enter o Espacio; su nombre y tooltip enumeran los puertos. ENRUTAR verifica un enlace continuo con puertos recíprocos. Un fallo o timeout daña y renueva el tablero en la misma fase.</span></div>'+
 '<div class="legend-row"><span class="sym magenta">Ω</span><span class="lg-key">MEMORIA · daemons</span><span class="lg-desc">memoriza la secuencia hex durante unos segundos y repítela cuando se oculte.</span></div>'+
 '<div class="legend-row"><span class="sym rojo">▣</span><span class="lg-key">ESCÁNER · ICE T3</span><span class="lg-desc">una línea barre la zona: haz clic cuando pase sobre un hueco. Toca todos antes de que acabe el tiempo.</span></div>'+
 '<div class="legend-row"><span class="sym ambar">⬢</span><span class="lg-key">VAULT · símbolos</span><span class="lg-desc">memoriza el orden (3 s) y repítelo en 15 s. Fallar cuesta −10 CPU y 10 s de bloqueo.</span></div>'+
 '</div>'+
-'<p class="help-p">Todas las defensas tienen varias <b>fases</b>: gana todas para destruirlas. Un fallo o un timeout hacen <b>daño neural</b> (en claves y memoria toca repetir la fase con una clave o secuencia nueva).</p>'+
+'<p class="help-p">Las fases representan protecciones retiradas. La silueta se rellena de rojo <b>desde abajo al recibir daño el programa</b>; el porcentaje DAÑO RECIBIDO sube, no es vida restante. TU CPU sigue indicando tu integridad. Completar una defensa no entrega ni paga por sí solo una prueba narrativa. Un fallo o timeout hace daño neural; cada modo conserva sus reglas de reintento.</p>'+
 '<div class="helprow">'+
 '<div class="helprow-item"><span class="kbd">ENTER</span><span class="muted">enviar clave / secuencia (también se comprueba sola al escribir)</span></div>'+
 '<div class="helprow-item"><span class="kbd">ESC</span><span class="muted">huir · abandonas el combate (el nodo sigue en pie)</span></div>'+

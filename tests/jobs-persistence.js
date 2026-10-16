@@ -212,7 +212,9 @@ async function run(options = {}) {
     g.run('S.player.heat=60;inImmersion.current=inImmersion.grid.entry;Math.random=function(){return 0;};tryScavenger();beginCombat();window.__oldWin=COM.ctx.onWin;');
     for (let i=0;i<4 && g.run('combatActive');i++) {
       const input = g.sb.document.getElementById('codeInput');
-      input.value = g.run('COM.code'); g.emitElement(input,'input');
+      const address = g.run('COM.code');
+      g.sb.document.getElementById('traceReply').click();
+      input.value = address; g.emitElement(input,'input');
     }
     assert.equal(g.run('combatActive'),false);
     assert.equal(g.run('S.jobs[0].prog.iceT2'),3);

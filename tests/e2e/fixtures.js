@@ -182,14 +182,14 @@ const test = base.extend({
         await page.reload();
         await game.boot(bootOptions);
       },
-      async startCombat({ type = 'ice', tier = 1, boss = false, encounter = false } = {}) {
+      async startCombat({ type = 'ice', tier = 1, boss = false, scavenger = false, encounter = false } = {}) {
         await game.freeze();
         // Arrange the enemy only; code entry, damage from Enter and Escape use real input.
-        await page.evaluate(({ type, tier, boss }) => {
+        await page.evaluate(({ type, tier, boss, scavenger }) => {
           const node = inImmersion ? nodeById(inImmersion.current) : {};
-          Object.assign(node, { type, tier, boss, tierName: `T${tier}`, name: 'ENEMIGO DE PRUEBA', done: false });
+          Object.assign(node, { type, tier, boss, scavenger, tierName: `T${tier}`, name: 'ENEMIGO DE PRUEBA', done: false });
           startCombat({ node, onWin: onNodeDefeated });
-        }, { type, tier, boss });
+        }, { type, tier, boss, scavenger });
         await expect(page.locator('#combat')).toBeVisible();
         if (!encounter) await page.locator('#combat-enter').click();
       },
@@ -264,16 +264,62 @@ async function tabTo(page, target, { reverse = false, limit = 40 } = {}) {
   await expect(target, 'Reach the control using real Tab, not programmatic focus').toBeFocused();
 }
 
+async function solveRoutePhase(page) {
+  const tiles = await page.locator('[data-route]').evaluateAll(elements => elements.map(element => Number(element.dataset.mask)));
+  const [source, target] = (await page.locator('#routeStatus').innerText()).match(/\d+/g).map(value => Number(value)-1);
+  const rotate = mask => ((mask << 1) & 15) | ((mask >> 3) & 1);
+  function connected(masks) {
+    if (!(masks[source] & 8) || !(masks[target] & 2)) return false;
+    const queue = [source], seen = new Set();
+    while (queue.length) {
+      const current = queue.shift();
+      if (current === target) return true;
+      if (seen.has(current)) continue;
+      seen.add(current);
+      for (const [bit, back, delta] of [[1,4,-3],[2,8,1],[4,1,3],[8,2,-1]]) {
+        const next = current + delta;
+        if (next < 0 || next > 8 || (Math.abs(delta) === 1 && Math.floor(next/3) !== Math.floor(current/3))) continue;
+        if ((masks[current] & bit) && (masks[next] & back) && !seen.has(next)) queue.push(next);
+      }
+    }
+    return false;
+  }
+  function search(masks, index = 0) {
+    if (index === 9) return connected(masks) ? [...masks] : null;
+    const initial = masks[index];
+    do {
+      const solution = search(masks, index+1);
+      if (solution) return solution;
+      masks[index] = rotate(masks[index]);
+    } while (masks[index] !== initial);
+    return null;
+  }
+  const solution = search([...tiles]);
+  expect(solution, 'The visible circuit must have a reachable solution').not.toBeNull();
+  for (let index = 0; index < tiles.length; index++) {
+    while (tiles[index] !== solution[index]) {
+      await page.locator(`[data-route="${index}"]`).click();
+      tiles[index] = rotate(tiles[index]);
+    }
+  }
+  await page.locator('#routeSend').click();
+}
+
 async function solveCodeCombat(page) {
   // Read the displayed challenge; do not assign COM.code or replace combat functions.
   for (let phase = 0; phase < 4; phase++) {
     if (!(await page.locator('#combat').isVisible())) return;
     if (await page.locator('#combat-enter').isVisible()) await page.locator('#combat-enter').click();
+    if (await page.locator('#routeBoard').isVisible()) { await solveRoutePhase(page); continue; }
     // El juego puede encadenar el efecto del nodo tras el combate (p. ej. emboscada
     // antes de un vault): la UI ya no es de claves y esta rutina termina aquí.
     if (!(await page.locator('#codeInput').isVisible())) return;
+    let code;
+    if (await page.locator('#traceReply').isVisible()) {
+      code = (await page.locator('#codeTarget').innerText()).match(/0x([0-9A-F]+)/)[1].toLowerCase();
+      await page.locator('#traceReply').click();
+    } else code = (await page.locator('#codeTarget').innerText()).replace(/\s/g, '').toLowerCase();
     await expect(page.locator('#codeInput')).toBeFocused();
-    const code = (await page.locator('#codeTarget').innerText()).replace(/\s/g, '').toLowerCase();
     expect(code).toMatch(/^[0-9a-f]{3,}$/);
     await page.keyboard.type(code.split('').join(' '));
   }
@@ -324,4 +370,4 @@ async function downloadJSON(download) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
-module.exports = { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat, scannerState, solveScanner, downloadJSON };
+module.exports = { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat, solveRoutePhase, scannerState, solveScanner, downloadJSON };

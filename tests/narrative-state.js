@@ -352,6 +352,12 @@ async function run(options = {}) {
     game.run('Math.random=function(){return 0;};tryGridEvent();');
     assert.equal(game.run('tryScavenger()'), false);
     assert.equal(game.run('combatActive'), false);
+    game.run('startCombat({node:nodeById("1_0")});');
+    assert.equal(game.run('COM.mode'), 'ruta');
+    assert.match(game.run('combatContext()'), /acceso de huésped/);
+    assert.match(game.run('combatContext()'), /desviador/);
+    assert.doesNotMatch(game.run('combatContext()'), /clave de consulta/);
+    game.run('cancelActiveCombat();');
     game.run('nodeById("1_0").done=true;inImmersion.current="1_1";inImmersion.maxDepthReached=2;storyCollectProof(nodeById("1_1"));save();');
     assert.ok(game.run('load()'));
     assert.equal(game.run('load()._inImmersion.narrativePayload.chapter'), 'c01');

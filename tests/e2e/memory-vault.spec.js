@@ -1,6 +1,6 @@
 'use strict';
 
-const { test, expect, makeImmersion } = require('./fixtures');
+const { test, expect, makeImmersion, solveCodeCombat } = require('./fixtures');
 
 // These cases advance up to 75s of real game callbacks with rendering enabled.
 // A slower test machine must not confuse that workload with an action timeout.
@@ -143,15 +143,10 @@ async function reenterChallenge(page, game) {
     if (await page.locator('#combat-enter').isVisible()) await page.locator('#combat-enter').click();
     const battle = (await minigames(page)).combat;
     if (battle?.scavenger) {
-      expect(battle.mode).toBe('claves');
+      expect(battle.mode).toBe('rastreo');
       // Winning a scavenger can immediately open the target minigame, so stop
       // after its actual phases, not when the shared combat overlay disappears.
-      for (let phase = 0; phase < battle.phases; phase++) {
-        await expect(page.locator('#codeInput')).toBeFocused();
-        const code = (await page.locator('#codeTarget').innerText()).replace(/\s/g, '').toLowerCase();
-        expect(code).toMatch(/^[0-9a-f]{3,}$/);
-        await page.keyboard.type(code);
-      }
+      await solveCodeCombat(page);
       expect((await minigames(page)).combat?.scavenger === true).toBe(false);
       if (await page.locator('#combat-enter').isVisible()) await page.locator('#combat-enter').click();
       ambushes++;

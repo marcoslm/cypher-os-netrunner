@@ -46,14 +46,14 @@ async function run(options = {}){
     assert.equal(g.sb.document.getElementById('encounter-title').textContent,'<b>PERRO</b>');
     assert.equal(g.sb.document.querySelector('#encounter-title b'),null);
     const card=g.sb.document.querySelector('.encounter-card');
-    assert.match(card.textContent,/RASTREADOR · ICE · T2/);assert.match(card.textContent,/CLAVES HEX/);
+    assert.match(card.textContent,/RASTREADOR · ICE · T2/);assert.match(card.textContent,/RASTREO/);
     assert.doesNotMatch(card.textContent,/Memoriza|Introduce|por fase|daño por fallo/);
     assert.equal(g.sb.document.querySelector('.encounter-gear'),null);
   });
   await check("equipo de la ficha muestra solo recursos existentes y aplicables sin consumirlos",()=>{
     const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.decoys=2;S.player.virus=1;S.player.breakerUp=1;S.player.fwUp=1;startCombat({node:{type:"ice",tier:2}});');
     const items=()=>Array.from(g.sb.document.querySelectorAll('.encounter-gear li'),el=>el.textContent);
-    assert.deepEqual(items(),['DECOY ×2','VIRUS ×1','ROMPEHIELOS +1','FIREWALL +10']);
+    assert.deepEqual(items(),['DECOY ×2','VIRUS ×1','FIREWALL +10']);
     assert.equal(g.run('S.player.decoys'),2);assert.equal(g.run('S.player.virus'),1);
     g.run('cancelActiveCombat();startCombat({node:{type:"daemon",tier:3}});');
     assert.deepEqual(items(),['DECOY ×2','VIRUS ×1','FIREWALL +10']);
@@ -532,8 +532,10 @@ async function run(options = {}){
     g.sb.document.querySelector('.adj-node[data-idx="2"]').click();
     assert.equal(g.run('COM.node.scavenger'),true);
     g.sb.document.getElementById('combat-enter').click();
+    const address=g.run('COM.code');
+    g.sb.document.getElementById('traceReply').click();
     const input=g.sb.document.getElementById("codeInput");
-    input.value=g.sb.document.getElementById("codeTarget").textContent.replace(/\s/g,"").toLowerCase();
+    input.value=address.toLowerCase();
     g.emitElement("codeInput","input");
     assert.equal(g.run("combatActive"),false);
     assert.equal(g.run("inImmersion.current"),target);
@@ -617,6 +619,80 @@ async function run(options = {}){
       assert.equal(g.run('importGameState(window.__candidate)'),false,"history."+key);
       assert.equal(g.run("S"),original);
     }
+  });
+
+  await check("F7: familias estables, daño ascendente y ningún progreso en ficha",()=>{
+    for(const enemy of [{type:'ice',tier:1},{type:'ice',tier:2},{type:'ice',tier:3},{type:'daemon',tier:3},{type:'ice',tier:2,scavenger:true},{type:'nucleo',tier:4}]){
+      const g=game();g.sb.enemy=enemy;
+      g.run('S=nuevoEstado();startCombat({node:window.enemy});');
+      const first=g.run('combatAvatarHtml()');
+      const before=g.run('JSON.stringify(S)');g.advance(60000);
+      assert.equal(g.run('JSON.stringify(S)'),before);
+      assert.equal(g.sb.document.getElementById('enemyDamage').textContent,'0%');
+      g.run('cancelActiveCombat();startCombat({node:window.enemy});');
+      assert.equal(g.run('combatAvatarHtml()'),first);
+      g.run('beginCombat();COM.phase=2;updateCombatBars();');
+      assert.equal(g.sb.document.getElementById('enemyDamage').textContent,g.run('Math.round(100/COM.phases)')+'%');
+      assert.ok(Number(g.sb.document.querySelector('.avatar-damage').getAttribute('height'))>0);
+    }
+  });
+  await check("F7: desvíos siempre resolubles por controles, una victoria y sin estado nuevo",()=>{
+    const g=game();g.run('S=nuevoEstado();window.wins=0;');
+    const keys=g.run('JSON.stringify(Object.keys(S))');
+    for(let trial=0;trial<32;trial++){
+      g.run('startCombat({node:{type:"ice",tier:2},onWin:function(){window.wins++;}});beginCombat();');
+      for(let phase=0;phase<2;phase++){
+        assert.equal(g.run('routeConnected(COM.route)'),false);
+        const expected=g.run('COM.route.source===0?[10,10,12,6,10,9,3,10,10]:[6,10,10,3,10,12,10,10,9]');
+        for(let index=0;index<9;index++){
+          const button=g.sb.document.querySelector('[data-route="'+index+'"]');
+          for(let turn=0;Number(button.getAttribute('data-mask'))!==expected[index]&&turn<4;turn++)button.click();
+          assert.equal(Number(button.getAttribute('data-mask')),expected[index]);
+        }
+        assert.equal(g.run('routeConnected(COM.route)'),true);
+        g.sb.document.getElementById('routeSend').click();
+      }
+      assert.equal(g.run('COM'),null);
+      g.run('submitRoute();');assert.equal(g.run('window.wins'),trial+1);
+    }
+    assert.equal(g.run('JSON.stringify(Object.keys(S))'),keys);
+  });
+  await check("F7: ruta errónea y timeout dañan una vez, DECOY y cierre limpian reloj",()=>{
+    const g=game();g.run('S=nuevoEstado();S.player.maxCpu=500;S.player.cpu=500;S.player.decoys=1;startCombat({node:{type:"ice",tier:2}});beginCombat();');
+    const first=g.sb.document.querySelector('[data-route="0"]');
+    const oldSend=g.sb.document.getElementById('routeSend');
+    const damage=g.run('combatDamage()');
+    g.sb.document.getElementById('routeSend').click();
+    assert.equal(g.run('S.player.cpu'),500);assert.equal(g.run('S.player.decoys'),0);
+    assert.equal(g.run('COM.phase'),1);g.advance(g.run('COM.time'));
+    assert.equal(g.run('S.player.cpu'),500-damage);
+    g.run('cancelActiveCombat();startCombat({node:{type:"ice",tier:2}});beginCombat();');
+    const next=g.run('JSON.stringify(COM.route)');first.click();oldSend.click();
+    assert.equal(g.run('JSON.stringify(COM.route)'),next);
+    g.run('S.player.sigilo=20;doEscape();');const cpu=g.run('S.player.cpu');g.advance(60000);
+    assert.equal(g.run('COM'),null);assert.equal(g.run('combatTimer'),null);assert.equal(g.run('S.player.cpu'),cpu);
+  });
+  await check("F7: rastreo exige cerrar lectura, normaliza hex y reinicia tras fallo",()=>{
+    const g=game();g.run('S=nuevoEstado();window.wins=0;startCombat({node:{type:"ice",tier:2,scavenger:true},onWin:function(){window.wins++;}});beginCombat();');
+    const input=g.sb.document.getElementById('codeInput');
+    input.value=g.run('COM.code');g.emitElement(input,'input');assert.equal(g.run('COM.phase'),1);
+    assert.equal(input.disabled,true);g.sb.document.getElementById('traceReply').click();
+    assert.equal(input.disabled,false);assert.ok(!g.sb.document.getElementById('codeTarget').textContent.includes(g.run('COM.code')));
+    input.value='';g.emitElement(input,'keydown',{key:'Enter'});
+    assert.equal(g.run('COM.traceStage'),'read');assert.equal(input.disabled,true);
+    const cpu=g.run('S.player.cpu');
+    for(let phase=0;phase<2;phase++){
+      const address=g.run('COM.code');g.sb.document.getElementById('traceReply').click();
+      input.value=address.toLowerCase().split('').join(' ');g.emitElement(input,'input');
+    }
+    assert.equal(g.run('COM'),null);assert.equal(g.run('window.wins'),1);
+    g.advance(60000);assert.equal(g.run('S.player.cpu'),cpu);
+    g.run('startCombat({node:{type:"ice",tier:2,scavenger:true}});beginCombat();');
+    const oldReply=g.sb.document.getElementById('traceReply');
+    g.run('cancelActiveCombat();startCombat({node:{type:"ice",tier:2,scavenger:true}});beginCombat();');
+    oldReply.click();assert.equal(g.run('COM.traceStage'),'read');
+    g.run('cancelActiveCombat();startCombat({node:{type:"nucleo",tier:4,boss:true,scavenger:true}});');
+    assert.equal(g.run('COM.mode'),'claves');
   });
 
   console.log("Regresiones: " + passes + " correctas · " + fails + " fallos");

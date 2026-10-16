@@ -1,5 +1,5 @@
 'use strict';
-const {test,expect,makeImmersion,downloadJSON}=require('./fixtures');
+const {test,expect,makeImmersion,downloadJSON,solveCodeCombat}=require('./fixtures');
 const nav=(page,view)=>page.locator(`.navbtn[data-view="${view}"]`);
 function offer(project='KURO',id='vault-kuro',contact='doctorSudario') {
   const corp=project==='MIRAJE'?'CAUCE':'MALLA';
@@ -13,13 +13,9 @@ async function moveToVault(page,game) {
   const before=await game.snapshot(), index=before.immersion.grid.adj[before.immersion.current].indexOf('2_0');
   expect(index).toBeGreaterThanOrEqual(0);
   await page.locator(`#adjlist .adj-node[data-idx="${index}"]`).click();
-  if ((await game.snapshot()).combat?.mode==='claves') {
+  if ((await game.snapshot()).combat?.mode==='rastreo') {
     // Un rastreador aleatorio puede preceder al puzzle. Resolver sus fases reales.
-    const phases=await page.locator('body').evaluate(()=>COM.phases);
-    for(let phase=0;phase<phases;phase++) {
-      const code=(await page.locator('#codeTarget').innerText()).replace(/\s/g,'');
-      await page.keyboard.type(code);
-    }
+    await solveCodeCombat(page);
   }
   await expect(page.locator('#combat .vp-sequence')).toBeVisible();
 }
