@@ -514,8 +514,9 @@ button.btn{
 .offers{margin-top:8px;}
 .offer{border:1px solid var(--borde);border-radius:3px;padding:8px 10px;
   margin-top:6px;font-size:13px;display:flex;justify-content:space-between;gap:10px;
-  align-items:center;}
-.offer .desc{flex:1;}
+  align-items:center;flex-wrap:wrap;}
+.offer .desc{flex:1 1 220px;min-width:0;overflow-wrap:anywhere;}
+.offer>.btn{min-height:44px;}
 
 /* ---- jobs activos ---- */
 .job{border:1px solid var(--borde);border-radius:3px;padding:8px 10px;
@@ -848,6 +849,8 @@ button.btn{
 .archive-document .archive-text{white-space:pre-wrap;margin:20px 0;}
 .archive-tabs{display:flex;flex-wrap:wrap;gap:8px;}
 .archive-tabs .btn[aria-pressed="true"]{border-color:var(--cyan);color:var(--cyan);}
+.work-sections{position:sticky;top:0;z-index:2;background:var(--fondo-panel);padding:8px 0;margin-bottom:16px;border-bottom:1px solid var(--borde);}
+.work-sections .btn{flex:1;min-width:0;min-height:44px;white-space:normal;letter-spacing:0;}
 #intro-menu{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.85fr);gap:24px 30px;margin-top:24px;
   padding-top:24px;border-top:1px solid rgba(77,216,255,.25);animation:deckMenu .35s ease-out;}
 #intro-menu.hidden{display:none;}

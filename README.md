@@ -11,6 +11,8 @@ El codigo de desarrollo incorpora una campana completa de ocho casos: llegada co
 
 F7 incorpora RASTREO (retener una direccion ficticia y cerrar su lectura antes de responder) y DESVIO (rotar conexiones para abrir un enlace), junto a CLAVES, MEMORIA y ESCANER. Seis familias de programas tienen siluetas locales originales y dano recibido ascendente con porcentaje, sin imagenes externas. Se mantienen la ficha inicial en pausa, teclado/tactil, huida y reglas de entrega. La validacion automatizada no sustituye pruebas de lectura, equilibrio con personas o dispositivos fisicos.
 
+La revision de claridad explica que se investiga, por que importa cada copia y que hacer despues, con resumen sencillo junto al registro original. TRABAJOS separa INVESTIGACION y CONTRATOS; CONTACTOS separa PERSONALES y OFERTAS. La historia busca poder seguirse sin conocimientos de gestion ni del mundo ficticio; ese objetivo editorial sigue pendiente de prueba con lectores.
+
 El formato anterior a esta revision narrativa requiere una partida nueva: esos guardados no se cargan ni se convierten, pero tampoco se eliminan. Los checkpoints de la revision actual (`story_v1`) siguen siendo validos. Los archivos exportados anteriores pueden conservarse como respaldo; los ajustes de audio y pantalla siguen siendo preferencias del dispositivo, independientes de la partida.
 
 **[Jugar online en GitHub Pages](https://marcoslm.github.io/cypher-os-netrunner/cypher_os.html)** — abre el enlace y pulsa COMENZAR, sin instalar nada.

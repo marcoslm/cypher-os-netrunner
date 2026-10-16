@@ -138,6 +138,7 @@ test('F3: factura completa, paquete persistente y verificacion unica sin lectura
   await expect(page.locator('.archive-meta')).toContainText('hora de sesión');
   await nav(page, 'contactos').click();
   await expect(action(page, 'acceptJob').first()).toBeVisible();
+  await page.locator('[data-action="workSection"][data-tab="story"]').click();
   await page.locator('[data-action="openStoryConversation"][data-id="m_celia_alias"]').click();
   expect((await game.snapshot()).state.player.credits).toBe(640);
 });
@@ -357,7 +358,7 @@ for (const width of [320,1280]) {
       await scoped('deliverStoryCase',id).click();
       expect((await game.snapshot()).state.player.credits).toBe(returned.state.player.credits+(id==='c05'?400:500));
       await expect(page.locator('#conversation-heading')).toBeFocused();
-      await expect(page.locator('#panel-scroll')).toContainText(id==='c05'?'Retengo la segunda autorización':'salida está ejecutada');
+      await expect(page.locator('#panel-scroll')).toContainText(id==='c05'?'no la voy a dar':'salida está ejecutada');
       await fits(); await page.screenshot({path:testInfo.outputPath(`${id}-reaction-${width}.png`)});
       await action(page,'closeStoryConversation').click();
       await expect(scoped('deliverStoryCase',id)).toHaveCount(0);
@@ -371,6 +372,7 @@ for (const width of [320,1280]) {
     await expect(page.locator('#panel-scroll')).toContainText('Ya está aquí');
     await fits(); await page.screenshot({path:testInfo.outputPath(`welcome-${width}.png`)});
     await game.reload(); await nav(page,'contactos').click();
+    await page.locator('[data-action="workSection"][data-tab="story"]').click();
     await scoped('openStoryConversation','m_ines_salida').click();
     expect((await game.snapshot()).state.player.credits).toBe(finished.state.player.credits);
     await nav(page,'archivos').click();
@@ -412,6 +414,8 @@ for(const width of [320,1280]){
       if(id==='c07')await action(page,'closeStoryConversation').click();
     }
     const paid=await game.snapshot();expect(paid.state.history.finalDone).toBe(true);
+    await expect(page.locator('#panel-scroll')).toContainText('Te lo regalo');
+    await expect(page.locator('#panel-scroll')).toContainText('el deck es tuyo');
     expect(paid.state.narrative.readConversations).toContain('m_berto_final');
     for(const id of ['m_ines_final','m_nara_final','m_copia_final'])expect(paid.state.narrative.readConversations).not.toContain(id);
     await action(page,'goStoryProofs').click();await expect(scoped('openArchive','r_copia_final')).toHaveCount(0);
@@ -454,6 +458,43 @@ test('F6: campana completa desde nueva partida sin contratos ni compras obligato
   expect(closed.state.jobs).toEqual([]);expect(closed.state.player.stats.totalCreditsSpent).toBe(0);
   expect(closed.state.history.finalDone).toBe(true);expect(closed.state.player.cpu).toBeGreaterThan(0);
 });
+
+for(const width of [320,1280]){
+  test(`investigacion y contratos separados con contactos extensos a ${width} px`,async({page,game},testInfo)=>{
+    await page.setViewportSize({width,height:width===320?800:900});await setupF5(page,game,7);
+    const section=tab=>page.locator(`[data-action="workSection"][data-tab="${tab}"]`);
+    const fits=async()=>{
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+      expect(await page.locator('#panel-scroll').evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    };
+    await nav(page,'trabajos').click();
+    await expect(page.locator('[data-action="consultStoryCase"][data-id="c08"]')).toBeVisible();
+    await section('contracts').click();await expect(section('contracts')).toBeFocused();
+    await expect(action(page,'consultStoryCase')).toHaveCount(0);
+    await nav(page,'contactos').click();
+    await expect(action(page,'acceptJob').first()).toBeVisible();
+    const before=(await game.snapshot()).state.narrative;
+    await section('story').click();await expect(section('story')).toBeFocused();
+    await expect(action(page,'acceptJob')).toHaveCount(0);
+    expect(await action(page,'openStoryConversation').count()).toBeGreaterThan(15);
+    await action(page,'openStoryConversation').last().scrollIntoViewIfNeeded();
+    const sticky=await section('contracts').boundingBox(),panel=await page.locator('#panel-scroll').boundingBox();
+    expect(sticky.y).toBeGreaterThanOrEqual(panel.y);expect(sticky.y+sticky.height).toBeLessThan(panel.y+panel.height);
+    await fits();await page.screenshot({path:testInfo.outputPath(`personal-sticky-${width}.png`)});
+    await section('contracts').click();await expect(section('contracts')).toBeFocused();
+    await expect(action(page,'openStoryConversation')).toHaveCount(0);
+    await expect(action(page,'acceptJob').first()).toBeVisible();
+    expect((await game.snapshot()).state.narrative).toEqual(before);
+    await fits();await page.screenshot({path:testInfo.outputPath(`offers-${width}.png`)});
+    await section('story').click();
+    await page.locator('[data-action="openStoryConversation"][data-id="m_celia_alias"]').click();
+    await expect(page.locator('#conversation-heading')).toBeFocused();
+    await expect(section('story')).toHaveAttribute('aria-pressed','true');
+    await expect(page.locator('#panel-scroll')).toContainText('No uses las credenciales de Tomás');
+    await expect(action(page,'acceptJob')).toHaveCount(0);
+    await fits();
+  });
+}
 
 test('smoke: todos los paneles, terminal y compras con autosave', async ({ page, game }) => {
   await game.boot({ skip: 'click' });

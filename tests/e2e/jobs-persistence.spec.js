@@ -27,6 +27,7 @@ test('nivel 30: tres contratos aceptados generan oportunidades suficientes en un
     expect(item.n).toBeLessThanOrEqual(item.type==='recoleta'?6:item.type==='daemon'?3:4);
   }
   await nav(page,'trabajos').click();
+  await page.locator('[data-action="workSection"][data-tab="contracts"]').click();
   await expect(page.locator('#panel-scroll')).toContainText('los daemons no cuentan');
 });
 test('vault F01: aceptar y generar conserva el nodo sorteado al guardar, exportar/importar y recargar', async ({page,game}) => {
@@ -104,6 +105,7 @@ test('exportar/reset/importar cuatro veces conserva datos, ICE vencido, subestac
   }
   await move('1_0'); await move('2_0'); await move('3_0');
   await nav(page,'trabajos').click();
+  await page.locator('[data-action="workSection"][data-tab="contracts"]').click();
   await expect(page.locator('.job').filter({hasText:'rompehielas'}).locator('.prog')).toContainText('1/2');
   await nav(page,'red').click();
   const expected=await game.snapshot();

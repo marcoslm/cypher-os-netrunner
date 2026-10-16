@@ -634,6 +634,74 @@ async function run(options = {}) {
     assert.equal(game.run('nodeById(nodeById("c08_proof").storyDefense).done'),false);
     game.run('save();');assert.ok(game.run('load()'));
   });
+  check('pestanas separan casos y contratos sin lecturas ni cambios de progreso', game => {
+    activate(game); resolve(game,'c01');
+    game.run('ensureStateIntegrity();generateOffers();activateStorySession(false);showView("trabajos");');
+    const click=(view,tab)=>{
+      const element=game.sb.document.querySelector('[data-action="workSection"][data-view-name="'+view+'"][data-tab="'+tab+'"]');
+      assert.ok(element); game.emitElement(element,'click');
+      assert.equal(game.sb.document.activeElement.getAttribute('data-tab'),tab);
+    };
+    const before=clone(game.run('S.narrative'));
+    assert.ok(game.sb.document.querySelector('[data-action="consultStoryCase"]'));
+    click('trabajos','contracts');
+    assert.ok(!game.sb.document.querySelector('[data-action="consultStoryCase"]'));
+    game.run('showView("contactos");');
+    assert.ok(game.sb.document.querySelector('[data-action="acceptJob"]'));
+    assert.ok(!game.sb.document.querySelector('[data-action="openStoryConversation"]'));
+    click('contactos','story');
+    assert.ok(game.sb.document.querySelector('[data-action="openStoryConversation"]'));
+    assert.ok(!game.sb.document.querySelector('[data-action="acceptJob"]'));
+    click('contactos','contracts');
+    assert.deepEqual(clone(game.run('S.narrative')),before);
+    const offer=game.sb.document.querySelector('[data-action="acceptJob"]');
+    game.emitElement(offer,'click');
+    assert.equal(game.run('S.jobs.length'),1);
+    assert.deepEqual(clone(game.run('S.narrative')),before);
+    game.run('ACTIONS.consultStoryCase({getAttribute:function(){return "c02";}});');
+    assert.equal(game.run('_workTab'),'story');
+    assert.ok(game.sb.document.querySelector('[data-action="acceptStoryCase"]'));
+    assert.ok(!game.sb.document.querySelector('[data-action="cancelJob"]'));
+    assert.equal(game.run('S.jobs.length'),1);
+    game.run('clearSessionRuntime();');
+    assert.equal(game.run('_workTab'),'story');
+    assert.equal(game.run('_contactsTab'),null);
+  });
+  check('documentos explican las pruebas sin sustituir sus registros ni abrir archivos cerrados', game => {
+    activate(game); resolve(game,'c01');
+    game.run('ensureStateIntegrity();activateStorySession(false);ACTIONS.openArchive({getAttribute:function(){return "r_factura";}});');
+    const text=game.sb.document.getElementById('panel-scroll').textContent;
+    assert.match(text,/recibi[oó] el pago/);
+    assert.match(text,/23:11/); assert.match(text,/23:13/);
+    assert.equal(game.run('storyReadFile("r_custodia")'),false);
+    for(const id of ['c02','c03','c04','c05','c06','c07','c08']) assert.ok(game.run('STORY_CASE_DETAILS.'+id+'.purpose.length')>40);
+  });
+  check('regalo del deck solo al cerrar c08 y sin premio o identidad adicionales', game => {
+    activate(game);
+    for(const id of ['c01','c02','c03','c04','c05','c06','c07']){
+      if(id==='c03') game.run('storyGrantCaseKey();storyApplyCaseKey();');
+      if(id==='c05') invoke(game,'storyReadConversation','m_nara_presentacion');
+      resolve(game,id);
+    }
+    game.run('CMD.expediente();');
+    assert.match(game.sb.document.getElementById('panel-scroll').textContent,/uso provisional/);
+    assert.equal(game.run('storyConversationAvailable("m_berto_final")'),false);
+    resolve(game,'c08');
+    assert.match(game.run('STORY_DIALOGUES.m_berto_final.text'),/Te lo regalo/);
+    game.run('CMD.expediente();');
+    assert.match(game.sb.document.getElementById('panel-scroll').textContent,/deck regalado por Tomás/);
+    assert.ok(!game.sb.document.getElementById('panel-scroll').textContent.includes('uso provisional'));
+    game.run('window.lines=[];msg=function(text){window.lines.push(text);};CMD.quien("yo");CMD.quien("Tomás");CMD.quien("Berto");');
+    assert.match(game.run('window.lines.join(" ")'),/El deck es suyo/);
+    const credits=game.run('S.player.credits');
+    game.run('save();');
+    assert.equal(game.run('importGameState('+JSON.stringify(clone(game.run('load()')))+')'),true);
+    game.run('storyReadConversation("m_berto_final");storyReadConversation("m_berto_final");');
+    assert.equal(game.run('S.player.credits'),credits);
+    assert.equal(game.run('Object.keys(S.narrative).length'),12);
+    assert.equal(game.run('S.narrative.aliasAcquired'),true);
+    assert.equal(game.run('S.narrative.awarded.length'),8);
+  });
   console.log(`Narrativa: ${passes} correctas, ${fails} fallos`);
   return options.summary ? { passes, fails, total: passes + fails } : fails;
 }

@@ -117,6 +117,7 @@ test('vault F02: importar duplicado legacy lo retira una vez sin calor ni otro p
   expect(imported.state.jobs[1]).toMatchObject({done:true,failed:true,_vaultRetired:true,prog:{vaulted:true}});
   expect(imported.state.offers).toHaveLength(0);
   await nav(page,'trabajos').click();
+  await page.locator('[data-action="workSection"][data-tab="contracts"]').click();
   await expect(page.locator('.job').filter({hasText:'retirado:'})).toContainText('RETIRADO');
   await expect(page.locator('.job').filter({hasText:'retirado:'})).toContainText('sin calor ni recompensa');
   await game.reload();
@@ -129,6 +130,7 @@ test('vault F02: importar duplicado legacy lo retira una vez sin calor ni otro p
 test('vault F02: recuperación legítima sin snapshot conserva el cobro al siguiente DIP',async({page,game})=>{
   await game.setup({state:{jobs:[job('MIRAJE','pendiente',{prog:{vaulted:true}})],offers:[offer('MIRAJE','obsoleta')]}});
   await nav(page,'trabajos').click();
+  await page.locator('[data-action="workSection"][data-tab="contracts"]').click();
   await expect(page.locator('.job')).toContainText('proyecto recuperado');
   expect((await game.snapshot()).state.jobs[0].done).toBe(false);
   await nav(page,'red').click(); await page.locator('[data-action="dipGrid"]').click();
