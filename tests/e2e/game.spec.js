@@ -489,10 +489,73 @@ for(const width of [320,1280]){
     await section('story').click();
     await page.locator('[data-action="openStoryConversation"][data-id="m_celia_alias"]').click();
     await expect(page.locator('#conversation-heading')).toBeFocused();
-    await expect(section('story')).toHaveAttribute('aria-pressed','true');
+    await expect(section('story')).toHaveCount(0);
+    await expect(page.locator('.panel-back [data-action="closeStoryConversation"]')).toBeVisible();
     await expect(page.locator('#panel-scroll')).toContainText('No uses las credenciales de Tomás');
     await expect(action(page,'acceptJob')).toHaveCount(0);
     await fits();
+  });
+}
+
+for(const width of [320,768,1280]){
+  test(`GUI comun: pestanas, acciones y retorno a ${width} px`,async({page,game},testInfo)=>{
+    await page.setViewportSize({width,height:width===320?740:900});await game.setup();
+    const fits=async()=>{
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+      expect(await page.locator('#panel-scroll').evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    };
+    await nav(page,'inicio').click();
+    const row=page.locator('.panel-actions').filter({has:action(page,'goArchivos')});
+    await expect(row).toHaveCSS('gap','10px');await expect(row).toHaveCSS('justify-content','flex-start');
+    const first=await action(page,'goArchivos').boundingBox(),second=await action(page,'goStoryWork').boundingBox();
+    expect(second.y>=first.y+first.height+9 || second.x>=first.x+first.width+9).toBe(true);
+    await fits();await page.screenshot({path:testInfo.outputPath(`inicio-${width}.png`)});
+    let tabStyle;
+    for(const view of ['trabajos','contactos','mensajes','archivos']){
+      await nav(page,view).click();
+      const tabs=page.locator('.archive-tabs'),tab=tabs.locator('button').first();
+      await expect(tabs).toHaveCSS('position','sticky');await expect(tabs).toHaveCSS('gap','8px');
+      const style=await tab.evaluate(element=>{const css=getComputedStyle(element);return {clip:css.clipPath,radius:css.borderRadius,padding:css.padding,font:css.fontSize};});
+      expect(style.clip).toContain('polygon');expect(style.radius).toBe('0px');
+      if(tabStyle)expect(style).toEqual(tabStyle);else tabStyle=style;
+      await tabs.locator('button').last().click();await expect(tabs.locator('button').last()).toBeFocused();
+      await expect(tabs.locator('[aria-pressed="true"]')).toHaveCount(1);
+      await fits();await page.screenshot({path:testInfo.outputPath(`${view}-${width}.png`)});
+    }
+    await nav(page,'contactos').click();await page.locator('[data-action="workSection"][data-tab="story"]').click();
+    const last=await page.locator('.archive-row').last().boundingBox(),investigation=await action(page,'goStoryWork').boundingBox();
+    expect(investigation.y-last.y-last.height).toBeGreaterThanOrEqual(15);
+    await action(page,'openStoryConversation').first().click();await expect(page.locator('#conversation-heading')).toBeFocused();
+    await expect(page.locator('.panel-back [data-action="closeStoryConversation"]')).toBeVisible();
+    await fits();await page.screenshot({path:testInfo.outputPath(`conversacion-${width}.png`)});
+    await action(page,'closeStoryConversation').click();await expect(nav(page,'contactos')).toHaveClass(/active/);
+    await expect(action(page,'openStoryConversation').first()).toBeFocused();
+    await nav(page,'archivos').click();await page.locator('[data-action="archiveTab"][data-tab="previous"]').click();
+    const file=page.locator('[data-action="openArchive"][data-id="l_estancia"]');await file.click();
+    await expect(page.locator('#archive-heading')).toBeFocused();
+    await expect(page.locator('.panel-back [data-action="closeArchive"]')).toBeVisible();
+    await action(page,'closeArchive').click();await expect(file).toBeFocused();
+    const mail=await page.evaluate(()=>{const id=MENSAJES_DEF[0].id;S.mensajes=[{id,hora:S.clock,leido:false}];return id;});
+    await nav(page,'mensajes').click();await page.locator('[data-action="mailTab"][data-tab="current"]').click();
+    const letter=page.locator(`[data-action="openMsg"][data-id="${mail}"]`);await letter.click();
+    await expect(page.locator('#message-heading')).toBeFocused();
+    await expect(page.locator('.panel-back [data-action="closeMsg"]')).toBeVisible();
+    await expect(page.locator('.archive-tabs')).toHaveCount(0);await fits();
+    await page.screenshot({path:testInfo.outputPath(`carta-${width}.png`)});
+    await action(page,'closeMsg').click();await expect(letter).toBeFocused();
+    await page.locator('[data-action="mailTab"][data-tab="previous"]').click();
+    await page.locator('[data-action="openArchive"][data-id="l_contacto"]').click();
+    await expect(page.locator('.panel-back [data-action="closeArchive"]')).toHaveText('VOLVER A MENSAJES');
+    await action(page,'closeArchive').click();await expect(nav(page,'mensajes')).toHaveClass(/active/);
+    await expect(page.locator('[data-action="openArchive"][data-id="l_contacto"]')).toBeFocused();
+    await nav(page,'red').click();await expect(page.locator('#panel-scroll h1')).toHaveText('RED');
+    await expect(page.locator('.panel-actions [data-action="dipGrid"]')).toBeVisible();
+    await expect(page.locator('#grid-overlay')).toHaveCount(0);await expect(page.locator('#gridcanvas')).toBeVisible();
+    await fits();await page.screenshot({path:testInfo.outputPath(`red-${width}.png`)});
+    for(const view of ['tienda','estado','informes','registro','logros','ayuda']){await nav(page,view).click();await fits();}
+    await nav(page,'registro').click();await page.locator('[data-action="logFilter"][data-cat="lore"]').click();
+    await expect(page.locator('[data-action="logFilter"][data-cat="lore"]')).toBeFocused();
+    await expect(page.locator('[data-action="logFilter"][aria-pressed="true"]')).toHaveCount(1);
   });
 }
 

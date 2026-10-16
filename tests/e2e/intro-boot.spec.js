@@ -89,6 +89,8 @@ test('F2: archivos y correo anterior tienen una sola lectura, fuente y fecha', a
     expect(after.saved.narrative.readFiles).toEqual(['l_revision', 'l_contacto']);
     await action(page, 'closeArchive').click();
     await expect(page.locator('[data-action="openArchive"][data-id="l_contacto"]')).toBeFocused();
+    await expect(page.locator('.navbtn[data-view="mensajes"]')).toHaveClass(/active/);
+    await page.locator('.navbtn[data-view="archivos"]').click();
     await page.locator('[data-action="archiveTab"][data-tab="recovered"]').click();
     await expect(page.locator('#panel-scroll')).toContainText('No hay archivos');
     await game.reload();

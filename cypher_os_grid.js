@@ -1369,12 +1369,13 @@ function renderGridHud(){
   /* El HUD ocupa su propio espacio. Mapa y tooltip comparten origen,
      incluso cuando el canvas queda centrado en una zona más grande. */
   adm.innerHTML =
-    '<div id="gridwrap">'+
+    (immersed?'':'<h1 class="title">RED</h1><div class="sub">Enlace remoto · desconectado</div><div class="panel-actions">'+btn+'</div>')+
+    '<div id="gridwrap"'+(immersed?'':' class="grid-idle"')+'>'+
       '<div id="grid-stage"><div id="grid-map">'+
         '<canvas id="gridcanvas"></canvas>'+
         '<div id="grid-tooltip" class="hidden"></div>'+
       '</div></div>'+
-      '<div id="grid-overlay"'+(immersed?' class="grid-immersed"':'')+'>'+
+      (immersed?'<div id="grid-overlay" class="grid-immersed">'+
         (immersed ? '<div id="grid-context"><div id="gridhud"></div><span id="grid-completion"></span><div id="grid-current"></div></div>'+
           '<div id="grid-navigation"><div id="adjlist" role="group" aria-label="Nodos vecinos"></div></div>'+
           '<div id="grid-info"><details id="grid-exploration"'+(_gridHudPrefs.explorationOpen?' open':'')+'>'+
@@ -1383,7 +1384,7 @@ function renderGridHud(){
             '<summary id="grid-jobs-summary"><span class="grid-summary-label">TRABAJOS</span> <b id="grid-job-ready">0</b></summary><div id="grid-job-items"></div>'+
           '</details></div>' : '')+
         '<div id="grid-actions">'+btn+'</div>'+
-      '</div>'+
+      '</div>':'')+
     '</div>';
   // Re-adquirir referencia del canvas tras reconstruir el DOM.
   canvas = document.getElementById("gridcanvas");

@@ -164,14 +164,13 @@ test('grid adaptativo: fallback sin ResizeObserver responde al lateral y al relo
   expect((await game.snapshot()).immersion).toEqual(expected.immersion);
 });
 
-test('grid en calle: ampliar texto reajusta la franja DIP sin inmersión ni reloj nuevo',async({page,game})=>{
+test('grid en calle: ampliar texto conserva la franja comun DIP sin inmersion ni reloj nuevo',async({page,game})=>{
   await page.emulateMedia({reducedMotion:'reduce'});await page.setViewportSize({width:1024,height:600});
   await game.setup({state:{offers:[]}});await page.locator('.navbtn[data-view="red"]').click();
   const before=await game.snapshot();
-  await page.addStyleTag({content:'#gridwrap{font-size:24px;}'});
-  await expect.poll(()=>page.locator('#gridwrap').evaluate(el=>parseFloat(el.style.getPropertyValue('--grid-hud-height')))).toBe(84);
+  await page.addStyleTag({content:'#panel-scroll>.panel-actions{font-size:24px;}#panel-scroll>.panel-actions .btn{font-size:inherit;}'});
   const layout=await page.locator('[data-action="dipGrid"]').evaluate(el=>{
-    const r=el.getBoundingClientRect(),hud=document.getElementById('grid-overlay').getBoundingClientRect();
+    const r=el.getBoundingClientRect(),hud=el.closest('.panel-actions').getBoundingClientRect();
     return {top:r.top,bottom:r.bottom,hudTop:hud.top,hudBottom:hud.bottom};
   });
   expect(layout.top).toBeGreaterThanOrEqual(layout.hudTop);expect(layout.bottom).toBeLessThanOrEqual(layout.hudBottom);
