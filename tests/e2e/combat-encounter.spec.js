@@ -142,24 +142,52 @@ for(const width of [320,1280]){
   });
 }
 
-test('F7: rastreo cierra lectura, fallo cambia dirección y no duplica victoria',async({page,game},testInfo)=>{
+for(const width of [320,1280]){
+test('rastreo: contexto previo y lectura/respuesta compactas a '+width+' px',async({page,game},testInfo)=>{
+  await page.setViewportSize({width,height:600});
   await game.setup({player:{maxCpu:200,cpu:200}});
   await page.evaluate(()=>startCombat({node:{type:'ice',tier:2,scavenger:true,name:'RASTREADOR'}}));
+  await expect(page.locator('.encounter-note')).toContainText('dirección de su rutina activa');
+  const initial=(await game.snapshot()).state.player;
+  await page.clock.runFor(30000);
+  expect((await game.snapshot()).state.player).toEqual(initial);
+  expect(await page.evaluate(()=>combatTimer)).toBeNull();
+  await page.screenshot({path:testInfo.outputPath('rastreo-contexto.png')});
   await page.locator('#combat-enter').click();
+  await expect(page.locator('#traceReply')).toBeFocused();
   await expect(page.locator('#codeInput')).toBeDisabled();
+  await expect(page.locator('#codeInput')).toBeHidden();
+  await expect(page.locator('.hex-kb')).toBeHidden();
   const code=(await page.locator('#codeTarget').innerText()).match(/0x([0-9A-F]+)/)[1];
-  await page.locator('#traceReply').click();
+  await expect(page.locator('#codeTarget')).toHaveText('0x'+code);
+  await expect(page.locator('.trace-card')).not.toContainText(/TRAZA LOCAL|RUTINA ACTIVA|CANAL AISLADO|persigue esta sesión/);
+  const fits=async()=>{
+    const card=page.locator('.trace-card');
+    expect(await card.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    expect(await card.evaluate(element=>element.scrollHeight-element.clientHeight)).toBeLessThanOrEqual(1);
+    const box=await card.boundingBox();expect(box.y).toBeGreaterThanOrEqual(0);expect(box.y+box.height).toBeLessThanOrEqual(600);
+  };
+  await fits();await page.screenshot({path:testInfo.outputPath('rastreo-lectura.png')});
+  const remaining=await page.evaluate(()=>COM.remaining);
+  await page.clock.runFor(300);
+  expect(await page.evaluate(()=>COM.remaining)).toBe(remaining-300);
+  await page.keyboard.press('Enter');
   await expect(page.locator('#codeTarget')).not.toContainText(code);
+  await expect(page.locator('#traceReply')).toBeHidden();
   await expect(page.locator('#codeInput')).toBeFocused();
+  await expect(page.locator('.hex-kb')).toBeVisible();
+  await fits();await page.screenshot({path:testInfo.outputPath('rastreo-respuesta.png')});
   const before=(await game.snapshot()).state.player.cpu;
   await page.keyboard.press('Enter');
   expect((await game.snapshot()).state.player.cpu).toBeLessThan(before);
   await expect(page.locator('#traceReply')).toBeVisible();
   await expect(page.locator('#codeInput')).toBeDisabled();
-  await page.screenshot({path:testInfo.outputPath('rastreo.png')});
+  await expect(page.locator('.hex-kb')).toBeHidden();
+  await fits();await page.screenshot({path:testInfo.outputPath('rastreo-reintento.png')});
   await solveCodeCombat(page);
   await expect(page.locator('#combat')).toBeHidden();
 });
+}
 
 test('F7: timeout, huida y callbacks retirados con movimiento reducido',async({page,game})=>{
   await page.emulateMedia({reducedMotion:'reduce'});

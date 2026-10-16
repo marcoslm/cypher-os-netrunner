@@ -313,9 +313,10 @@ async function solveCodeCombat(page) {
     if (await page.locator('#routeBoard').isVisible()) { await solveRoutePhase(page); continue; }
     // El juego puede encadenar el efecto del nodo tras el combate (p. ej. emboscada
     // antes de un vault): la UI ya no es de claves y esta rutina termina aquí.
-    if (!(await page.locator('#codeInput').isVisible())) return;
+    const readingTrace = await page.locator('#traceReply').isVisible();
+    if (!readingTrace && !(await page.locator('#codeInput').isVisible())) return;
     let code;
-    if (await page.locator('#traceReply').isVisible()) {
+    if (readingTrace) {
       code = (await page.locator('#codeTarget').innerText()).match(/0x([0-9A-F]+)/)[1].toLowerCase();
       await page.locator('#traceReply').click();
     } else code = (await page.locator('#codeTarget').innerText()).replace(/\s/g, '').toLowerCase();

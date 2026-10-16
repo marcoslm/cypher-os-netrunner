@@ -673,13 +673,27 @@ async function run(options = {}){
     assert.equal(g.run('COM'),null);assert.equal(g.run('combatTimer'),null);assert.equal(g.run('S.player.cpu'),cpu);
   });
   await check("F7: rastreo exige cerrar lectura, normaliza hex y reinicia tras fallo",()=>{
-    const g=game();g.run('S=nuevoEstado();window.wins=0;startCombat({node:{type:"ice",tier:2,scavenger:true},onWin:function(){window.wins++;}});beginCombat();');
+    const g=game();g.run('S=nuevoEstado();window.wins=0;startCombat({node:{type:"ice",tier:2,scavenger:true},onWin:function(){window.wins++;}});');
+    assert.match(g.sb.document.querySelector('.encounter-note').textContent,/canal.*dirección.*rutina activa/);
+    const paused=g.run('S.player.cpu');g.advance(30000);
+    assert.equal(g.run('S.player.cpu'),paused);assert.equal(g.run('combatTimer'),null);
+    g.run('beginCombat();');
     const input=g.sb.document.getElementById('codeInput');
+    const card=g.sb.document.querySelector('.trace-card');
+    assert.equal(g.sb.document.getElementById('codeTarget').textContent,'0x'+g.run('COM.code'));
+    assert.ok(card.classList.contains('trace-reading'));
+    assert.ok(!g.sb.document.getElementById('iceBar'));
+    const remaining=g.run('COM.remaining');g.advance(200);
+    assert.equal(g.run('COM.remaining'),remaining-200);
     input.value=g.run('COM.code');g.emitElement(input,'input');assert.equal(g.run('COM.phase'),1);
     assert.equal(input.disabled,true);g.sb.document.getElementById('traceReply').click();
+    assert.ok(!card.classList.contains('trace-reading'));
+    assert.equal(g.run('COM.remaining'),remaining-200);
     assert.equal(input.disabled,false);assert.ok(!g.sb.document.getElementById('codeTarget').textContent.includes(g.run('COM.code')));
     input.value='';g.emitElement(input,'keydown',{key:'Enter'});
     assert.equal(g.run('COM.traceStage'),'read');assert.equal(input.disabled,true);
+    assert.ok(card.classList.contains('trace-reading'));
+    assert.equal(g.sb.document.getElementById('codeTarget').textContent,'0x'+g.run('COM.code'));
     const cpu=g.run('S.player.cpu');
     for(let phase=0;phase<2;phase++){
       const address=g.run('COM.code');g.sb.document.getElementById('traceReply').click();

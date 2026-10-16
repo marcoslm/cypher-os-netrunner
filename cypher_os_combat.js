@@ -34,7 +34,7 @@ function combatAvatarHtml(){
     '</svg><span class="avatar-caption">PROGRAMA · DAÑO RECIBIDO <b id="enemyDamage">'+damage+'%</b></span></div>';
 }
 function combatContext(){
-  if(COM.node.scavenger) return "El rastreador persigue esta sesión. Interrumpir su rutina libera el paso; no recupera archivos ni paga contratos.";
+  if(COM.node.scavenger) return "El rastreador persigue esta sesión. El deck ha aislado su canal: localizar la dirección de su rutina activa permitirá interrumpir el seguimiento. No recupera archivos ni paga contratos.";
   if(COM.node.type==="nucleo") return "Esta defensa protege la escritura central. Recuperar y entregar la revocación sigue siendo necesario después.";
   if(inImmersion && COM.node.id==="1_0" && inImmersion.grid.nodes.some(function(node){ return node.storyChapter==="c01"; })) return COM.mode==="ruta" ? "El acceso de huésped al historial está cerrado por un desviador. Reorientar el enlace permite consultar la factura; no modifica ni entrega su contenido." : "El archivador limita el historial con acceso de huésped. El deck obtiene una clave de consulta, pero el canal exige confirmación manual; no puede escribir directamente en él.";
   if(COM.node.type==="daemon") return "El daemon retiene un patrón de acceso. Reconstruirlo libera este nodo, no confirma el contenido de sus archivos.";
@@ -168,15 +168,15 @@ function renderCombat(){
   /* teclado hex virtual compartido: 789 EF / 456 CD / 123 AB + borrar + enviar */
   var hexKB=buildHexKB("hexDel","hexEnter");
   el.innerHTML =
-    '<div class="combat-card">'+
+    '<div class="combat-card'+(COM.mode==="rastreo"?' trace-card trace-reading':'')+'">'+
       '<div class="combat-title" id="ct-title"></div>'+
       '<div class="combat-sub" id="ct-sub">FASE 1/'+COM.phases+'</div>'+
       combatAvatarHtml()+
       '<div class="combat-bars">'+
         '<div class="combat-bar-lbl"><span>TU CPU</span><span id="cpuPct">100%</span></div>'+
         '<div class="bar"><i id="cpuBar" style="width:100%"></i><div class="bar-txt" id="cpuTxt">100/100</div></div>'+
-        '<div class="combat-bar-lbl"><span>ICE</span><span id="icePct">100%</span></div>'+
-        '<div class="bar rojo"><i id="iceBar" style="width:100%"></i></div>'+
+        (COM.mode==="rastreo"?'':'<div class="combat-bar-lbl"><span>ICE</span><span id="icePct">100%</span></div>'+
+        '<div class="bar rojo"><i id="iceBar" style="width:100%"></i></div>')+
       '</div>'+
       '<div class="code-box">'+
         '<div class="code-target" id="codeTarget">—</div>'+
@@ -198,7 +198,6 @@ function renderCombat(){
   initHexKeyboard();
   document.getElementById("ct-title").textContent="⚠ "+(COM.node.name||"ICE")+" · T"+COM.tier;
   if(COM.mode==="rastreo"){
-    document.getElementById("codeTarget").classList.add("trace-dump");
     var target=document.getElementById("codeTarget");
     target.insertAdjacentHTML("afterend",'<button class="btn small" id="traceReply">CERRAR LECTURA Y RESPONDER</button>');
     var battle=COM, replyButton=document.getElementById("traceReply");
@@ -253,7 +252,8 @@ function newCode(){
   if(t) t.textContent=s.split("").join(" ");
   if(COM.mode==="rastreo"){
     COM.traceStage="read";
-    if(t) t.textContent="TRAZA LOCAL · SESIÓN\nLECTURA 0x"+s+"\nRUTINA ACTIVA · CANAL AISLADO";
+    document.querySelector(".trace-card").classList.add("trace-reading");
+    if(t) t.textContent="0x"+s;
     var reply=document.getElementById("traceReply"); if(reply){ reply.hidden=false; reply.focus(); }
   }
   if(inp){ inp.value=""; inp.disabled=COM.mode==="rastreo"; if(!inp.disabled) inp.focus(); }
@@ -262,7 +262,8 @@ function newCode(){
 function traceReply(){
   if(!COM || !COM.alive || COM.mode!=="rastreo" || COM.traceStage!=="read") return;
   COM.traceStage="reply";
-  document.getElementById("codeTarget").textContent="LECTURA CERRADA · DIRECCIÓN DE "+COM.code.length+" CARACTERES";
+  document.querySelector(".trace-card").classList.remove("trace-reading");
+  document.getElementById("codeTarget").textContent="DIRECCIÓN · "+COM.code.length+" HEX";
   document.getElementById("traceReply").hidden=true;
   var input=document.getElementById("codeInput"); input.disabled=false; input.focus();
 }

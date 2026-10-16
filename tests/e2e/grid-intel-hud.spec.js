@@ -17,7 +17,7 @@ async function move(page, game, id) {
   expect(index).toBeGreaterThanOrEqual(0);
   await page.locator(`#adjlist .adj-node[data-idx="${index}"]`).click();
   if(await page.locator('#combat-enter').isVisible()) await page.locator('#combat-enter').click();
-  if(await page.locator('#codeInput').isVisible() || await page.locator('#routeBoard').isVisible()) await solveCodeCombat(page);
+  if(await page.locator('#codeInput').isVisible() || await page.locator('#traceReply').isVisible() || await page.locator('#routeBoard').isVisible()) await solveCodeCombat(page);
 }
 async function solveVault(page) {
   const symbols=(await page.locator('.vp-sequence').innerText()).trim().split(/\s+/);

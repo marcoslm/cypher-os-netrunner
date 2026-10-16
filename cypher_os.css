@@ -644,7 +644,15 @@ button.btn{
 .combat-identity[data-family="daemon"]{color:var(--magenta);}
 .combat-identity[data-family="central"]{color:var(--ambar);}
 .combat-identity[data-family="rastreador"]{color:var(--verde);}
-.trace-dump{font-size:13px;letter-spacing:0;line-height:1.6;white-space:pre-line;}
+.trace-card{width:min(420px,92vw);padding:14px 16px;}
+.trace-card .combat-title{font-size:14px;letter-spacing:0;}
+.trace-card .combat-sub{margin-bottom:6px;}
+.trace-card .code-target{font-size:12px;letter-spacing:0;line-height:1.5;}
+.trace-reading .code-target{font-size:24px;}
+.trace-card .code-input{font-size:22px;letter-spacing:4px;}
+.trace-reading .code-input,.trace-reading .hex-kb,.trace-card .combat-help{display:none;}
+.trace-card .combat-log:empty{display:none;}
+.trace-card .center{margin-top:8px;}
 #traceReply{white-space:normal;min-height:44px;}
 #traceReply[hidden]{display:none;}
 .route-board{display:grid;grid-template-columns:repeat(3,minmax(44px,64px));justify-content:center;gap:6px;margin:10px 0;}
