@@ -80,7 +80,7 @@ async function run(options = {}){
     assert.equal(g.run('S.player.credits'),500);
   });
 
-  await check("el logro de fixers exige los cuatro indicadores llenos, incluido Kairos", () => {
+  await check("el logro de fixers exige los cuatro indicadores llenos, incluido NAEV", () => {
     const g = game();
     g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();');
     for(const id of g.run('CONTACTOS_DEF.map(function(c){return c.id;})')){
@@ -396,8 +396,8 @@ async function run(options = {}){
     g.sb.__story = storyFixture(g.run('newNarrativeState()'), g.run('STORY_CHAPTERS.map(function(item){return item.id;})'), g.run('STORY_FILES.map(function(item){return item.id;})'), 'accepted');
     g.run('S.narrative=window.__story;S.history.finalUnlocked=true;renderInicio();');
     clickAction(g,"acceptNucleo");
-    assert.equal(g.saved().nextDepth,5);
-    g.run('ACTIONS.dipGrid();');
+    assert.equal(g.saved()._inImmersion.depth,5);
+    g.run('ACTIONS.acceptNucleo();ACTIONS.dipGrid();');
     assert.equal(g.run("inImmersion.depth"),5);
     assert.equal(g.run('inImmersion.grid.nodes.filter(function(n){return n.boss;}).length'),1);
     assert.equal(g.run("S.nextDepth"),null);

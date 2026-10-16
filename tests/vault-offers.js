@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 const {loadGame,clickAction}=require('./harness');
 const clone=value=>JSON.parse(JSON.stringify(value));
 function job(project='KURO',id='vault',extra={}) {
-  return {id,title:'EL VAULT DE KURO GATECH',desc:'Recupera '+project,type:'vault',n:1,
+  return {id,title:'EL VAULT DE MALLA',desc:'Recupera '+project,type:'vault',n:1,
     contact:'doctorSudario',risk:'high',reward:100,xp:10,project,targetDepth:4,
     prog:{vaulted:false},done:false,failed:false,...extra};
 }
@@ -37,7 +37,7 @@ async function run(options={}) {
       for(const o of vaults) {
         const corp=g.run('PROYECTO_CORP')[o.project];
         if(corp) assert.equal(o.title,'EL VAULT DE '+corp);
-        else assert.ok(['EL VAULT DE KURO GATECH','EL VAULT DE MONOLITH'].includes(o.title));
+        else assert.ok(['EL VAULT DE MALLA','EL VAULT DE ESTRATO'].includes(o.title));
       }
       assert.equal(g.run('S.offers').filter(o=>o.type!=='vault').length,8);
     }

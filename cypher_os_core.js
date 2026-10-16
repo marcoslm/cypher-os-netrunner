@@ -50,6 +50,10 @@ function storyItem(catalog, id){
   for(var index=0;index<catalog.length;index++) if(catalog[index].id===id) return catalog[index];
   return null;
 }
+function projectName(id){
+  var dossier=storyItem(INTEL,PROYECTO_EXPEDIENTE[id]);
+  return dossier && dossier.label || id;
+}
 function newNarrativeState(){
   var chapters={}, files={};
   STORY_CHAPTERS.forEach(function(chapter){ chapters[chapter.id]="locked"; });
@@ -61,6 +65,8 @@ function newNarrativeState(){
 function storyPhaseRank(phase){ return ["locked","offered","accepted","returned","resolved"].indexOf(phase); }
 function storyConversationAvailable(narrative,id){
   var item=storyItem(STORY_CONVERSATIONS,id);
+  var endings=["m_berto_final","m_ines_final","m_nara_final","m_copia_final"], endingIndex=endings.indexOf(id);
+  if(endingIndex>0 && narrative.readConversations.indexOf(endings[endingIndex-1])<0) return false;
   if(id==="m_tomas_contacto" && narrative.files.l_testimonio!=="readable") return false;
   if(id==="m_berto_acogida" && narrative.readConversations.indexOf("m_ines_salida")<0) return false;
   return !!(item && narrative.entry==="active" &&
@@ -221,6 +227,7 @@ function storyAcceptCase(id){
   if(!item || narrative.entry!=="active" || narrative.chapters[id]!=="offered") return false;
   if(id==="c03" && narrative.files.l_casos!=="readable") return false;
   if(id==="c05" && narrative.readConversations.indexOf("m_nara_presentacion")<0) return false;
+  if(id==="c08" && (narrative.chapters.c07!=="resolved" || narrative.files.r_continuidad!=="readable")) return false;
   if(S.jobs.some(function(job){ return !job.done && ["recoleta","carrera"].indexOf(job.type)>=0 && job.n>=ramCap(); })) return false;
   narrative.chapters[id]="accepted";
   if(id==="c01") narrative.aliasAcquired=true;
@@ -230,6 +237,7 @@ function storyAcceptCase(id){
 }
 function storyReadFile(id){
   if(!S || !S.narrative || S.narrative.files[id]!=="readable") return false;
+  if(id==="r_copia_final" && S.narrative.readConversations.indexOf("m_copia_final")<0) return false;
   if(S.narrative.readFiles.indexOf(id)<0) S.narrative.readFiles.push(id);
   save();
   return true;
@@ -612,7 +620,7 @@ function checkUnlocks(){
   if(S.player.level>=10) unlock("crono_parpadeo");
   if((S.player.stats.maxDepth||0)>=6) unlock("fondo_sueno");
   /* cruces bandeja → INTEL (mensajería Fase 3, CONTRACTS §19) */
-  if(msgReceived("m_gracias_reparacion")) unlock("tras_nucleo");
+  if(S.narrative.readConversations.indexOf("m_copia_final")>=0) unlock("tras_nucleo");
   S.history.finalUnlocked=!!(S.narrative && storyPhaseRank(S.narrative.chapters.c08)>=storyPhaseRank("accepted"));
   updateBest();
 }
@@ -725,6 +733,7 @@ function buzonRemitenteCompleto(){
 }
 function checkMensajes(){
   if(!S) return;
+  if(S.history.finalDone && S.narrative.readConversations.indexOf("m_copia_final")<0) return;
   if(S.mensajes==null) S.mensajes=[];
   if(S._msgNextAt==null) S._msgNextAt=0;
   var now=S.player.stats.totalPlayTime||0;

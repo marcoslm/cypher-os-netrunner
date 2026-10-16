@@ -56,7 +56,7 @@ test('fixers F03: renovar tras agotar vaults no altera el contrato activo, la re
   expect((await game.snapshot()).immersion).toEqual(before.immersion);
 });
 
-test('fixers F03: Mama Wire conserva un contrato de aprendizaje viable en una partida nueva',async({page,game})=>{
+test('fixers F03: VEYRA conserva un contrato de aprendizaje viable en una partida nueva',async({page,game})=>{
   await game.setup();await nav(page,'contactos').click();
   const offers=(await game.snapshot()).state.offers;
   const starter=offers.find(o=>o.contact==='mamaWire'&&o.type==='recoleta');

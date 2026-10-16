@@ -2,7 +2,7 @@
 const {test,expect,makeImmersion,downloadJSON}=require('./fixtures');
 const nav=(page,view)=>page.locator(`.navbtn[data-view="${view}"]`);
 function offer(project='KURO',id='vault-kuro',contact='doctorSudario') {
-  const corp=project==='MIRAJE'?'HELIOX':'KURO GATECH';
+  const corp=project==='MIRAJE'?'CAUCE':'MALLA';
   return {id,title:'EL VAULT DE '+corp,desc:'Recupera el proyecto '+project+'.',type:'vault',n:1,
     contact,risk:'high',reward:100,xp:10,project,targetDepth:2};
 }

@@ -28,7 +28,8 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<p class="help-p"><b>Contratos genéricos, disponibles después de la factura:</b></p>'+
 '<p class="help-p"><b>Investigación:</b> consulta los siguientes casos en TRABAJOS y acéptalos expresamente en la calle. ORVIK necesita el respaldo del índice; verificarlo reconstruye referencias, no rompe el cifrado. Consulta el permiso de Inés, recibe su clave y pulsa APLICAR CLAVE para leer las copias locales y aceptar LAS DOS VERSIONES. Después puedes contrastar el diario de LOS ONCE SEGUNDOS. Cada copia ocupa una unidad de RAM reservada y se consolida al volver por el puerto; la verificación posterior paga una sola vez.</p>'+
 '<p class="help-p">Los contratos genéricos pueden acompañar un caso si caben en RAM; una prueba documental no cuenta como dato vendido ni como objetivo de RECOLECTA o CARRERA. Las redes posteriores a la factura conservan eventos y rastreadores. Retirarte sin prueba permite reintentar el caso, pero no elimina las reglas de fracaso de los contratos genéricos.</p>'+
-'<p class="help-p"><b>LA FIRMA:</b> consulta la presentación de NAEV por Inés y recupera la cadena de autorizaciones. Firmas y actualización forman un paquete de una unidad de RAM. <b>EL HUÉSPED:</b> vuelve con el registro de custodia, verifica la identidad en el canal supervisado y después tramita la revisión con Inés. La salida no la ejecuta el combate. Berto confirma la acogida al consultarlo después; la preparación de servicios queda fuera del tramo disponible.</p>'+
+'<p class="help-p"><b>LA FIRMA:</b> consulta la presentación de NAEV por Inés y recupera la cadena de autorizaciones. Firmas y actualización forman un paquete de una unidad de RAM. <b>EL HUÉSPED:</b> vuelve con el registro de custodia, verifica la identidad en el canal supervisado y después tramita la revisión con Inés. La salida no la ejecuta el combate. Berto confirma la acogida al consultarlo después.</p>'+
+'<p class="help-p"><b>LA CONTINUIDAD:</b> recupera tres verificaciones de servicios y acuses de copias en un paquete. Su entrega abre <b>SIN ÚLTIMA PALABRA</b>. Retira la defensa del Núcleo, copia la revocación y vuelve al puerto. El combate no cierra ni paga: verificar la entrega concede 5000₡ y 600 XP una vez. El cierre avanza por comunicaciones a tu ritmo y conserva el punto al guardar; no acepta otra misión. VER PRUEBAS abre las copias y VOLVER A LA CALLE deja disponibles genéricos y supervivencia.</p>'+
 '<ol class="helpol">'+
 '<li><b>Pide un trabajo</b> en CONTACTOS. Cada contrato tiene un objetivo (recoger datos, destruir ICE, etc.) y una recompensa.</li>'+
 '<li><b>Baja a la red</b> con ◈ DIP AL GRID. El trabajo se "carga" en tu mochila dentro del grid.</li>'+
@@ -129,7 +130,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<p class="help-p">Recuperar un proyecto de un vault archiva inmediatamente su <b>EXPEDIENTE RECUPERADO</b> en INFORMES: qué hace, quién lo custodia y qué parte falta. Hay ocho, uno por proyecto; no se duplican ni sustituyen los informes narrativos. No hace falta cobrar el contrato para leerlo. Cada proyecto se recupera <b>una sola vez por partida</b>: deja de ofrecerse al resolver su puzzle, aunque aún falte cobrar. Cuando recuperas los ocho, los demás trabajos siguen disponibles.</p>'+
 '<p class="help-p">Los contratos antiguos que repiten un proyecto ya recuperado quedan <b>RETIRADOS</b>, sin calor ni recompensa; cuentan una sola vez como fracaso administrativo. Una recuperación legítima pendiente de cobro se conserva y se paga al superficializar.</p>'+
 '<p class="help-p">Puedes tener hasta <b>3 trabajos activos</b>. Acepta antes del DIP: esa red contendrá suficientes objetivos para todos. Las cuotas máximas por inmersión son <b>6 datos, 4 datos profundos, 4 ICE o 3 daemons</b>, respetando la RAM. Dentro del grid solo puedes aceptar trabajos si aún quedan objetivos y RAM; VAULT siempre se acepta en la calle.</p>'+
-'<p class="help-p">La RAM necesaria para los contratos queda reservada: los fragmentos de SEÑAL no ocupan esos slots y debes recoger primero los datos profundos de CARRERA si los superficiales los agotarían. Las ofertas de cada fixer varían: entre <b>una y su máximo disponible</b>, siempre con un trabajo repetible si lo tiene. Abrir CONTACTOS o cargar la partida no vuelve a sortearlas: pulsa <b>REFRESCAR OFERTAS</b> para renovarlas. Refrescar no cambia tus contratos activos ni el Grid. Al empezar, Mama Wire conserva RECOLECTA para aprender. KAIROS se desbloquea con nivel 4 y reputación con NIGHT-0X ≥ 2.</p>'+
+'<p class="help-p">La RAM necesaria para los contratos queda reservada: los fragmentos de SEÑAL no ocupan esos slots y debes recoger primero los datos profundos de CARRERA si los superficiales los agotarían. Las ofertas de cada fixer varían: entre <b>una y su máximo disponible</b>, siempre con un trabajo repetible si lo tiene. Abrir CONTACTOS o cargar la partida no vuelve a sortearlas: pulsa <b>REFRESCAR OFERTAS</b> para renovarlas. Refrescar no cambia tus contratos activos ni el Grid. Al empezar, VEYRA conserva RECOLECTA para aprender. NAEV se desbloquea con nivel 4 y reputación con Inés Aro ≥ 2.</p>'+
 '</div>'+
 
 /* ⑧ CALOR / RAM / CPU */
@@ -180,7 +181,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="panel-h">⑫ TU PRIMERA PARTIDA</div><div class="box helpbox">'+
 '<ol class="helpol">'+
 '<li>En <b>INICIO</b> mira tu estado (CPU, calor, créditos, nivel). La primera vez un <b>tutorial interactivo</b> te acompaña paso a paso.</li>'+
-'<li>Ve a <b>CONTACTOS</b> y pulsa <b>ACEPTAR</b> en un trabajo (empieza por una <b>RECOLECTA</b> de Mama Wire — la más sencilla).</li>'+
+'<li>Ve a <b>CONTACTOS</b> y pulsa <b>ACEPTAR</b> en un trabajo (empieza por una <b>RECOLECTA</b> de VEYRA — la más sencilla).</li>'+
 '<li>Pulsa <b>◈ DIP AL GRID</b> para sumergirte.</li>'+
 '<li><b>Clic en un nodo ◆</b> para recoger datos. Muévete entre los nodos conectados (clic o teclas 1-9).</li>'+
 '<li>Cuando cumplas el objetivo del contrato, pulsa <b>SUPERFICIE</b> (o <b>F</b>) para <b>resolverlo</b> y cobrar.</li>'+
@@ -192,7 +193,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 
 /* ⑬ LOGROS Y POST-PARTIDA */
 '<div class="panel-h">⑬ LOGROS Y TRAS EL NÚCLEO</div><div class="box helpbox">'+
-'<p class="help-p">La pantalla <b>LOGROS</b> guarda tus 26 hazañas (los que faltan aparecen cifrados). Y cuando derrotas a <b>EL NÚCLEO</b>… el juego no termina:</p>'+
+'<p class="help-p">La pantalla <b>LOGROS</b> guarda tus 26 hazañas (los que faltan aparecen cifrados). Tras verificar y entregar la revocación final puedes continuar sin reactivar al Núcleo:</p>'+
 '<div class="helprow">'+
 '<div class="helprow-item"><span class="kbd">◎ SEÑAL</span><span class="muted">nodos residuales del Núcleo: +30 XP</span></div>'+
 '<div class="helprow-item"><span class="kbd">▣ ECO</span><span class="muted">ICE T2 especiales que dan más XP</span></div>'+
@@ -225,7 +226,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="lg-key">archivos</span><span class="lg-desc">consultar documentos anteriores y recuperados</span></div>'+
 '<div class="legend-row"><span class="lg-key">stats / intel / log</span><span class="lg-desc">estado / informes / registro (estado, informes y registro también valen)</span></div>'+
 '<div class="legend-row"><span class="lg-key">salir / back</span><span class="lg-desc">volver a INICIO</span></div>'+
-'<div class="legend-row"><span class="lg-key">nucleo</span><span class="lg-desc">acepta la misión EL NÚCLEO (nivel 5 y reputación con NIGHT-0X ≥ 3)</span></div>'+
+'<div class="legend-row"><span class="lg-key">nucleo</span><span class="lg-desc">conecta con la intervención ya aceptada en TRABAJOS; exige continuidad verificada, no nivel ni reputación</span></div>'+
 '<div class="legend-row"><span class="lg-key">ajustes / config</span><span class="lg-desc">PANEL DE CONTROL: volúmenes independientes, brillo, textura CRT, resplandor y movimiento reducido. Iconos de la barra = silenciar o reactivar sin perder el volumen. Ajustes del dispositivo, conservados al importar o reiniciar. Cambios inmediatos; restablecer no borra la partida. El panel muestra el estado efectivo de avisos/transiciones y su causa. MOVIMIENTO REDUCIDO LOCAL en OFF no anula una solicitud de reducción del sistema o navegador: si marca SISTEMA/NAVEGADOR, revisa su accesibilidad o preferencias (también en Firefox). Esa señal no mide la CPU ni depende de la resolución. No pausa el reloj y no se abre durante combates o puzzles</span></div>'+
 '<div class="legend-row"><span class="lg-key">sonido / snd</span><span class="lg-desc">canal FX/UI: botones, avisos y logros (indicador FX; por defecto ON)</span></div>'+
 '<div class="legend-row"><span class="lg-key">musica / music / mus</span><span class="lg-desc">canal de música (indicador MUS; por defecto ON). Sin mp3 en music/, suena el guiño del canal 7</span></div>'+
@@ -234,7 +235,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="lg-key">pantalla / full</span><span class="lg-desc">modo pantalla completa (indicador FULL de la topbar; también con su botón). En tablet, el navegador y sus barras dejan de robarle espacio al juego. El juego arranca como lo dejaste: si cerraste en pantalla completa, vuelves a entrar al pulsar ▶ COMENZAR. Sales con ESC o con el botón FULL</span></div>'+
 '<div class="legend-row"><span class="lg-key">mensajes / buzon / mail</span><span class="lg-desc">la bandeja del deck: las cartas que te llegan (sección ⑱)</span></div>'+
 '<div class="legend-row"><span class="lg-key">responder</span><span class="lg-desc">intenta contestar la última carta… si su ruta lo permite (casi nunca)</span></div>'+
-'<div class="legend-row"><span class="lg-key">expediente / quien &lt;nombre&gt; / diario</span><span class="lg-desc">tu ficha de archivo, las fichas de los personajes (el OS evade lo importante) y el registro filtrado por tu historia</span></div>'+
+'<div class="legend-row"><span class="lg-key">expediente / quien &lt;nombre&gt; / diario</span><span class="lg-desc">registro local de sesión, referencias de personajes y registro filtrado por tu historia; identidad y situación requieren documentos, no solo un alias</span></div>'+
 '<div class="legend-row"><span class="lg-key">glosario / mundo</span><span class="lg-desc">el mundo en 30 segundos y el glosario de términos (esta misma ayuda)</span></div>'+
 '<div class="legend-row"><span class="lg-key">guardar / clear / whoami / tiempo</span><span class="lg-desc">utilidades (clear = cls)</span></div>'+
 '<div class="legend-row"><span class="lg-key">ayuda / help / ?</span><span class="lg-desc">abre esta ayuda, también desde la red</span></div>'+
@@ -262,7 +263,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="lg-key">el cable</span><span class="lg-desc">la red que lo gobierna todo en la ciudad. Está viva y nadie sabe qué es de verdad.</span></div>'+
 '<div class="legend-row"><span class="lg-key">el Núcleo</span><span class="lg-desc">la máquina que manda en la red, en lo más profundo (capa 5).</span></div>'+
 '<div class="legend-row"><span class="lg-key">capas</span><span class="lg-desc">profundidad de la red: del puerto (capa 0) al Núcleo (capa 5). Más abajo, más dinero y más peligro.</span></div>'+
-'<div class="legend-row"><span class="lg-key">ciberdeck / deck</span><span class="lg-desc">el hardware con el que te conectas a la red. Los de la calle son robados.</span></div>'+
+'<div class="legend-row"><span class="lg-key">ciberdeck / deck</span><span class="lg-desc">el hardware con el que te conectas a la red. El de Tomás está prestado a Álex; los archivos anteriores no transfieren su identidad.</span></div>'+
 '<div class="legend-row"><span class="lg-key">CPU</span><span class="lg-desc">tu cordura dentro de la red. Si llega a 0: flatline.</span></div>'+
 '<div class="legend-row"><span class="lg-key">flatline</span><span class="lg-desc">muerte-conexión: te expulsan de la red a las malas.</span></div>'+
 '<div class="legend-row"><span class="lg-key">calor</span><span class="lg-desc">tu rastro en la red. Con 100, la ciudad te busca (LOCKDOWN).</span></div>'+
@@ -272,7 +273,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="lg-key">daemon</span><span class="lg-desc">habitante de la red: no ataca por dinero, archiva. Combate de memoria.</span></div>'+
 '<div class="legend-row"><span class="lg-key">vault</span><span class="lg-desc">archivo sellado con un proyecto corporativo dentro. Puzzle de símbolos.</span></div>'+
 '<div class="legend-row"><span class="lg-key">subestación</span><span class="lg-desc">órgano de la red: da crédito y baja el calor (una vez).</span></div>'+
-'<div class="legend-row"><span class="lg-key">fixer</span><span class="lg-desc">quien te consigue contratos (Mama Wire, Night-0X). Cobran por facilitar.</span></div>'+
+'<div class="legend-row"><span class="lg-key">fixer</span><span class="lg-desc">quien te consigue contratos (VEYRA, Inés Aro). Cobran por facilitar.</span></div>'+
 '<div class="legend-row"><span class="lg-key">rastreador</span><span class="lg-desc">la policía de la red: emboscada si dejas mucho rastro.</span></div>'+
 '<div class="legend-row"><span class="lg-key">créditos (₡)</span><span class="lg-desc">la moneda de la calle.</span></div>'+
 '<div class="legend-row"><span class="lg-key">las Torres</span><span class="lg-desc">macroobras que se dejaron de construir en 2071. Nadie habla de por qué.</span></div>'+

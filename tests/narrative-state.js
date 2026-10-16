@@ -51,6 +51,34 @@ async function run(options = {}) {
     assert.equal(game.run('S.narrative.aliasAcquired'), true);
     assert.equal(game.run('validNarrativeState(S.narrative)'), true);
   });
+  check('F6 terminal reconoce nombres canonicos sin robo, identidad ni salida prematuros', game => {
+    activate(game);
+    game.run('window.lines=[];msg=function(text){window.lines.push(text);};');
+    for (const name of ['VEYRA','ORVIK','Inés','NAEV','Berto','Tomás','Álex','Núcleo']) {
+      game.run('CMD.quien('+JSON.stringify(name)+');');
+    }
+    const lines = clone(game.run('window.lines'));
+    assert.equal(lines.length, 8);
+    assert.ok(lines.every(line => !line.startsWith('uso:')));
+    assert.ok(lines[2].includes('oficina independiente'));
+    assert.ok(!lines[3].includes('Nara Beltrán'));
+    assert.ok(!lines[5].includes('fuera de custodia'));
+    assert.ok(lines[6].includes('todavía no ha adquirido alias'));
+    assert.ok(!game.run('TRANSMISSIONS.join(" ")').includes('deck robado'));
+    assert.ok(!game.run('TRANSMISSIONS.join(" ")').includes('NAEV no es una persona'));
+    game.run('CMD.expediente();');
+    assert.ok(game.run('document.getElementById("panel-scroll").innerHTML').includes('uso provisional'));
+    assert.ok(!game.run('document.getElementById("panel-scroll").innerHTML').includes('robado'));
+    resolve(game,'c01'); resolve(game,'c02');
+    assert.equal(game.run('storyGrantCaseKey()'),true);
+    assert.equal(game.run('storyApplyCaseKey()'),true);
+    resolve(game,'c03'); resolve(game,'c04');
+    assert.equal(invoke(game,'storyReadConversation','m_nara_presentacion'),true);
+    resolve(game,'c05'); resolve(game,'c06');
+    game.run('CMD.quien("NAEV");CMD.quien("Tomás");');
+    assert.ok(game.run('window.lines[window.lines.length-2]').includes('Nara Beltrán'));
+    assert.ok(game.run('window.lines[window.lines.length-1]').includes('fuera de custodia'));
+  });
   check('prueba exige paquete y defensa consumida', game => {
     activate(game);
     invoke(game, 'storyAcceptCase', 'c01');
@@ -461,7 +489,7 @@ async function run(options = {}) {
       assert.equal(invoke(game,'storyResolveCase',id),true);
     }
   });
-  check('F5 acciones escalonan identidad, revision, acogida y pago unico sin c07', game => {
+  check('F5 acciones escalonan identidad, revision, acogida y ofrecen c07 sin aceptarlo', game => {
     activate(game);
     for(const id of ['c01','c02','c03','c04']){
       if(id==='c03') game.run('storyGrantCaseKey();storyApplyCaseKey();');
@@ -495,11 +523,110 @@ async function run(options = {}) {
     }
     assert.equal(game.run('S.narrative.readConversations.indexOf("m_berto_acogida")'),-1);
     assert.equal(game.sb.document.querySelector('[data-action="acceptStoryCase"][data-id="c07"]'),null);
-    assert.equal(game.sb.document.querySelector('[data-action="consultStoryCase"][data-id="c07"]'),null);
+    assert.ok(game.sb.document.querySelector('[data-action="consultStoryCase"][data-id="c07"]'));
     const before=game.run('S.player.credits');click('openStoryConversation','m_berto_acogida');
     assert.match(game.sb.document.getElementById('panel-scroll').textContent,/Ya está aquí/);
     assert.equal(game.run('S.player.credits'),before);
     assert.equal(game.run('validImportState(load())'),true);
+  });
+  check('F6 continuidad y Nucleo generado no cierran ni pagan antes de entregar', game => {
+    activate(game);
+    for(const id of ['c01','c02','c03','c04','c05','c06']){
+      if(id==='c03') game.run('storyGrantCaseKey();storyApplyCaseKey();');
+      if(id==='c05') invoke(game,'storyReadConversation','m_nara_presentacion');
+      resolve(game,id);
+    }
+    game.run('ensureStateIntegrity();activateStorySession(false);ACTIONS.startEndless();');
+    assert.equal(game.run('inImmersion'),null);
+    assert.equal(invoke(game,'storyAcceptCase','c08'),false);
+    resolve(game,'c07');
+    assert.equal(invoke(game,'storyAcceptCase','c08'),true);
+    game.run('S.nextDepth=null;startImmersion();');
+    assert.equal(game.run('inImmersion.depth'),5);
+    assert.equal(game.run('inImmersion.grid.nodes.filter(function(node){return node.type==="nucleo";}).length'),1);
+    assert.equal(game.run('nodeById("c08_proof").storyDefense'),game.run('inImmersion.grid.nodes.filter(function(node){return node.boss;})[0].id'));
+    const before=game.run('S.player.credits');
+    assert.equal(game.run('defeatNucleo()'),false);
+    game.run('window.boss=nodeById(nodeById("c08_proof").storyDefense);onNodeDefeated({node:window.boss});onNodeDefeated({node:window.boss});save();');
+    assert.equal(game.run('S.player.stats.ice'),1);
+    assert.equal(game.run('S.player.credits'),before);
+    assert.equal(game.run('S.history.finalDone'),false);
+    assert.equal(game.run('S.best.finalDone'),undefined);
+    assert.equal(game.run('S.narrative.files.r_revocacion'),'unknown');
+    game.run('inImmersion.current="c08_proof";inImmersion.maxDepthReached=5;');
+    assert.equal(game.run('storyCollectProof(nodeById("c08_proof"))'),true);
+    game.run('save();'); const saved=clone(game.run('load()')); assert.ok(saved);
+    assert.equal(game.run('importGameState('+JSON.stringify(saved)+')'),true);
+    game.run('inImmersion.current=inImmersion.grid.entry;');
+    assert.equal(invoke(game,'storyReturnCase','c08'),true);
+    game.run('inImmersion=null;');
+    assert.equal(game.run('S.history.finalDone'),false);
+    assert.equal(invoke(game,'storyResolveCase','c08'),true);
+    assert.equal(invoke(game,'storyResolveCase','c08'),false);
+    assert.equal(game.run('S.player.credits'),before+5000);
+    assert.equal(game.run('S.history.finalDone'),true);
+    game.run('ACTIONS.startEndless();');
+    assert.ok(game.run('inImmersion'));
+    assert.equal(game.run('inImmersion.grid.nodes.some(function(node){return node.boss || node.storyChapter;})'),false);
+  });
+  check('F6 acciones finales escalonadas reanudan sin pago ni copia prematuros', game => {
+    activate(game);
+    for(const id of ['c01','c02','c03','c04','c05','c06']){
+      if(id==='c03') game.run('storyGrantCaseKey();storyApplyCaseKey();');
+      if(id==='c05') invoke(game,'storyReadConversation','m_nara_presentacion');
+      resolve(game,id);
+    }
+    game.run('ensureStateIntegrity();activateStorySession(false);showView("trabajos");');
+    const click=(action,id)=>{const element=game.sb.document.querySelector('[data-action="'+action+'"]'+(id?'[data-id="'+id+'"]':''));assert.ok(element,action+':'+id);game.emitElement(element,'click');};
+    for(const id of ['c07','c08']){
+      click('consultStoryCase',id);click('acceptStoryCase',id);click('dipGrid');
+      const guard=game.run('nodeById("'+id+'_proof").storyDefense');
+      game.run('onNodeDefeated({node:nodeById('+JSON.stringify(guard)+')});inImmersion.current="'+id+'_proof";inImmersion.maxDepthReached='+(id==='c07'?4:5)+';enterNode(nodeById(inImmersion.current));inImmersion.current=inImmersion.grid.entry;superficializar();closeOverlay();');
+      const credits=game.run('S.player.credits');click('deliverStoryCase',id);
+      assert.equal(game.run('S.player.credits'),credits+(id==='c07'?750:5000));
+      if(id==='c07')click('closeStoryConversation');
+    }
+    assert.equal(game.run('storyReadFile("r_copia_final")'),false);
+    assert.equal(game.run('storyReadConversation("m_nara_final")'),false);
+    const before=game.run('S.player.credits');
+    for(const id of ['m_ines_final','m_nara_final','m_copia_final']){
+      assert.equal(game.run('S.narrative.readConversations.indexOf('+JSON.stringify(id)+')'),-1);
+      click('openStoryConversation',id);
+      assert.equal(game.run('S.player.credits'),before);
+      assert.equal(game.run('validImportState(load())'),true);
+      const saved=clone(game.run('load()'));assert.equal(game.run('importGameState('+JSON.stringify(saved)+')'),true);
+      game.run('showView("trabajos");');
+    }
+    assert.equal(game.run('storyReadFile("r_copia_final")'),true);
+    click('goStoryProofs');
+    assert.ok(game.sb.document.querySelector('[data-action="openArchive"][data-id="r_copia_final"]'));
+    game.run('showView("trabajos");');
+    assert.match(game.sb.document.getElementById('panel-scroll').textContent,/Investigación concluida/);
+    assert.ok(!game.sb.document.getElementById('panel-scroll').textContent.includes('Tomás no ha vuelto'));
+    assert.equal(game.run('S.narrative.awarded.length'),8);
+    assert.equal(game.run('S.player.credits'),before);
+  });
+  check('F6 reconexion LEGENDARIO conserva continuidad y reintenta un unico Nucleo', game => {
+    activate(game);
+    for(const id of ['c01','c02','c03','c04','c05','c06','c07']){
+      if(id==='c03')game.run('storyGrantCaseKey();storyApplyCaseKey();');
+      if(id==='c05')invoke(game,'storyReadConversation','m_nara_presentacion');
+      resolve(game,id);
+    }
+    invoke(game,'storyAcceptCase','c08');
+    game.run('S.difficulty="legendario";S.best.finalDone=true;ensureStateIntegrity();activateStorySession(false);startImmersion();');
+    assert.equal(game.run('inImmersion.depth'),5);
+    const credits=game.run('S.player.credits');
+    game.run('onNodeDefeated({node:nodeById(nodeById("c08_proof").storyDefense)});inImmersion.current="c08_proof";inImmersion.maxDepthReached=5;storyCollectProof(nodeById("c08_proof"));S.player.cpu=0;flatline();ACTIONS.reconnect();');
+    assert.equal(game.run('S.narrative.files.r_continuidad'),'readable');
+    assert.equal(game.run('S.narrative.files.r_revocacion'),'unknown');
+    assert.equal(game.run('S.history.finalDone'),false);
+    assert.equal(game.run('S.narrative.chapters.c08'),'accepted');
+    assert.equal(game.run('S.player.credits'),credits);
+    game.run('startImmersion();');
+    assert.equal(game.run('inImmersion.grid.nodes.filter(function(node){return node.boss;}).length'),1);
+    assert.equal(game.run('nodeById(nodeById("c08_proof").storyDefense).done'),false);
+    game.run('save();');assert.ok(game.run('load()'));
   });
   console.log(`Narrativa: ${passes} correctas, ${fails} fallos`);
   return options.summary ? { passes, fails, total: passes + fails } : fails;

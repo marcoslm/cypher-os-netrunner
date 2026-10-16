@@ -16,8 +16,8 @@
 function startTutorial(){
   if(!S || S._tutorialDone) return;
   /* paso 1: CONTACTOS */
-  msg("MAMA WIRE: Ve a CONTACTOS y acepta un trabajo.","cyan");
-  addLog("TUTORIAL ▸ Mama Wire te dice: ve a CONTACTOS.");
+  msg("VEYRA: Ve a CONTACTOS y acepta un trabajo.","cyan");
+  addLog("TUTORIAL ▸ VEYRA te dice: ve a CONTACTOS.");
   var btn=document.querySelector('.navbtn[data-view="contactos"]');
   if(btn) btn.classList.add("tutorial-highlight");
   S._tutorialStep=1;
@@ -28,8 +28,8 @@ function advanceTutorial(){
     /* paso aceptar trabajo → RED */
     var btnC=document.querySelector('.navbtn[data-view="contactos"]');
     if(btnC) btnC.classList.remove("tutorial-highlight");
-    msg("Mama Wire: Ahora baja al grid con ◈ DIP AL GRID.","cyan");
-    addLog("TUTORIAL ▸ Mama Wire te dice: baja al grid.");
+    msg("VEYRA: Ahora baja al grid con ◈ DIP AL GRID.","cyan");
+    addLog("TUTORIAL ▸ VEYRA te dice: baja al grid.");
     var btnR=document.querySelector('.navbtn[data-view="red"]');
     if(btnR) btnR.classList.add("tutorial-highlight");
     S._tutorialStep=2;
@@ -37,8 +37,8 @@ function advanceTutorial(){
     /* paso entrar al grid → recoger datos */
     var btnR=document.querySelector('.navbtn[data-view="red"]');
     if(btnR) btnR.classList.remove("tutorial-highlight");
-    msg("Mama Wire: Recoge un nodo de datos ◆ y vuelve con SUPERFICIE.","cyan");
-    addLog("TUTORIAL ▸ Mama Wire te dice: recoge datos.");
+    msg("VEYRA: Recoge un nodo de datos ◆ y vuelve con SUPERFICIE.","cyan");
+    addLog("TUTORIAL ▸ VEYRA te dice: recoge datos.");
     S._tutorialStep=3;
   } else if(S._tutorialStep===3){
     /* paso superficializar → fin */
@@ -846,7 +846,7 @@ var VIEWS = {
 function renderTienda(){
   var p=S.player;
   var html='<h1 class="title">MERCADO NEGRO</h1>'+
-    '<div class="sub">PUESTO DE MAMA WIRE · BAR-CLUB ÓCTAVA</div>'+
+    '<div class="sub">PUESTO DE VEYRA · BAR-CLUB ÓCTAVA</div>'+
     '<div class="box">CRÉDITOS: <b class="verde">₡'+Math.floor(p.credits)+'</b> · la calle no da fiado.</div>'+
     '<div class="panel-h">EQUIPO</div><div class="grid2">';
   TIENDA_DEF.forEach(function(it){
@@ -919,17 +919,17 @@ function getContactDialogue(contact, rep){
   if(S.history && S.history.finalDone){
     var postNucleo={
       mamaWire:[
-        "El Núcleo está apagado. La calle respira diferente. ¿Qué harás con eso, corvo?",
-        "Sin el ojo encima, la calle se ha vuelto más ruidosa. Y más libre."],
+        "Los operadores siguen al frente. Los trabajos continúan sin reabrir la intervención.",
+        "El hostal conserva luz. Eso importa más que otro apodo en el cable."],
       doctorSudario:[
-        "Lo lograste. El ojo se cerró. Pero el cable sigue soñando. ¿Y tú?",
-        "Apagaste el Núcleo y la ciudad aún no se ha dado cuenta. Todavía."],
+        "Las copias coinciden. No hace falta inventar lo que falta.",
+        "La revocación sigue vigente; conserva también sus acuses."],
       night0X:[
-        "Has destruido un imperio. Ahora eres libre... o eso dicen.",
-        "El imperio ha perdido su corona. Y yo, mi propósito. Gracias, supongo."],
+        "Las nuevas reclamaciones siguen admitidas. Ahora hay que revisarlas.",
+        "Los originales están protegidos; el extracto público no revela nombres."],
       kairos:[
-        "El sueño terminó. Pero hay otros sueños esperando en las capas.",
-        "Sin el Núcleo, el cable ha empezado a improvisar. A mí me gusta."]
+        "Mi firma sigue entre las pruebas. Responderé por ella.",
+        "Los servicios locales funcionan sin el permiso de escritura central."]
     };
     if(postNucleo[contact.id]) return pickFresh("dial-"+contact.id, postNucleo[contact.id]);
   }
@@ -1062,7 +1062,7 @@ function generateOffers(){
     if(!types.length) return;
     var repeatable=types.filter(function(type){ return type!=="vault"; });
     /* Garantizar un repetible, sin convertir el vault agotado en relleno.
-       Mama Wire conserva RECOLECTA para aprender en el primer nivel. */
+       VEYRA conserva RECOLECTA para aprender en el primer nivel. */
     var first=(c.id==="mamaWire" && S.player.level===1 && S.player.stats.jobsCompleted===0 && repeatable.indexOf("recoleta")>=0)
       ? "recoleta" : pick(repeatable.length?repeatable:types);
     var count=randInt(1,types.length), selected=[first];
@@ -1096,8 +1096,8 @@ function buildOffer(contact,type){
     var pool=vaultOfferProjects();
     if(!pool.length) return null;
     var proj=pick(pool);
-    var corp=PROYECTO_CORP[proj]||pick(["KURO GATECH","MONOLITH"]); /* VESPER = consorcio */
-    return mkOffer(contact,"EL VAULT DE "+corp,"Llega a la capa "+td+" y recupera el proyecto "+proj+".","vault",1,Math.round(base*2.2),30,"high",{project:proj,targetDepth:td});
+    var corp=PROYECTO_CORP[proj]||pick(["MALLA","ESTRATO"]); /* VESPER = consorcio */
+    return mkOffer(contact,"EL VAULT DE "+corp,"Llega a la capa "+td+" y recupera el proyecto "+projectName(proj)+".","vault",1,Math.round(base*2.2),30,"high",{project:proj,targetDepth:td});
   }
   if(type==="daemon"){
     var nd=Math.min(jobQuotaLimit("daemon"),1+Math.floor(lvl/3));
@@ -1151,9 +1151,11 @@ function storyFollowupHtml(){
     if(id==="c06" && S.narrative.files.l_testimonio!=="readable") html+='<p>El diario identifica a Tomás en el Anexo, pero aún falta comprobar quién responde. Inés puede abrir un canal supervisado y contrastar la nota local del conector con un detalle no publicado. La salida sigue pendiente.</p><button class="btn cyan" data-action="confirmStoryCustody"'+(inImmersion?' disabled':'')+'>VERIFICAR IDENTIDAD CON INÉS</button>';
     else html+='<button class="btn cyan" data-action="deliverStoryCase" data-id="'+id+'"'+(inImmersion?' disabled':'')+'>'+(id==="c06"?'TRAMITAR REVISIÓN Y VERIFICAR ENTREGA':'VERIFICAR ENTREGA')+'</button>';
   } else {
+    if(id==="c08" && S.narrative.readConversations.indexOf("m_copia_final")<0) return html+'<p class="verde">REVOCACIÓN ENTREGADA · pago registrado una sola vez.</p>'+storyEndingActions()+'</section>';
     html+='<p class="verde">ENTREGA VERIFICADA</p><p>'+escapeHtml(detail.conclusion)+'</p><button class="btn small" data-action="openStoryConversation" data-id="'+detail.result+'">RELEER VERIFICACIÓN</button>';
     if(id!==ids[ids.length-1]) html+='<button class="btn cyan" data-action="consultStoryCase" data-id="'+ids[ids.indexOf(id)+1]+'">CONSULTAR SIGUIENTE CASO</button>';
-    else html+='<p>Fin del tramo de investigación disponible. Los trabajos genéricos continúan; la preparación de servicios todavía no está disponible.</p><button class="btn" data-action="openStoryConversation" data-id="m_berto_acogida">CONTACTAR CON BERTO</button>';
+    else html+='<p>Investigación concluida. Los trabajos genéricos y SEALED NETWORK siguen disponibles; no se ha aceptado otra misión.</p>'+storyEndingActions();
+    if(id==="c06") html+='<button class="btn" data-action="openStoryConversation" data-id="m_berto_acogida">CONTACTAR CON BERTO</button>';
   }
   html+='</section><div class="story-actions">';
   ids.forEach(function(previous){
@@ -1161,11 +1163,18 @@ function storyFollowupHtml(){
   });
   return html+'</div>';
 }
+function storyEndingActions(){
+  var endings=["m_berto_final","m_ines_final","m_nara_final","m_copia_final"], next=null;
+  endings.some(function(id){ if(S.narrative.readConversations.indexOf(id)>=0) return false; next=id; return true; });
+  return (next?'<button class="btn cyan" data-action="openStoryConversation" data-id="'+next+'">CONTINUAR CIERRE</button>':'<p>El cable no duerme. Solo parpadea.</p>')+
+    '<button class="btn" data-action="goInicio">VOLVER A LA CALLE</button><button class="btn" data-action="goStoryProofs">VER PRUEBAS</button>';
+}
 function storyCaseHtml(){
   var phase=S.narrative.chapters.c01;
   var html='<section class="story-case"><h2>LA FACTURA</h2><p class="sub">Cliente: Berto Salas · Hostal La Bajante</p>';
   if(_storyConversation && storyConversationAvailable(S.narrative,_storyConversation)){
-    return '<section class="story-case">'+storyDialogueHtml(_storyConversation)+(_storyConversation==="m_ines_clave" && S.narrative.keys.indexOf("k_casos")<0?'<button class="btn cyan" data-action="receiveStoryKey"'+(inImmersion?' disabled':'')+'>RECIBIR CLAVE AUTORIZADA</button>':'')+'<button class="btn small" data-action="closeStoryConversation">VOLVER AL ENCARGO</button></section>';
+    return '<section class="story-case">'+storyDialogueHtml(_storyConversation)+(_storyConversation==="m_ines_clave" && S.narrative.keys.indexOf("k_casos")<0?'<button class="btn cyan" data-action="receiveStoryKey"'+(inImmersion?' disabled':'')+'>RECIBIR CLAVE AUTORIZADA</button>':'')+
+      (["m_berto_final","m_ines_final","m_nara_final","m_copia_final"].indexOf(_storyConversation)>=0?storyEndingActions():'<button class="btn small" data-action="closeStoryConversation">VOLVER AL ENCARGO</button>')+'</section>';
   }
   if(phase==="offered"){
     html+=storyDialogueHtml("m_berto_encargo")+'<p>DESTINO · Servicio de facturación del edificio · capa 1</p><p>OBJETIVO · Recuperar el historial LB-2093-10 y volver al puerto. 140₡ y 60 XP al verificar la entrega.</p><p>RECIBO APORTADO POR BERTO · LB-2093-10 · pago recibido el 07-10-2093 a las 18:12.</p><button class="btn cyan" data-action="acceptInvoice">ACEPTAR ENCARGO</button>';
@@ -1174,7 +1183,7 @@ function storyCaseHtml(){
   } else if(phase==="returned"){
     html+=storyDialogueHtml("m_berto_entrega")+'<p>Historial LB-2093-10 conservado. Pendiente de verificación con la oficina de Inés.</p><button class="btn cyan" data-action="deliverInvoice"'+(inImmersion?' disabled':'')+'>ENTREGAR HISTORIAL</button>';
   } else if(phase==="resolved"){
-    html+='<p class="verde">ENTREGA FINALIZADA · Reclamación admitida; corte suspendido preventivamente.</p><p>HECHO · Pago anterior al corte; revisión posterior a la orden.</p><p>SIN CONFIRMAR · Causa y responsabilidad de la discrepancia. Tomás no ha vuelto al hostal, según Berto.</p></section>'+storyFollowupHtml();
+    html+='<p class="verde">ENTREGA FINALIZADA · Reclamación admitida; corte suspendido preventivamente.</p><p>HECHO · Pago anterior al corte; revisión posterior a la orden.</p><p>'+(S.narrative.chapters.c06==="resolved"?'Tomás está fuera de custodia; Inés ha confirmado su salida.':'SIN CONFIRMAR · Causa y responsabilidad de la discrepancia. Tomás no ha vuelto al hostal, según Berto.')+'</p></section>'+storyFollowupHtml();
     return html;
   }
   return html+'</section>';
@@ -1185,6 +1194,8 @@ ACTIONS.openStoryConversation=function(btn){
   _storyConversation=id; showView("trabajos");
   var heading=document.getElementById("conversation-heading"); if(heading) heading.focus();
 };
+ACTIONS.goStoryProofs=function(){ _archiveTab="recovered"; _archiveOpen=null; showView("archivos"); };
+ACTIONS.goInicio=function(){ showView("inicio"); };
 ACTIONS.consultStoryCase=function(btn){
   var id=btn.getAttribute("data-id"), detail=STORY_CASE_DETAILS[id];
   if(!detail || S.narrative.chapters[id]!=="offered") return;
@@ -1287,7 +1298,7 @@ function progText(j){
     case "recoleta": return "recogidos: "+j.prog.gathered+"/"+j.n;
     case "carrera": return "datos en cap≥3: "+j.prog.deepGathered+"/"+j.n+" · (calor <45 al volver)";
     case "rompehielas": return "ICE T2/T3 destruidos: "+j.prog.iceT2+"/"+j.n+" · los daemons no cuentan";
-    case "vault": return j.prog.vaulted?"proyecto recuperado ✓":"llega a la capa "+j.targetDepth+" y recupera "+escapeHtml(j.project);
+    case "vault": return j.prog.vaulted?"proyecto recuperado ✓":"llega a la capa "+j.targetDepth+" y recupera "+escapeHtml(projectName(j.project));
     case "daemon": return "daemons: "+j.prog.daemons+"/"+j.n;
     default: return "";
   }
@@ -1363,18 +1374,18 @@ function intelHint(id){
   for(var i=0;i<INTEL.length;i++) if(INTEL[i].id===id) u=INTEL[i].u;
   var map={ first_immerse:"primera inmersión", first_job:"primer trabajo",
     depth3:"alcanzar profundidad 3", depth4:"alcanzar profundidad 4",
-    first_daemon:"primer daemon", doctor_job:"trabajo del Doctor Sudario",
+    first_daemon:"primer daemon", doctor_job:"trabajo de ORVIK",
     first_vault:"primer vault", heat90:"calor ≥ 90",
     level2:"nivel 2", level5:"nivel 5", level8:"nivel 8", level10:"nivel 10",
-    defeat_boss:"derrotar al Núcleo", rep_mama2:"reputación con Mama Wire ≥ 2",
-    rep_doctor3:"reputación con Doctor Sudario ≥ 3", rep_night3:"reputación con Night-0X ≥ 3",
+    defeat_boss:"leer la copia preservada del cierre", rep_mama2:"reputación con VEYRA ≥ 2",
+    rep_doctor3:"reputación con ORVIK ≥ 3", rep_night3:"reputación con Inés Aro ≥ 3",
     ice_t3:"destruir 5 ICE", immerse3:"3 inmersiones",
-    rep_doctor2:"reputación con Doctor Sudario ≥ 2", rep_night2:"reputación con Night-0X ≥ 2",
+    rep_doctor2:"reputación con ORVIK ≥ 2", rep_night2:"reputación con Inés Aro ≥ 2",
     data50:"cargar 50 datos en total", ice10:"destruir 10 ICE",
     immerse5:"5 inmersiones", daemon5:"derrotar 5 daemons",
     depth6:"alcanzar la capa 6 (SEALED NETWORK)" };
   if(u==="recover_project"){
-    for(var j=0;j<INTEL.length;j++) if(INTEL[j].id===id) return "recuperar el proyecto "+INTEL[j].project+" de un vault";
+    for(var j=0;j<INTEL.length;j++) if(INTEL[j].id===id) return "recuperar el proyecto "+projectName(INTEL[j].project)+" de un vault";
   }
   return map[u]||"desconocido";
 }
@@ -1423,8 +1434,8 @@ function renderInicio(){
     '<button class="btn" data-action="goTienda">⛿ MERCADO NEGRO</button>'+
     '<button class="btn ambar" data-action="goTrabajos">▤ TRABAJOS</button>'+
     '</div>';
-  if(S.history.finalUnlocked && !S.history.finalDone && !inImmersion)
-    html+='<div class="center mt-2"><button class="btn magenta" data-action="acceptNucleo">✦ EL NÚCLEO (profundidad 5)</button></div>';
+  if(S.narrative.chapters.c08==="accepted" && !inImmersion)
+    html+='<div class="center mt-2"><button class="btn magenta" data-action="acceptNucleo">✦ INTERVENCIÓN (profundidad 5)</button></div>';
   if(S.history.finalDone)
     html+='<div class="center mt-2"><button class="btn magenta" data-action="startEndless">◈ SEALED NETWORK</button> <span class="muted text-xs">modo supervivencia</span></div>';
   html+='<div class="panel-h">REPUTACIÓN</div><div class="box">'+repRows()+'</div>';
@@ -1477,6 +1488,7 @@ ACTIONS.dipGrid = function(){
 ACTIONS.startIntro = beginIntro;
 ACTIONS.startEndless = function(){
   if(!livingInteraction()) return;
+  if(!S.history.finalDone){ msg("La supervivencia se abre después de verificar la revocación final.","ambar"); return; }
   if(inImmersion){ msg("ya estás en el grid. superficializa primero.","ambar"); return; }
   if(isLockdown()){
     msg("LOCKDOWN ACTIVO ▸ calor demasiado alto. espera a que baje para conectarte.","rojo");
@@ -1869,6 +1881,7 @@ function renderArchivos(){
       '<div class="archive-tools"><label for="archive-filter">Estado</label><select id="archive-filter"><option value="all">Todos</option><option value="readable">Legibles</option><option value="pending">Pendientes</option><option value="sealed">Cifrados</option></select></div><div class="archive-list">';
     var count=0;
     STORY_FILES.forEach(function(file){
+      if(file.id==="r_copia_final" && narrative.readConversations.indexOf("m_copia_final")<0) return;
       var state=narrative.files[file.id], previous=file.origin==="local"||file.origin==="inherited-mail";
       if(state==="unknown" || previous!==(_archiveTab==="previous") ||
          (_archiveFilter==="readable" && state!=="readable") ||
@@ -1911,7 +1924,7 @@ ACTIONS.goArchivos=function(){ showView("archivos"); };
 /* ---- REGISTRO ---- */
 /* clasificación por prefijo (sin migrar guardados): lore / combate / contratos / sistema */
 function logCat(text){
-  if(/^(INTEL ▸|NIGHT-0X ▸|SEÑAL ▸|FRAGMENTO ▸|ECO DEL DECK|✦ EL NÚCLEO)/.test(text)) return "lore";
+  if(/^(INTEL ▸|Inés Aro ▸|SEÑAL ▸|FRAGMENTO ▸|ECO DEL DECK|✦ EL NÚCLEO)/.test(text)) return "lore";
   if(/^(CONEXIÓN GANADA|⚠ DAEMON|⚠ RASTREADOR|⚠ ALARMA|HUIR|PAQUETE VIRUS)/.test(text)) return "combate";
   if(/^(✔ CONTRATO|✓ TRABAJO|✗ TRABAJO|REFRESCAR)/.test(text)) return "contratos";
   return "sistema";
@@ -1999,29 +2012,33 @@ CMD.glosario = CMD.mundo = function(){ showView("ayuda"); msg("AYUDA ▸ el mund
 /* comandos diegéticos: el OS habla… y evade (los misterios de LORE §7 quedan sellados) */
 CMD.expediente = function(){
   scroller('<h1 class="title">EXPEDIENTE</h1>'+
-    '<div class="sub">archivo del deck · consulta pública</div>'+
-    '<div class="box"><p>ASUNTO: CORVO-7 — netrunner de calle.</p>'+
-    '<p>ORIGEN: no consta. El deck es un CORVO-7 robado; por regla local, quien lo porta lo es.</p>'+
+    '<div class="sub">archivo del deck · registro local de sesión</div>'+
+    '<div class="box"><p>ASUNTO: Álex Riba · uso provisional acordado con Berto.</p>'+
+    '<p>CANAL: '+(S.narrative.aliasAcquired?'CORVO-7 · alias de esta sesión.':'sin alias adquirido.')+'</p>'+
     '<p>ESTADO: activo · nivel '+S.player.level+' · '+S.player.stats.immerse+' inmersiones · capa '+S.player.stats.maxDepth+' alcanzada.</p>'+
-    '<p>OBSERVACIÓN: el deck conserva datos de portadores anteriores. No es un fallo: es un recuerdo.</p>'+
+    '<p>OBSERVACIÓN: el deck de Tomás conserva archivos anteriores. Consultarlos no autoriza a responder en su nombre.</p>'+
     '<p class="muted">FIN DEL ARCHIVO · hay preguntas que este archivo no responde.</p></div>');
   msg("EXPEDIENTE ▸ tu ficha, tal como la conserva el cable.","cyan");
 };
 CMD.quien = function(arg){
   var q=(arg||"").toLowerCase(), line;
-  if(q.indexOf("mama")>=0 || q.indexOf("wire")>=0)
-    line="MAMA WIRE ▸ fixer de calle desde el bar-club ÓCTAVA. Nadie recuerda su nombre anterior; eso también lo arregló ella.";
-  else if(q.indexOf("sudario")>=0 || q.indexOf("doctor")>=0)
-    line="DOCTOR SUDARIO ▸ netrunner retirado. Vende recuerdos. Habla del Núcleo como de un sueño y cambia de tema.";
-  else if(q.indexOf("night")>=0)
-    line="NIGHT-0X ▸ fixer de nivel alto. Se presenta en plural y nunca se contradice… dos veces.";
-  else if(q.indexOf("kairos")>=0)
-    line="KAIROS ▸ espía corporativo. O eso dice su ficha. La ficha la escribió él.";
-  else if(q.indexOf("corvo")>=0 || q.indexOf("yo")>=0 || q.indexOf("7")>=0)
-    line="CORVO-7 ▸ tú. El deck es robado y recuerda a quienes lo portaron antes. No es un fallo: es un recuerdo.";
-  else if(q.indexOf("nucleo")>=0)
-    line="EL NÚCLEO ▸ la máquina que gobierna la red desde la capa 5. Eso es todo lo que este archivo admite.";
-  else line='uso: QUIEN <nombre> — prueba con mama wire, sudario, night-0x, kairos, corvo o núcleo.';
+  if(q.indexOf("veyra")>=0 || q.indexOf("celia")>=0)
+    line="VEYRA ▸ Celia Ronda. Intermedia trabajos y coordina operadores; el canal de Álex es nuevo, no una suplantación de Tomás.";
+  else if(q.indexOf("orvik")>=0 || q.indexOf("mateo")>=0)
+    line="ORVIK ▸ Mateo Sanz. Recupera referencias y bloques conservados; no reconstruye bytes perdidos.";
+  else if(q.indexOf("inés")>=0 || q.indexOf("ines")>=0)
+    line="Inés Aro ▸ oficina independiente de reclamaciones. Contrasta documentos y solicita permisos; no es una inteligencia distribuida.";
+  else if(q.indexOf("naev")>=0 || q.indexOf("nara")>=0)
+    line=S.narrative.chapters.c05==="resolved"?"NAEV ▸ Nara Beltrán. Identidad contrastada por certificación profesional; su firma y responsabilidad permanecen entre las pruebas.":"NAEV ▸ canal de acceso corporativo. Su identidad requiere contraste documental; el alias no la certifica.";
+  else if(q.indexOf("berto")>=0)
+    line="Berto Salas ▸ Hostal La Bajante. Autoriza el uso provisional del deck de Tomás; no transfiere su identidad.";
+  else if(q.indexOf("tomás")>=0 || q.indexOf("tomas")>=0)
+    line=S.narrative.chapters.c06==="resolved"?"Tomás Egea ▸ fuera de custodia tras la revisión confirmada por Inés.":"Tomás Egea ▸ titular del deck. Su situación actual no se deduce de los archivos heredados.";
+  else if(q.indexOf("corvo")>=0 || q.indexOf("álex")>=0 || q.indexOf("alex")>=0 || q==="yo")
+    line="Álex Riba ▸ mantenimiento subcontratado. Usa el deck provisionalmente; "+(S.narrative.aliasAcquired?"CORVO-7 es su alias de canal.":"todavía no ha adquirido alias de canal.");
+  else if(q.indexOf("núcleo")>=0 || q.indexOf("nucleo")>=0)
+    line=S.history.finalDone?"EL NÚCLEO ▸ permiso de escritura central revocado. Los servicios preparados siguen operativos; la copia preservada no restaura ese permiso.":"EL NÚCLEO ▸ proceso central de revisión de registros. El alcance de sus permisos debe contrastarse con las órdenes y firmas conservadas.";
+  else line='uso: QUIEN <nombre> · VEYRA, ORVIK, Inés, NAEV, Berto, Tomás, Álex o Núcleo.';
   msg(line,"cyan");
 };
 CMD.diario = function(){ _logCat="lore"; showView("registro"); msg("REGISTRO ▸ filtrado por lore: tu historia, sin el ruido del sistema.","cyan"); };
@@ -2235,7 +2252,7 @@ ACTIONS.acceptNucleo = function(){
   S.history.finalUnlocked=true; S.nextDepth=5;
   addLog("CASO c08 ▸ red de revocacion preparada. Profundidad 5.");
   msg("recupera la prueba de revocacion y vuelve para verificarla.","magenta");
-  save(); showView("contactos");
+  save(); startImmersion(5);
 };
 
 

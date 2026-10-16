@@ -30,7 +30,7 @@ test('nivel 30: tres contratos aceptados generan oportunidades suficientes en un
   await expect(page.locator('#panel-scroll')).toContainText('los daemons no cuentan');
 });
 test('vault F01: aceptar y generar conserva el nodo sorteado al guardar, exportar/importar y recargar', async ({page,game}) => {
-  const offer={id:'vault-f01',title:'EL VAULT DE KURO GATECH',desc:'Recupera el proyecto KURO en la capa 4.',
+  const offer={id:'vault-f01',title:'EL VAULT DE MALLA',desc:'Recupera el proyecto KURO en la capa 4.',
     type:'vault',contact:'doctorSudario',risk:'high',reward:100,xp:10,n:1,project:'KURO',targetDepth:4};
   await game.setup({state:{offers:[offer]}});
   await nav(page,'contactos').click();

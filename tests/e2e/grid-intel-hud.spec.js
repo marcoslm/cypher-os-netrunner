@@ -50,9 +50,9 @@ test('VESPER recuperado: expediente inmediato, sin cinco daemons, conserva expor
   expect(won.state.intel).not.toContain('vesper');
   expect(won.saved.intel).toContain('exp_vesper');
   await nav(page,'informes').click();
-  const dossier=page.locator('.intel').filter({hasText:'EXPEDIENTE RECUPERADO // VESPER'});
+  const dossier=page.locator('.intel').filter({hasText:'EXPEDIENTE RECUPERADO // CONTINUIDAD'});
   await expect(dossier).toContainText('FIRMA CENSURADA');
-  await expect(dossier).toContainText('KURO GATECH y MONOLITH');
+  await expect(dossier).toContainText('MALLA y ESTRATO');
   await game.openSaveTools();
   const promise=page.waitForEvent('download');await page.locator('#btn-export').click();
   const exported=await downloadJSON(await promise);
@@ -60,7 +60,7 @@ test('VESPER recuperado: expediente inmediato, sin cinco daemons, conserva expor
   await game.importFile(exported,'vesper.json');
   expect((await game.snapshot()).immersion).toEqual(won.immersion);
   await nav(page,'informes').click();
-  await expect(page.locator('.intel').filter({hasText:'EXPEDIENTE RECUPERADO // VESPER'})).toHaveCount(1);
+  await expect(page.locator('.intel').filter({hasText:'EXPEDIENTE RECUPERADO // CONTINUIDAD'})).toHaveCount(1);
 });
 test('emboscada encadenada en ruta al vault resuelve el combate y abre el puzzle', async ({page,game}) => {
   const inm=trackedImmersion();
@@ -79,7 +79,7 @@ test('legacy en la calle: importar y cargar recuperan VESPER desde el contrato s
   await game.setup({state:{offers:[]},player:{credits:4321}});
   const incoming=(await game.snapshot()).saved;
   incoming.intel=[]; incoming._inImmersion=null;
-  incoming.jobs=[{id:'vault-legacy',title:'EL VAULT DE MONOLITH',desc:'Recupera VESPER.',type:'vault',
+  incoming.jobs=[{id:'vault-legacy',title:'EL VAULT DE ESTRATO',desc:'Recupera VESPER.',type:'vault',
     project:'VESPER',targetDepth:4,n:1,contact:'doctorSudario',reward:500,xp:30,risk:'high',
     done:true,failed:false,prog:{vaulted:true}}];
   incoming.player.stats.jobsCompleted=1;
@@ -93,7 +93,7 @@ test('legacy en la calle: importar y cargar recuperan VESPER desde el contrato s
       stats:{jobsCompleted:1,credits:incoming.player.stats.credits}});
     expect(recovered.state.jobs).toEqual(incoming.jobs);
     await nav(page,'informes').click();
-    await expect(page.locator('.intel').filter({hasText:'EXPEDIENTE RECUPERADO // VESPER'})).toHaveCount(1);
+    await expect(page.locator('.intel').filter({hasText:'EXPEDIENTE RECUPERADO // CONTINUIDAD'})).toHaveCount(1);
   };
   await game.importFile(incoming,'vesper-antiguo.json');
   await assertRecovered();
@@ -104,7 +104,7 @@ test('legacy en la calle: importar y cargar recuperan VESPER desde el contrato s
   const migrated=(await game.snapshot()).saved;
   await game.importFile(migrated,'vesper-migrado.json');
   await assertRecovered();
-  expect((await game.snapshot()).state.log.filter(e=>e.text.startsWith('INTEL ▸ EXPEDIENTE RECUPERADO // VESPER'))).toHaveLength(1);
+  expect((await game.snapshot()).state.log.filter(e=>e.text.startsWith('INTEL ▸ EXPEDIENTE RECUPERADO // CONTINUIDAD'))).toHaveLength(1);
 });
 test('INFORMES avisa de lo archivado: punto, marca NUEVO y cartel discreto', async ({page,game}) => {
   // Logros ya concedidos: con una sola acción real, el único cartel posible es el de INFORMES.

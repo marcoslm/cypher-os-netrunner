@@ -46,18 +46,20 @@ function vaultOffer(id, project, corp) {
   };
 }
 
-async function setupF5(page, game) {
-  const narrative = await page.evaluate(() => {
+async function setupF5(page, game, completed = 4) {
+  const narrative = await page.evaluate(completed => {
     const state = newNarrativeState();
     Object.assign(state, { entry:'active', aliasAcquired:true, recoveryStage:'complete_known', keys:['k_casos'] });
     for (const id of ['l_estancia','l_revision','l_contacto','l_indice','l_casos']) state.files[id]='readable';
-    for (const chapter of STORY_CHAPTERS.slice(0,4)) {
+    for (const chapter of STORY_CHAPTERS.slice(0,completed)) {
       state.chapters[chapter.id]='resolved'; state.awarded.push(chapter.id);
       for (const id of chapter.files) state.files[id]='readable';
     }
-    state.chapters.c05='offered';
+    if(completed>=5)state.readConversations.push('m_nara_presentacion');
+    if(completed>=6)state.files.l_testimonio='readable';
+    state.chapters[STORY_CHAPTERS[completed].id]='offered';
     return state;
-  });
+  }, completed);
   await game.setup({ state:{narrative} });
 }
 
@@ -364,8 +366,7 @@ for (const width of [320,1280]) {
     expect(finished.state.narrative.chapters.c07).toBe('offered');
     expect(finished.state.narrative.readConversations).not.toContain('m_berto_acogida');
     await expect(scoped('acceptStoryCase','c07')).toHaveCount(0);
-    await expect(scoped('consultStoryCase','c07')).toHaveCount(0);
-    await expect(page.locator('#panel-scroll')).toContainText('Fin del tramo');
+    await expect(scoped('consultStoryCase','c07')).toBeVisible();
     await scoped('openStoryConversation','m_berto_acogida').click();
     await expect(page.locator('#panel-scroll')).toContainText('Ya está aquí');
     await fits(); await page.screenshot({path:testInfo.outputPath(`welcome-${width}.png`)});
@@ -379,6 +380,80 @@ for (const width of [320,1280]) {
     await expect(page.locator('.archive-text')).toContainText('detalle no publicado');
   });
 }
+
+for(const width of [320,1280]){
+  test(`F6: continuidad, revocacion y cierre reanudable a ${width} px`,async({page,game},testInfo)=>{
+    test.setTimeout(120000);await page.setViewportSize({width,height:width===320?800:900});await setupF5(page,game,6);
+    const scoped=(name,id)=>page.locator(`[data-action="${name}"][data-id="${id}"]`);
+    const fits=async()=>{expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);expect(await page.locator('#panel-scroll').evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);};
+    await nav(page,'trabajos').click();
+    for(const id of ['c07','c08']){
+      await scoped('consultStoryCase',id).click();await scoped('acceptStoryCase',id).click();
+      await page.evaluate(()=>{window.__storyRng=Math.random;Math.random=()=>0.99;});
+      try{await action(page,'dipGrid').click();}finally{await page.evaluate(()=>{Math.random=window.__storyRng;delete window.__storyRng;});}
+      const entered=await game.snapshot(),proof=entered.immersion.grid.nodes.find(node=>node.storyChapter===id);
+      expect(entered.immersion.depth).toBe(id==='c07'?4:5);
+      if(id==='c08')expect(entered.immersion.grid.nodes.filter(node=>node.boss)).toHaveLength(1);
+      await storyRoute(page,proof.storyDefense);
+      const victory=await game.snapshot();
+      expect(victory.state.player.credits).toBe(entered.state.player.credits);
+      expect(victory.state.history.finalDone).toBe(false);
+      expect(victory.state.narrative.files[proof.storyChapter==='c07'?'r_continuidad':'r_revocacion']).toBe('unknown');
+      await page.screenshot({path:testInfo.outputPath(`${id}-grid-${width}.png`)});
+      await storyRoute(page,proof.id);await page.keyboard.press('Control+s');
+      const transit=await game.snapshot();await game.importFile(jsonFile(transit.saved));await game.reload();
+      expect((await game.snapshot()).immersion).toEqual(transit.immersion);
+      await storyRoute(page,transit.immersion.grid.entry);await action(page,'doSuperficie').click();await action(page,'closeResume').click();
+      const returned=await game.snapshot();expect(returned.state.history.finalDone).toBe(false);
+      await scoped('deliverStoryCase',id).click();
+      expect((await game.snapshot()).state.player.credits).toBe(returned.state.player.credits+(id==='c07'?750:5000));
+      await expect(page.locator('#conversation-heading')).toBeFocused();await fits();
+      await page.screenshot({path:testInfo.outputPath(`${id}-delivery-${width}.png`)});
+      if(id==='c07')await action(page,'closeStoryConversation').click();
+    }
+    const paid=await game.snapshot();expect(paid.state.history.finalDone).toBe(true);
+    expect(paid.state.narrative.readConversations).toContain('m_berto_final');
+    for(const id of ['m_ines_final','m_nara_final','m_copia_final'])expect(paid.state.narrative.readConversations).not.toContain(id);
+    await action(page,'goStoryProofs').click();await expect(scoped('openArchive','r_copia_final')).toHaveCount(0);
+    await game.reload();await nav(page,'trabajos').click();
+    for(const id of ['m_ines_final','m_nara_final','m_copia_final']){
+      await scoped('openStoryConversation',id).click();await expect(page.locator('#conversation-heading')).toBeFocused();
+      await fits();await page.screenshot({path:testInfo.outputPath(`${id}-${width}.png`)});
+      const saved=await game.snapshot();expect(saved.state.player.credits).toBe(paid.state.player.credits);
+      await game.importFile(jsonFile(saved.saved));await game.reload();await nav(page,'trabajos').click();
+    }
+    await expect(page.locator('#panel-scroll')).toContainText('Investigación concluida');
+    await action(page,'goStoryProofs').click();await scoped('openArchive','r_copia_final').click();
+    await expect(page.locator('.archive-text')).toContainText('no por qué decidió preservarla');
+    await nav(page,'inicio').click();await action(page,'startEndless').click();
+    const endless=await game.snapshot();expect(endless.immersion.grid.nodes.some(node=>node.boss||node.storyChapter)).toBe(false);
+    expect(endless.state.narrative.awarded).toHaveLength(8);expect(endless.state.player.credits).toBe(paid.state.player.credits);
+  });
+}
+
+test('F6: campana completa desde nueva partida sin contratos ni compras obligatorios',async({page,game})=>{
+  test.setTimeout(240000);await game.boot();const scoped=(name,id)=>page.locator(`[data-action="${name}"][data-id="${id}"]`);
+  await nav(page,'trabajos').click();
+  for(const id of ['c01','c02','c03','c04','c05','c06','c07','c08']){
+    if(id==='c01'){await action(page,'acceptInvoice').click();await action(page,'closeStoryConversation').click();}
+    else{
+      await scoped('consultStoryCase',id).click();
+      if(id==='c03'){await scoped('openStoryConversation','m_ines_clave').click();await action(page,'receiveStoryKey').click();await action(page,'applyStoryKey').click();}
+      await scoped('acceptStoryCase',id).click();
+    }
+    await page.evaluate(()=>{window.__storyRng=Math.random;Math.random=()=>0.99;});
+    try{await action(page,'dipGrid').click();}finally{await page.evaluate(()=>{Math.random=window.__storyRng;delete window.__storyRng;});}
+    const entered=await game.snapshot(),proof=entered.immersion.grid.nodes.find(node=>node.storyChapter===id);
+    await storyRoute(page,proof.storyDefense);await storyRoute(page,proof.id);await storyRoute(page,entered.immersion.grid.entry);
+    await action(page,'doSuperficie').click();await action(page,'closeResume').click();
+    if(id==='c06'){await action(page,'confirmStoryCustody').click();await action(page,'closeStoryConversation').click();}
+    if(id==='c01')await action(page,'deliverInvoice').click();else await scoped('deliverStoryCase',id).click();
+    if(id!=='c08')await action(page,'closeStoryConversation').click();
+  }
+  const closed=await game.snapshot();expect(closed.state.narrative.awarded).toEqual(['c01','c02','c03','c04','c05','c06','c07','c08']);
+  expect(closed.state.jobs).toEqual([]);expect(closed.state.player.stats.totalCreditsSpent).toBe(0);
+  expect(closed.state.history.finalDone).toBe(true);expect(closed.state.player.cpu).toBeGreaterThan(0);
+});
 
 test('smoke: todos los paneles, terminal y compras con autosave', async ({ page, game }) => {
   await game.boot({ skip: 'click' });
@@ -723,8 +798,8 @@ test('importación: picker real rechaza JSON/tipos dañados y recupera un grid v
 });
 
 test('vault: solo se acepta en la calle, uno activo y un objetivo en el siguiente grid', async ({ page, game }) => {
-  const first = vaultOffer('vault-kuro', 'KURO', 'KURO GATECH');
-  const second = vaultOffer('vault-lapida', 'LÁPIDA', 'MONOLITH');
+  const first = vaultOffer('vault-kuro', 'KURO', 'MALLA');
+  const second = vaultOffer('vault-lapida', 'LÁPIDA', 'ESTRATO');
   await game.setup({ state: { offers: [first, second] }, immersion: makeImmersion() });
   await nav(page, 'contactos').click();
   const kuro = page.locator('#offers-doctorSudario .offer').filter({ hasText: first.title });
@@ -748,7 +823,7 @@ test('vault: solo se acepta en la calle, uno activo y un objetivo en el siguient
   expect(vaults[0]).toMatchObject({ proj: 'KURO', layer: 2 });
 });
 
-test('Núcleo: c08 solo prepara el siguiente DIP en calle y persiste tras recarga', async ({ page, game }) => {
+test('Núcleo: c08 conecta desde la calle y conserva un único jefe tras recarga', async ({ page, game }) => {
   await game.setup({ player: { level: 5, rep: { night0X: 3 } }, state: { history: { finalUnlocked: true } }, immersion: makeImmersion() });
   const oldGrid = (await game.snapshot()).immersion;
   expect(oldGrid.depth).toBe(4);
@@ -763,11 +838,16 @@ test('Núcleo: c08 solo prepara el siguiente DIP en calle y persiste tras recarg
   await action(page, 'closeResume').click();
   await expect(action(page, 'acceptNucleo')).toBeVisible();
   await action(page, 'acceptNucleo').click();
-  expect((await game.snapshot()).saved.nextDepth).toBe(5);
+  await expect(page.locator('#gridcanvas')).toBeVisible();
+  const connected = await game.snapshot();
+  expect(connected.immersion.depth).toBe(5);
+  expect(connected.saved._inImmersion).toEqual(connected.immersion);
+  expect(connected.saved.nextDepth).toBeNull();
   await game.reload();
-  expect((await game.snapshot()).state.nextDepth).toBe(5);
+  expect((await game.snapshot()).immersion).toEqual(connected.immersion);
+  await game.command('nucleo');
+  expect((await game.snapshot()).immersion.grid).toEqual(connected.immersion.grid);
   await nav(page, 'red').click();
-  await action(page, 'dipGrid').click();
   await expect(page.locator('#gridcanvas')).toBeVisible();
   const next = await game.snapshot();
   expect(next.immersion.depth).toBe(5);

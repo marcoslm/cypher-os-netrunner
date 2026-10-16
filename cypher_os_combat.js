@@ -75,7 +75,7 @@ function renderCombatEncounter(){
     '<h2 class="combat-title" id="encounter-title">'+escapeHtml(n.name||kind)+'</h2>'+
     '<dl class="encounter-facts"><div><dt>TIPO</dt><dd>'+kind+' · T'+COM.tier+'</dd></div>'+
     '<div><dt>COMBATE</dt><dd>'+label+'</dd></div></dl>'+
-    (inImmersion && n.id==="1_0" && inImmersion.grid.nodes.some(function(node){ return node.storyChapter==="c01"; })?'<p class="encounter-note">El archivador limita el historial con acceso de huésped. El deck ha encontrado una ventana para enviar la consulta.</p>':'')+
+    (inImmersion && n.id==="1_0" && inImmersion.grid.nodes.some(function(node){ return node.storyChapter==="c01"; })?'<p class="encounter-note">El archivador limita el historial con acceso de huésped. El deck ha encontrado una ventana para enviar la consulta.</p>':n.type==="nucleo"?'<p class="encounter-note">Esta defensa protege la escritura central. Los servicios locales ya están preparados. La revocación requiere recuperar el registro y verificarlo al volver.</p>':'')+
     (gear.length ? '<div class="encounter-gear"><div class="encounter-label">EQUIPO DISPONIBLE</div><ul>'+gear.map(function(item){return '<li>'+item+'</li>';}).join('')+'</ul></div>' : '')+
     (boss ? '<div class="encounter-note ambar">SIN HUIDA</div>' : '')+
     '<div class="encounter-actions"><button class="btn" id="combat-enter">ENTRAR AL COMBATE</button>'+
@@ -712,7 +712,7 @@ function clearVaultTimers(vp){
 function startVaultPuzzle(n){
   if(combatActive || !n || n.done || n._done) return;
   if(projectRecovered(n.proj)){
-    msg("ya recuperaste el proyecto "+n.proj+". Ese vault no entrega otra recompensa.","ambar"); return;
+    msg("ya recuperaste el proyecto "+projectName(n.proj)+". Ese vault no entrega otra recompensa.","ambar"); return;
   }
   clearVaultTimers(VAULT_PUZZLE);
   combatActive=true;
@@ -746,7 +746,7 @@ function renderVaultPuzzle(){
   var vp=VAULT_PUZZLE;
   el.innerHTML=
     '<div class="combat-card">'+
-      '<div class="combat-title ambar">⬢ VAULT · '+escapeHtml(vp.node.proj)+'</div>'+
+      '<div class="combat-title ambar">⬢ VAULT · '+escapeHtml(projectName(vp.node.proj))+'</div>'+
       '<div class="combat-sub">MEMORIZA EL ORDEN DE LOS SÍMBOLOS</div>'+
       '<div class="vault-puzzle">'+
         '<div class="vp-label">secuencia correcta:</div>'+
@@ -765,7 +765,7 @@ function renderVaultPuzzleInput(){
   }
   el.innerHTML=
     '<div class="combat-card">'+
-      '<div class="combat-title ambar">⬢ VAULT · '+escapeHtml(vp.node.proj)+'</div>'+
+      '<div class="combat-title ambar">⬢ VAULT · '+escapeHtml(projectName(vp.node.proj))+'</div>'+
       '<div class="combat-sub">HAZ CLIC EN EL ORDEN CORRECTO ('+vp.picks.length+'/'+vp.symbols.length+')</div>'+
       '<div class="vault-puzzle">'+
         '<div class="vp-label">ordena los símbolos:</div>'+

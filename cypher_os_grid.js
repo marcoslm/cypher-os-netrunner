@@ -149,7 +149,7 @@ function generateGrid(maxDepth, spawnBoss){
       if(layer>=2 && r<0.12+0.08*layer){ n.type="daemon"; n.tier=3; n.tierName="T3"; n.name=pick(NOM_DAEMONES); return; }
       /* post-Núcleo: nodo SEÑAL (da +30 XP) */
       if(S.history && S.history.finalDone && r<0.12+0.08*layer+0.05){
-        n.type="signal"; n.data=0; n.name="SEÑAL DEL NÚCLEO"; return;
+        n.type="signal"; n.data=0; n.name="SEÑAL RESIDUAL"; return;
       }
       /* post-Núcleo: ECO DEL NÚCLEO (ICE T2 con +60 XP) */
       if(S.history && S.history.finalDone && layer>=2 && Math.random()<0.10){
@@ -178,7 +178,7 @@ function generateGrid(maxDepth, spawnBoss){
       if(target.length){
         var node = pick(target);
         node.type="vault"; node.tier=3; node.tierName="T3";
-        node.name="VAULT · "+vv.project; node.proj=vv.project; node.isVault=true;
+        node.name="VAULT · "+projectName(vv.project); node.proj=vv.project; node.isVault=true;
         node.data=0; node.isEcho=false;
       }
       break;
@@ -192,17 +192,25 @@ function generateGrid(maxDepth, spawnBoss){
 
 function addStoryGridTarget(grid){
   var chapter=null;
-  ["c02","c03","c04","c05","c06"].some(function(id){
+  ["c02","c03","c04","c05","c06","c07","c08"].some(function(id){
     if(S.narrative.chapters[id]!=="accepted") return false;
     chapter=storyItem(STORY_CHAPTERS,id); return true;
   });
   if(!chapter || grid.maxDepth<chapter.depth) return;
   var layer=chapter.depth, tier=Math.min(3,layer+(S._legendaryTierBoost?1:0));
   var guard={id:chapter.id+"_guard",layer:layer,x:0,y:0,type:"ice",tier:tier,tierName:"T"+tier,data:0,name:"CUSTODIO · "+chapter.source,done:false,_done:false,_used:false};
+  if(chapter.id==="c08"){
+    guard=grid.nodes.filter(function(node){ return node.type==="nucleo"; })[0];
+    if(!guard) return;
+  }
   var proof={id:chapter.id+"_proof",layer:layer,x:0,y:0,type:"data",tier:0,data:0,name:storyItem(STORY_FILES,chapter.files[0]).title,storyChapter:chapter.id,storyDefense:guard.id,done:false,_done:false,_used:false};
   var anchor=grid.byLayer[layer-1][0];
-  grid.nodes.push(guard,proof); grid.byLayer[layer].push(guard,proof);
-  grid.adj[anchor.id].push(guard.id); grid.adj[guard.id]=[anchor.id,proof.id]; grid.adj[proof.id]=[guard.id];
+  if(chapter.id!=="c08"){
+    grid.nodes.push(guard); grid.byLayer[layer].push(guard);
+    grid.adj[anchor.id].push(guard.id); grid.adj[guard.id]=[anchor.id];
+  }
+  grid.nodes.push(proof); grid.byLayer[layer].push(proof);
+  grid.adj[guard.id].push(proof.id); grid.adj[proof.id]=[guard.id];
   grid.byLayer[layer].forEach(function(node,index){
     node.x=80+layer/grid.maxDepth*800; node.y=60+(index+1)*420/(grid.byLayer[layer].length+1);
   });
@@ -362,10 +370,10 @@ function startImmersion(depth){
     }
   }
   /* la misión final (S.nextDepth===5) es la ÚNICA inmersión con boss en capa 5 */
-  var finalMission = (S.nextDepth===5 && S.history.finalUnlocked && !S.history.finalDone && !S.history.endlessActive);
+  var finalMission = (S.narrative.chapters.c08==="accepted" && !S.history.finalDone && !S.history.endlessActive);
   depth = depth || (S.nextDepth || 4);
   var activeCase=storyCaseInPhase("accepted");
-  if(activeCase && ["c02","c03","c04","c05","c06"].indexOf(activeCase.id)>=0) depth=activeCase.depth;
+  if(activeCase && activeCase.id!=="c01") depth=activeCase.depth;
   if(S.jobs.some(function(j){ return !j.done; })) depth=Math.max(depth,4);
   if(S.nextDepth) S.nextDepth=null;
   /* legendario: +1 sin techo en SEALED NETWORK; grids normales máximo capa 5 */
@@ -660,7 +668,7 @@ function onNodeDefeated(ctx){
   var n = ctx.node;
   if(!n || n.done || n._done) return;
   if(n.type==="vault" && projectRecovered(n.proj)){
-    msg("ya recuperaste el proyecto "+n.proj+". Ese vault no entrega otra recompensa.","ambar"); return;
+    msg("ya recuperaste el proyecto "+projectName(n.proj)+". Ese vault no entrega otra recompensa.","ambar"); return;
   }
   if(n.type==="ice" || n.type==="daemon" || n.type==="nucleo") recordImmersionEnemy(n);
   n.done = true;
@@ -685,8 +693,8 @@ function onNodeDefeated(ctx){
        discreto, además de la línea inferior que ya lo cuenta. */
     unlock("kuro"); unlock("kuro_abandonado");
     var dossierNew=unlockProjectDossier(n.proj);
-    msg("VAULT "+n.proj+" recuperado. "+(dossierNew?"Expediente disponible en INFORMES. ":"")+"Se paga al superficializar.","magenta");
-  } else if(n.type==="nucleo"){ defeatNucleo(); }
+    msg("VAULT "+projectName(n.proj)+" recuperado. "+(dossierNew?"Expediente disponible en INFORMES. ":"")+"Se paga al superficializar.","magenta");
+  } else if(n.type==="nucleo"){ S.player.stats.ice++; defeatNucleo(); }
   updateTopbar(); save(); renderGridHud();
 }
 
@@ -696,9 +704,9 @@ function defeatNucleo(){
   for(var index=0;index<inImmersion.grid.nodes.length;index++){
     if(inImmersion.grid.nodes[index].storyChapter==="c08") objective=inImmersion.grid.nodes[index];
   }
-  if(!objective) return false;
-  S.player.stats.ice++;
+  if(!objective || !nodeById(objective.storyDefense) || !nodeById(objective.storyDefense).done) return false;
   addLog("✦ EL NÚCLEO ▸ defensa retirada. La revocacion sigue pendiente de recuperacion y entrega.");
+  msg("Defensa retirada. Recupera la revocación, vuelve al puerto y verifica la entrega; aún no se ha pagado ni cerrado el caso.","cyan");
   sound.win();
   return true;
 }
@@ -1479,7 +1487,7 @@ function updateGridHud(){
       var label=n.storyChapter?escapeHtml(n.name):(n.type==="data")?("DATOS") :
         (n.type==="ice")?("ICE "+escapeHtml(n.tierName)) :
         (n.type==="daemon")?("DAEMON "+escapeHtml(n.name)) :
-        (n.type==="vault")?("VAULT "+escapeHtml(n.proj)) :
+        (n.type==="vault")?("VAULT "+escapeHtml(projectName(n.proj))) :
         (n.type==="substation")?("SUBESTACIÓN") :
         (n.type==="nucleo")?("NÚCLEO") :
         (SIM[n.type]||"·");

@@ -165,7 +165,7 @@ async function reenterChallenge(page, game) {
 
 function vaultJob() {
   return {
-    id: 'memory-vault-kuro', contact: 'doctorSudario', title: 'EL VAULT DE KURO GATECH',
+    id: 'memory-vault-kuro', contact: 'doctorSudario', title: 'EL VAULT DE MALLA',
     desc: 'Llega a la capa 2 y recupera el proyecto KURO.', type: 'vault', n: 1,
     project: 'KURO', targetDepth: 2, risk: 'high', reward: 500, xp: 30, why: '',
     ts: Date.parse('2030-01-01T00:00:00Z'), prog: { vaulted: false }, done: false, failed: false

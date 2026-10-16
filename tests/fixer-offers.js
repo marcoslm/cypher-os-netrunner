@@ -84,7 +84,7 @@ async function run(options={}) {
     assert.equal(g.run('S.offers.filter(function(o){return o.type==="vault";}).length'),0);
     assertMinimum(g.run('S.offers'),Object.fromEntries(contacts.map(id=>[id,2])));
   });
-  await check('Kairos conserva ambos requisitos de desbloqueo antes de recibir su mínimo',g=>{
+  await check('NAEV conserva ambos requisitos de desbloqueo antes de recibir su mínimo',g=>{
     for(const [level,rep,available] of [[3,2,false],[4,1,false],[4,2,true]]) {
       g.run(`S.player.level=${level};S.player.rep.night0X=${rep};generateOffers();`);
       const own=g.run('S.offers').filter(o=>o.contact==='kairos');
@@ -93,7 +93,7 @@ async function run(options={}) {
       for(const id of contacts.slice(0,3)) assert.ok(g.run('S.offers').some(o=>o.contact===id));
     }
   });
-  await check('el primer trabajo de Mama Wire conserva RECOLECTA fácil aunque varíe la cantidad',g=>{
+  await check('el primer trabajo de VEYRA conserva RECOLECTA fácil aunque varíe la cantidad',g=>{
     const counts=new Set();
     for(let refresh=0;refresh<32;refresh++) {
       g.run('generateOffers();');const own=g.run('S.offers').filter(o=>o.contact==='mamaWire');

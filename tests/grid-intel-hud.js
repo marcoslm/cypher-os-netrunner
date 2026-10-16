@@ -29,7 +29,7 @@ async function run(options = {}) {
       const id=g.run('PROYECTO_EXPEDIENTE')[project];
       assert.equal(S.intel.filter(i=>i===id).length,1);
       assert.ok(g.saved().intel.includes(id));
-      assert.match(g.run(`intelHint('${id}')`),new RegExp(project));
+      assert.ok(g.run(`intelHint('${id}')`).includes(g.run(`projectName('${project}')`)));
       const xp=S.player.xp, logs=S.log.length;
       g.run('onNodeDefeated({node:window.__node});');
       assert.equal(S.player.xp,xp); assert.equal(S.log.length,logs);

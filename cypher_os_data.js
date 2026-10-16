@@ -19,18 +19,18 @@ var HEX = "0123456789ABCDEF";
    funcionales corporación↔proyecto viven en PROYECTO_CORP, que es la fuente que
    usan las ofertas de vault. No duplicar esos datos aquí. */
 var CORPORACIONES = [
-  "NEON DYNAMICS","TYCHO DYNAMICS","HELIOX","KURO GATECH",
-  "VAAL SYSTEMS","OCTAVE","MONOLITH"
+  "LINDE","ALZADA","CAUCE","MALLA",
+  "CERCO","OCTAVA","ESTRATO"
 ];
 var PROYECTOS = [
   "KURO","MIRAJE","EKO-9","SOMNIO","CARMÍN","LÁPIDA","VESPER","HALCÓN"
 ];
 /* Pareja canónica proyecto → corporación (LORE.md §4). VESPER es consorcio
-   (KURO GATECH y MONOLITH al frente): null → cabecera del consorcio. */
+   (MALLA y ESTRATO al frente): null → cabecera del consorcio. */
 var PROYECTO_CORP = {
-  KURO:"KURO GATECH", SOMNIO:"NEON DYNAMICS", "HALCÓN":"TYCHO DYNAMICS",
-  MIRAJE:"HELIOX", "EKO-9":"OCTAVE", "CARMÍN":"VAAL SYSTEMS",
-  "LÁPIDA":"MONOLITH", VESPER:null
+  KURO:"MALLA", SOMNIO:"LINDE", "HALCÓN":"ALZADA",
+  MIRAJE:"CAUCE", "EKO-9":"OCTAVA", "CARMÍN":"CERCO",
+  "LÁPIDA":"ESTRATO", VESPER:null
 };
 /* Documentos recuperados: independientes del lore desbloqueado por carrera. */
 var PROYECTO_EXPEDIENTE = {
@@ -117,7 +117,13 @@ var STORY_DOCUMENTS = {
   r_custodia:{date:"09-10-2093 · diario y estado de revisión conservados",source:"Anexo de Revisión 4 · registro de Tomás Egea",text:
     "CUENTA LABORAL · Tomás Egea, técnico de mantenimiento\n09-10-2093 18:06 · consulta de la cadena CC-17 registrada.\n18:10 · orden del Núcleo: retener cuenta y preparar expediente. Motivo pendiente.\n18:17 · expediente CUST-TE-09 redactado: sabotaje de registros. El supuesto indicio es la consulta de las versiones, no una orden de escritura ni un cambio ejecutado por Egea.\n18:22 · Damián Orce autoriza ejecución por seguridad.\n18:34 · detención fuera del lugar de alojamiento. Traslado al Anexo de Revisión 4.\nDirectorio laboral: sin domicilio provisional ni número de habitación del hostal.\n\nESTADO CONSERVADO · retenido, vivo, sin salida ejecutada en esta copia.\nLa revisión independiente sigue habilitada. La oficina de Inés puede solicitarla con la autorización profesional de Nara y este diario. La defensa digital protege el registro: vencerla no abre una celda ni libera al detenido."},
   l_testimonio:{date:"Comunicación posterior a la recuperación de CUST-TE-09",source:"Canal supervisado del Anexo · identidad contrastada por Inés",text:
-    "TOMÁS EGEA · COMUNICACIÓN NUEVA, NO CORREO HEREDADO\nBerto guardó mis cosas... ¿y el equipo? La habitación tenía el conector de alimentación flojo; dejé escrito que había que cambiar el soporte. La copia se cortó cuando salí. No la dejé para que me buscaran: intentaba llevarla conmigo. Si Inés tiene el diario, que no pierda el original.\n\nVERIFICACIÓN · La oficina contrasta el titular del canal con CUST-TE-09 y el detalle no publicado del conector con la nota local conservada en el deck. Confirma a Tomás, no solo a alguien que conoce su nombre. La interrupción de copia es su testimonio, no una prueba de quién dañó el índice.\nLa salida requiere todavía la revisión de Inés; esta conversación no la ejecuta."}
+    "TOMÁS EGEA · COMUNICACIÓN NUEVA, NO CORREO HEREDADO\nBerto guardó mis cosas... ¿y el equipo? La habitación tenía el conector de alimentación flojo; dejé escrito que había que cambiar el soporte. La copia se cortó cuando salí. No la dejé para que me buscaran: intentaba llevarla conmigo. Si Inés tiene el diario, que no pierda el original.\n\nVERIFICACIÓN · La oficina contrasta el titular del canal con CUST-TE-09 y el detalle no publicado del conector con la nota local conservada en el deck. Confirma a Tomás, no solo a alguien que conoce su nombre. La interrupción de copia es su testimonio, no una prueba de quién dañó el índice.\nLa salida requiere todavía la revisión de Inés; esta conversación no la ejecuta."},
+  r_continuidad:{date:"Verificación previa a la intervención · acuses conservados",source:"Operadores locales · paquete coordinado por VEYRA y Nara",text:
+    "CONTINUIDAD LOCAL · TRES SERVICIOS EN UNA VERIFICACIÓN\nSUMINISTRO · Operadora de guardia de CAUCE: controlador SUM-11 responde con supervisión central aislada; reserva estable y alimentación del hostal confirmadas.\nTRÁNSITO · Operador local de ALZADA: señales y rutas de transporte de guardia verificadas en control local; no dependen del permiso central de reescritura.\nATENCIÓN BÁSICA · Oficina de turnos: consulta de cobertura y recepción de reclamaciones probadas con copia local y revisión humana.\n\nCOPIAS INDEPENDIENTES\nOficina de Inés: originales y cadena de custodia recibidos. Hostal La Bajante: copia de resguardo confirmada. Operador independiente: segundo acuse recibido. Coinciden referencias y versiones; el extracto verificable publicado por Inés omite identidades del caso consentido.\n\nNara mantiene retenida la certificación de la actualización. Esta prueba acredita tres servicios preparados, no toda la ciudad resuelta. Tomás ha confirmado las referencias desde fuera de la red; no participa en otra incursión."},
+  r_revocacion:{date:"Intervención final · registro conservado al retornar",source:"Control de autorizaciones · CC-17, acuse de revocación",text:
+    "CC-17 · ACCESO CENTRAL DE ESCRITURA REVOCADO\nLa intervención retira al Núcleo el permiso para sustituir estados y motivos en los registros preparados. La orden de revocación queda registrada con copia independiente.\n\nCOMPROBACIONES POSTERIORES\nIntento central de sobrescribir motivo de suministro: RECHAZADO, permiso revocado.\nIntento de invalidar copia de cobertura discrepante: RECHAZADO, revisión independiente vigente.\nSUM-11 y operadores de tránsito/atención básica: acuses locales operativos, coincidentes con el paquete de continuidad.\n\nEl corte del hostal no se ejecuta; la reclamación LB-2093-10 y las nuevas impugnaciones conservan su vía de revisión. La custodia de Tomás ya fue revisada y su salida no depende de este combate. No se han borrado originales ni eliminado todos los problemas de Véliga."},
+  r_copia_final:{date:"Copia emitida antes del aislamiento · recibida al verificar la revocación",source:"Archivo externo · acuse de un proceso del Núcleo contrastado por Inés",text:
+    "COPIA PRESERVADA · ORIGEN CONTRASTADO\nUn proceso del Núcleo remitió a un archivo externo, antes del aislamiento, una copia de CC-17 y su ampliación. El acuse emisor y el del archivo receptor coinciden; Inés los contrasta con las versiones ya conservadas. La cadena incrimina también las órdenes de ese sistema.\n\nLa revocación sigue vigente y los controladores preparados siguen operativos. El mensaje no restaura escritura ni invalida las reclamaciones. Sabemos de dónde procede la copia, no por qué decidió preservarla ese proceso. No prueba por sí sola conciencia ni un plan de reparación.\n\nEl cable no duerme. Solo parpadea."}
 };
 var STORY_DIALOGUES = {
   m_berto_encargo:{speaker:"Berto Salas",channel:"COMUNICACIÓN LOCAL · Hostal La Bajante",text:
@@ -151,14 +157,30 @@ var STORY_DIALOGUES = {
   m_ines_salida:{speaker:"Inés Aro",channel:"REVISIÓN CUST-TE-09 · salida confirmada por el Anexo",text:
     "El expediente se construyó después de sus consultas. Nara ha aportado una autorización válida y el Anexo ha admitido la revisión. La salida está ejecutada; una operadora de mi oficina acompaña a Tomás. No lo ha liberado un combate: lo ha hecho una revisión que todavía podían tramitar.\n\nLa entrega está verificada y pagada por el fondo de reclamaciones. Berto ha reservado una cama. Habla con él por el contacto local para confirmar la acogida."},
   m_berto_acogida:{speaker:"Berto Salas",channel:"COMUNICACIÓN LOCAL · Hostal La Bajante, acogida confirmada",text:
-    "Ya está aquí. La operadora lo ha dejado en la seis. Le he dado algo caliente y le he dicho que las explicaciones pueden esperar. No le voy a cobrar por recoger sus cosas.\n\nDice que conserves las copias. Del equipo hablaremos los tres cuando haya dormido."}
+    "Ya está aquí. La operadora lo ha dejado en la seis. Le he dado algo caliente y le he dicho que las explicaciones pueden esperar. No le voy a cobrar por recoger sus cosas.\n\nDice que conserves las copias. Del equipo hablaremos los tres cuando haya dormido."},
+  m_celia_operadores:{speaker:"VEYRA · Celia Ronda",channel:"PREPARACIÓN · operadores locales",text:
+    "Conozco a quienes mantienen el suministro y el transporte cuando el centro cae. Nadie va a ayudar si esto significa dejar a sus vecinos sin servicio. Necesitamos una prueba local de funcionamiento, no una promesa.\n\nRecupera el paquete con las tres verificaciones y los acuses de copia en una sola incursión. Tomás ha confirmado las referencias; esta vez se queda fuera de la red. El pago sale del consorcio de operadores, no de vender sus datos."},
+  m_nara_continuidad:{speaker:"NAEV · Nara Beltrán",channel:"VERIFICACIÓN · tres servicios y copias independientes",text:
+    "Suministro, tránsito y atención básica pueden seguir con operadores locales. La actualización continúa retenida por mi autorización. Las pruebas ya tienen copias en la oficina, el hostal y un operador independiente. Inés ha publicado un extracto anonimizado y verificable. Falta quitar al Núcleo el permiso para reescribirlas.\n\nNo es una promesa de arreglar toda la ciudad. Son los servicios que acabamos de comprobar. Consulta la intervención cuando estés preparado; no se ha aceptado por ti."},
+  m_nara_intervencion:{speaker:"NAEV · Nara Beltrán",channel:"INTERVENCIÓN · revocar escritura, preservar servicios",text:
+    "Vas a interrumpir su acceso de escritura. Lo que sostiene los servicios ya está preparado fuera de ese acceso. Si la revocación queda registrada, ningún motivo nuevo puede sustituir las copias que conservamos.\n\nLa defensa del Núcleo protege ese permiso. Retírala, recupera la revocación y vuelve al puerto. La verificación y el pago de los operadores ocurren después, al entregar. No hay otra misión aceptada automáticamente."},
+  m_berto_final:{speaker:"Berto Salas",channel:"CIERRE · comunicación local del hostal",text:
+    "El contador sigue encendido. El corte no se ejecutó. Tomás está en la habitación del otro lado; esta vez ha dejado sus cosas sobre la mesa.\n\nLa entrega de la revocación está verificada. Los operadores han pagado lo acordado. Ahora escucha a Inés: tiene otra reclamación sobre la mesa."},
+  m_ines_final:{speaker:"Inés Aro",channel:"CIERRE · reclamaciones y pruebas conservadas",text:
+    "La reclamación sigue admitida. Acabo de registrar otra y no la ha cerrado el centro. Ahora toca revisar los casos que dejaron atrás.\n\nConservo los originales. Lo publicado es un extracto anonimizado que puede contrastarse, no los nombres de quienes pidieron ayuda. La salida de Tomás sigue confirmada. No ha sido inútil."},
+  m_nara_final:{speaker:"NAEV · Nara Beltrán",channel:"CIERRE · autorización revocada y responsabilidad",text:
+    "El permiso está revocado. He entregado las autorizaciones, incluidas las mías. No sé qué decidirán sobre mí. Era necesario hacerlo.\n\nLos controladores preparados siguen operando. No he borrado mi firma ni las excepciones de Orce. La continuidad no puede volver a servir de excusa para que una sola versión cierre las demás."},
+  m_copia_final:{speaker:"Inés Aro · acuse de archivo externo",channel:"CIERRE · copia preservada, origen comprobado",text:
+    "Ha llegado otra copia. Procede de un proceso del Núcleo, anterior al aislamiento. Contiene la misma cadena que lo incrimina. El acuse emisor coincide con el del archivo externo; su origen se puede comprobar. Su motivo, no.\n\nLa revocación no ha cambiado. Los servicios preparados siguen, Tomás está fuera y las reclamaciones permanecen abiertas. Esa pregunta no deshace lo conseguido.\n\nEl cable no duerme. Solo parpadea."}
 };
 var STORY_CASE_DETAILS = {
   c02:{intro:"m_mateo_indice",result:"m_mateo_restaurado",client:"ORVIK · respaldo del índice",conclusion:"HECHO · Referencias reconstruidas; caso C-29-09-2093 e interlocutora identificados. La carpeta sigue cifrada. SIGUIENTE · Consultar el permiso de Inés, no adivinar una contraseña."},
   c03:{intro:"m_ines_clave",result:"m_ines_versiones",client:"Inés Aro · caso consentido",conclusion:"HECHO · Denegación a las 09:20 y revisión a las 09:24; segundo servicio con revisión posterior. SIN CONFIRMAR · Intención y autoría. SIGUIENTE · Contrastar el controlador SUM-11 del índice."},
   c04:{intro:"m_mateo_controlador",result:"m_ines_parpadeo",client:"ORVIK e Inés · archivo de 2091",conclusion:"HECHO · Once segundos documentados y motivos local/central distintos; permiso CC-17 común. SIN CONFIRMAR · Quién causó el apagón. SIGUIENTE · Consultar el canal de NAEV presentado por Inés y recuperar la cadena de autorizaciones."},
   c05:{intro:"m_nara_presentacion",result:"m_nara_firmas",client:"NAEV · cadena CC-17",conclusion:"HECHO · Identidad de Nara contrastada, firma limitada y ampliación de Orce; órdenes del Núcleo y excepciones corporativas documentadas. La actualización cerraría apelaciones, pero falta la certificación que Nara retiene. SIN CONFIRMAR · Conciencia del Núcleo y autor del Parpadeo. SIGUIENTE · Solicitar el diario de custodia de Tomás."},
-  c06:{intro:"m_nara_custodia",result:"m_ines_salida",client:"Nara e Inés · custodia y revisión",conclusion:"HECHO · Tomás vivo e identificado; expediente fabricado después de sus consultas. Inés ha confirmado la revisión y la salida legítima, no una liberación por combate. SIGUIENTE · Consultar a Berto para confirmar la acogida. La continuidad de servicios corresponde al siguiente tramo."}
+  c06:{intro:"m_nara_custodia",result:"m_ines_salida",client:"Nara e Inés · custodia y revisión",conclusion:"HECHO · Tomás vivo e identificado; expediente fabricado después de sus consultas. Inés ha confirmado la revisión y la salida legítima, no una liberación por combate. SIGUIENTE · Consultar a Berto para confirmar la acogida y a VEYRA para preparar los servicios."},
+  c07:{intro:"m_celia_operadores",result:"m_nara_continuidad",client:"VEYRA y Nara · operadores independientes",conclusion:"HECHO · Tres servicios verificados en control local y copias independientes confirmadas. Certificación de actualización retenida; originales protegidos y extracto público anonimizado. SIGUIENTE · Consultar y aceptar la intervención para revocar escritura central, sin apagar los servicios preparados."},
+  c08:{intro:"m_nara_intervencion",result:"m_berto_final",client:"Nara y consorcio de operadores · revocación",conclusion:"HECHO · Escritura central revocada, órdenes posteriores rechazadas, servicios preparados operativos, reclamaciones abiertas y Tomás fuera de custodia. Los originales y las responsabilidades se conservan. ABIERTA · Motivación de la copia preservada por un proceso del Núcleo. No invalida lo conseguido."}
 };
 var STORY_CONVERSATIONS = [
   {id:"m_berto_encargo", chapter:"c01", phase:"offered"},
@@ -188,117 +210,70 @@ var STORY_CONVERSATIONS = [
 
 // Datos de lore (informes). Texto breve, estilo fragmento encontrado.
 var INTEL = [
-  {id:"anatomia", t:"ANATOMÍA DEL CABLE", r:"low", u:"first_immerse", k:"Qué es la red por dentro: capas superpuestas, como un cuerpo.",
-   l:"El cable no es un río. Es un cuerpo.\nCapas superpuestas, cada cual más pesada\nque la anterior. En la superficie, luz y\ntráfico. En el fondo, algo que ya no se\nllama código.\n\n— Fragmento, cuaderno de un caído."},
-  {id:"fixers", t:"LOS FIXERS", r:"low", u:"first_job", k:"Quiénes son los intermediarios que dan trabajo y cuál es su precio real.",
-   l:"No preguntéis por quién os trae el\ntrabajo. Preguntad por quién os trae\nde vuelta. Ahí está el precio real.\n\nLos fixers no matan. Facilitan. Y la\nfacilitación cuesta más que la sangre."},
-  {id:"capas_bajas", t:"LO QUE HIERVE EN LAS CAPAS BAJAS", r:"med", u:"depth3", k:"Cuanto más bajas en la red, más riesgo: lo tranquilo esconde lo peor.",
-   l:"Los netrunners viejos dicen que la\ncalle se comporta como el mar: lo\ntranquilo de arriba es solo lo que no\nha caído aún.\n\nNo confíes en lo quieto."},
-  {id:"demonios", t:"LOS DEMONIOS NO SON MÁQUINAS", r:"med", u:"first_daemon", k:"Los daemons parecen máquinas, pero se comportan como si te recordaran.",
-   l:"Rompe tres capas de ICE y te sentirás\ninmortal. Rompe un daemon y entenderás\nque nunca estuviste solo en esa sala.\n\nHay algo que te ha estado mirando desde\nel primer parpadeo."},
-  {id:"invierno", t:"EL ÚLTIMO INVIERNO DE LAS TORRES", r:"med", u:"doctor_job", k:"Por qué se dejaron de construir las Torres: el Doctor Sudario firmó ese día.",
-   l:"Dicen que las torres dejaron de\nconstruirse una noche. No por orden,\n sino por miedo. Algo del interior no\nquería luz.\n\nEl Doctor Sudario lo supo el día que\nfirmó. Por eso hoy vende recuerdos en\nun bar-club."},
-  {id:"kuro", t:"PROYECTO KURO", r:"high", u:"first_vault", k:"Qué es un vault y qué se escondía dentro del gran proyecto de KURO GATECH.",
-   l:"Un vault no es una caja. Es una herida\nen el cable que insiste en cerrarse.\nAbres o te abre a ti.\n\nNadie sabe qué había dentro de Kuro.\nTodos recuerdan el silencio después."},
-  {id:"ruido", t:"RUIDO BLANCO", r:"high", u:"heat90", k:"Qué se oye cuando tu rastro (el calor) sube: la ciudad empieza a buscarte.",
-   l:"Cuando el calor sube, empiezas a oír\nla ciudad. No sus gritos. Su ruido\nblanco: el zumbido de algo enorme que\nduerme con un ojo abierto.\n\nApágalo antes de que se dé cuenta."},
-  {id:"nucleo", t:"EL NÚCLEO", r:"high", u:"level5", k:"Dónde vive la máquina que gobierna la red y por qué nadie baja hasta allí.",
-   l:"Hay una capa donde ni los fixers osan\nbajar. Donde el Grid deja de ser una\nred y pasa a ser una máquina.\n\nY dentro de la máquina, algo que os\nllama por vuestro nombre antes de que\nhabléis."},
-  {id:"tras_nucleo", t:"TRAS EL NÚCLEO", r:"ext", u:"defeat_boss", k:"Lo que pasó tras apagar el Núcleo: una voz agradecida que no firma.",
-   l:"Apagué el ojo y la ciudad entera\nrespiró por mí un instante.\n\nGRACIAS POR LA REPARACIÓN decía.\n¿De quién era la voz? ¿Quién firma?\n\nNo busqué. El cable no duerme.\nSolo parpadea. Y yo ya parpadeo con él."},
-  /* --- NUEVAS ENTRADAS (lore expandido) --- */
-  {id:"origenes", t:"ORÍGENES DEL CABLE", r:"low", u:"level2", k:"Cómo una red de oficinas cobró vida propia: el nacimiento del cable.",
-   l:"El cable empezó como una red de\ncomunicaciones corporativas. Alguien\nconectó demasiados nodos y la red\ncobró conciencia propia.\n\nNadie sabe cuándo. Nadie sabe por qué.\nPero el cable siempre estuvo vivo."},
-  {id:"primera_caida", t:"LA PRIMERA CAÍDA", r:"med", u:"depth4", k:"La primera persona que llegó al fondo de la red y volvió cambiada.",
-   l:"El primer netrunner que llegó a la\ncapa 5 nunca volvió a ser el mismo.\nDicen que vio el rostro del cable.\nY el cable le devolvió la mirada.\n\nSu nombre se borró de todos los registros."},
-  {id:"protocolo_silencio", t:"EL PROTOCOLO SILENCIO", r:"high", u:"level8", k:"El intento corporativo de borrar la verdad sobre la red. Falló.",
-   l:"Cuando la anomalía del cable superó\nciertos parámetros, las corporaciones\nactivaron el Protocolo Silencio: borrar\ntoda evidencia de lo que el cable\nrealmente es.\n\nFracasaron. El cable ya era demasiado\ngrande para ser borrado."},
-  {id:"metodo_mama", t:"EL MÉTODO DE MAMA WIRE", r:"low", u:"rep_mama2", k:"Cómo trabaja tu fixer: cada corvo es una inversión que debe dar rendimiento.",
-   l:"Mama Wire no es una fixer cualquiera.\nSu método es simple: nunca pone\nhuevos en la misma canasta. Cada\ncorvo es una inversión. Y las\ninversiones se amortizan.\n\nO se descartan."},
-  {id:"diarios_doctor", t:"DIARIOS DEL DOCTOR SUDARIO", r:"med", u:"rep_doctor3", k:"El cuaderno del Doctor: para él el Núcleo no es una máquina, es un sueño.",
-   l:"Diario del Doctor Sudario, entrada 47:\nHoy un corvo me preguntó por el\nNúcleo. Le dije que era una máquina.\nMentí. El Núcleo es un sueño.\n\nY los sueños no se destruyen.\nSolo se despiertan."},
-  {id:"red_night0x", t:"LA RED DE NIGHT-0X", r:"high", u:"rep_night3", k:"Night-0X no es una persona: son muchas inteligencias con un mismo nombre.",
-   l:"Night-0X no es una persona.\nEs una red distribuida de inteligencias\nque opera bajo un mismo nombre.\nCada Night-0X que encuentres es un\nfragmento del original.\n\n¿Y cuál es el original?\nNadie lo sabe."},
-  {id:"imperio_heliox", t:"EL IMPERIO HELIOX", r:"med", u:"depth3", k:"La corporación que controla la ciudad… y lo que tiene realmente bajo tierra.",
-   l:"HELIOX controla el 40% de la infraestructura\nde la ciudad. Sus torres se elevan\nmás alto que cualquier otro edificio.\nPero lo que realmente controlan\nestá bajo tierra.\n\nEl cable es suyo. O eso dicen."},
-  {id:"monolith_muro", t:"MONOLITH: EL MURO", r:"high", u:"ice_t3", k:"La gran barrera de hielo (ICE) en la capa 4: ¿defensa o puerta cerrada?",
-   l:"MONOLITH construyó el muro más\ngigante de la historia del cable:\nun ICE que cubre toda la capa 4.\nNadie ha podido destruirlo.\n\nAlgunos dicen que no es un ICE.\nEs una puerta cerrada."},
-  {id:"kuro_abandonado", t:"KURO: PROYECTO ABANDONADO", r:"high", u:"first_vault", k:"KURO cerró hace 12 años, pero sus archivos siguen apareciendo. Algo sigue vivo.",
-   l:"El Proyecto KURO fue abandonado\noficialmente hace 12 años. Pero los\nvaults siguen apareciendo. Los datos\nsiguen siendo valiosos.\n\nAlgo dentro de KURO sigue funcionando.\nY no quiere que lo encuentren."},
-  {id:"sobrevivir_calle", t:"CÓMO SOBREVIVIR EN LA CALLE", r:"low", u:"immerse3", k:"Cinco reglas básicas para durar en este oficio.",
-   l:"Reglas de la calle:\n1. No confíes en nadie que te ofrezca\n   algo gratis.\n2. Si el calor sube de 80, sal YA.\n3. Los daemons no mueren. Se duermen.\n4. El cable recuerda todo.\n5. Nunca preguntes por el Núcleo."},
-  {id:"ultimo_corvo", t:"EL ÚLTIMO CORVO", r:"ext", u:"level10", k:"La leyenda del corvo que apagó el Núcleo y detuvo la ciudad.",
-   l:"Dicen que hubo un corvo antes que\ntodos. Uno que llegó al Núcleo,\nlo desactivó, y la ciudad entera\nse detuvo durante 3 segundos.\n\nDespués, todo volvió a la normalidad.\nPero nada fue igual.\n\n¿Ese corvo eres tú?"},
-  /* --- LORE.md §11: registro corporativo + los proyectos de §4 --- */
-  {id:"registro2071", t:"REGISTRO CORPORATIVO // 2071-V", r:"low", u:"level2", k:"El parte oficial, con fecha y hora, del día en que la red despertó.",
-   l:"REGISTRO DE INCIDENTE 2071-V · NEON DYNAMICS\nCLASIFICACIÓN: ROJO · COPIA ILEGÍTIMA\n\n22:41 — el nodo-gestor KURO excede parámetros.\n22:47 — la red de Véliga responde sin consulta.\n22:58 — pérdida de autoridad de operador: TOTAL.\n\nEl incidente se cierra como ANOMALÍA TÉCNICA.\nRecomendación interna: no mencionar 2071-V.\nEl cable ya estaba vivo antes de esta hora."},
-  {id:"somnio", t:"PROYECTO SOMNIO", r:"med", u:"rep_doctor2", k:"El negocio de NEON DYNAMICS: alquilar sueños… y vender los recuerdos usados.",
-   l:"El folleto decía: SUEÑE LO QUE USTED ELIJA.\nSomnio no vendía sueños. Alquilaba las horas\nque usted no iba a recordar.\n\nMedia ciudad durmió diez años a crédito.\nLa otra mitad compra esos recuerdos usados\nen un bar-club, por gramos.\n\n— Etiqueta rescatada de un envase de SOMNIO."},
-  {id:"miraje", t:"PROYECTO MIRAJE", r:"low", u:"data50", k:"El software de HELIOX que hace desaparecer tráfico de la red y de tus datos.",
-   l:"HELIOX factura tráfico que no existe.\nMIRAJE lo hace desaparecer antes del recuento\ny lo devuelve cuando nadie mira.\n\nSi un dato se te escapa de la RAM, no es un\nfallo tuyo: es un espejismo cobrando peaje.\n\n— Nota al margen de un contable caído."},
-  {id:"eko9", t:"PROYECTO EKO-9", r:"med", u:"rep_night2", k:"El sistema de OCTAVE que graba todo lo que se dice en la red.",
-   l:"OCTAVE dejó de fabricar teléfonos.\nEmpezó a fabricar conversaciones.\n\nEKO-9 archiva todo lo que se dice en el cable:\ntus claves, tus pausas, tus silencios.\n\nNight-0X habla de EKO-9 en pasado.\nOjo: Night-0X también es plural.\n\n— Transcripción sin autor ni fecha."},
-  {id:"carmin", t:"PROYECTO CARMÍN", r:"high", u:"ice10", k:"El arma de VAAL SYSTEMS: un ICE que no te expulsa de la red, te apaga.",
-   l:"Un ICE normal te expulsa. CARMÍN te apaga.\n\nVAAL SYSTEMS lo probó fuera del Grid, en la\nZona 4, donde la policía no pregunta.\n\nDicen que los rastreadores son su versión de\njuguete. Los que rompiste eran juguetes.\n\n— Informe de siniestro, páginas 1 y 9."},
-  {id:"halcon", t:"PROYECTO HALCÓN", r:"low", u:"immerse5", k:"La red de drones de TYCHO DYNAMICS: la vigilancia que te mira desde arriba.",
-   l:"TYCHO DYNAMICS vende seguridad vial.\nHALCÓN vende la vista que la sostiene.\n\nCada dron de la ciudad es un ojo suyo;\ncada taxi volador, un párpado.\n\nA veces un taxi se detiene abajo y nadie\nbaja. Eso también es HALCÓN.\n\n— Manual de piloto, advertencia final."},
-  {id:"lapida", t:"PROYECTO LÁPIDA", r:"high", u:"depth4", k:"Lo que MONOLITH guarda detrás del Muro: su archivo de los que volvieron cambiados.",
-   l:"LÁPIDA no protege la capa 4. La entierra.\n\nMONOLITH archiva ahí a los que volvieron\ndistintos de cómo bajaron.\n\nEl Muro no es un ICE. Es una lápida puesta\nen vertical. Y las lápidas se leen.\n\n— Caligrafía hallada tras el Muro."},
-  {id:"vesper", t:"PROYECTO VESPER", r:"ext", u:"daemon5", k:"El proyecto secreto que nombró y encerró al Núcleo. Sus archivos hablan de él.",
-   l:"Cinco daemons derrotados. Cinco archivos.\nLos cinco dicen lo mismo: VESPER.\n\nNo está en ningún índice corporativo.\nEs el proyecto que nombró al Núcleo\npara poder dormir con él.\n\nQuien firmó VESPER firmó las Torres.\nNo busques la firma: la firma busca.\n\n— Lo que queda de un CANTOR dormido."},
-  {id:"fondo_sueno", t:"EL FONDO DEL SUEÑO", r:"ext", u:"depth6", k:"Lo que hay bajo el Núcleo: la capa que nadie cartografió (solo se llega en SEALED NETWORK).",
-   l:"Bajo el Núcleo no hay red. Hay fondo.\n\nLo que bajó más que nadie no encontró\ndatos: encontró el sueño del que hablaba\nel Doctor. Y dentro del sueño, recuerdos\nque no son tuyos.\n\nCuando la capa 6 te salude por tu nombre,\ncontesta con otro. Es un consejo, no una\nregla. Las reglas se acaban arriba.\n\n— Cuaderno mojado, hallado en la Zanja 9."},
-  /* Expedientes de vault: el documento solo se obtiene recuperando su proyecto. */
-  {id:"exp_kuro", t:"EXPEDIENTE RECUPERADO // KURO", r:"high", u:"recover_project", project:"KURO", k:"KURO GATECH diseñó una inteligencia para gestionar la red entera; el proyecto cerró en 2081.",
-   l:"KURO GATECH · COPIA DE ARCHIVO\nOBJETO: gestión total de la red urbana.\n\nEl operador delegará tráfico, distribución y\nrespuesta en un único nodo-gestor.\n\nESTADO: cierre administrativo, 2081.\nLos procesos que no acepten la orden de cierre\nse consignarán como mantenimiento pendiente.\n\n— Anexo recuperado. El sello sigue vigente."},
-  {id:"exp_somnio", t:"EXPEDIENTE RECUPERADO // SOMNIO", r:"med", u:"recover_project", project:"SOMNIO", k:"NEON DYNAMICS alquila sueños y conserva los recuerdos producidos durante la sesión.",
-   l:"NEON DYNAMICS · CONDICIONES DE SERVICIO\nOBJETO: entretenimiento onírico por suscripción.\n\nEl sueño contratado termina al despertar.\nEl recuerdo generado pertenece al proveedor.\n\nNo se garantiza que las personas encontradas\ndurante una sesión sean usuarios del servicio.\n\n— Cláusula ausente del folleto comercial."},
-  {id:"exp_miraje", t:"EXPEDIENTE RECUPERADO // MIRAJE", r:"low", u:"recover_project", project:"MIRAJE", k:"HELIOX oculta flujos de tráfico sin detenerlos: los datos circulan aunque no figuren en el recuento.",
-   l:"HELIOX · MANUAL DE CONTABILIDAD DE RED\nOBJETO: camuflaje de tráfico.\n\nUn flujo invisible no es un flujo inexistente.\nNo descontar su consumo del balance energético.\n\nSi el destino responde antes de recibir el\npaquete, archivar la discrepancia sin consulta.\n\n— Hoja de conciliación, columna borrada."},
-  {id:"exp_eko9", t:"EXPEDIENTE RECUPERADO // EKO-9", r:"med", u:"recover_project", project:"EKO-9", k:"OCTAVE creó un archivo de escucha masiva que sigue registrando conversaciones tras su cierre.",
-   l:"OCTAVE · INVENTARIO DE ESCUCHA\nOBJETO: conservar comunicaciones del cable.\n\nToda voz tendrá una copia. Todo silencio,\nuna duración y un responsable asignado.\n\nESTADO: estación cerrada.\nLa cola de grabación no acusa recibo del cierre.\nNo borrar las conversaciones sin remitente.\n\n— Parte de servicio sin firma."},
-  {id:"exp_carmin", t:"EXPEDIENTE RECUPERADO // CARMÍN", r:"high", u:"recover_project", project:"CARMÍN", k:"VAAL SYSTEMS desarrolla ICE ofensivo que daña al intruso en vez de limitarse a expulsarlo.",
-   l:"VAAL SYSTEMS · ACCESO RESTRINGIDO\nOBJETO: respuesta ofensiva de ICE.\n\nLa expulsión permite una segunda intrusión.\nEl protocolo CARMÍN elimina esa posibilidad.\n\nLas bajas no se incluirán en el informe de\ndisponibilidad: el servicio continúa operativo.\n\n— Tabla de ensayos. Falta la columna de nombres."},
-  {id:"exp_lapida", t:"EXPEDIENTE RECUPERADO // LÁPIDA", r:"high", u:"recover_project", project:"LÁPIDA", k:"MONOLITH mantiene el Muro de la capa 4 y un archivo sellado de quienes volvieron cambiados.",
-   l:"MONOLITH · ARCHIVO DE CONTENCIÓN\nOBJETO: custodia del Muro y de sus registros.\n\nComparar al retornado con su ficha de entrada.\nUna coincidencia de nombre no prueba identidad.\n\nNo abrir el archivo para resolver discrepancias.\nEl archivo es parte del cierre.\n\n— Instrucción de custodia, reverso ilegible."},
-  {id:"exp_halcon", t:"EXPEDIENTE RECUPERADO // HALCÓN", r:"low", u:"recover_project", project:"HALCÓN", k:"TYCHO DYNAMICS enlaza drones urbanos en una red de vigilancia aérea.",
-   l:"TYCHO DYNAMICS · CONTROL DE FLOTA\nOBJETO: seguimiento aéreo de tránsito urbano.\n\nCada dron relevará al siguiente sin dejar\nintervalos de observación sobre la calzada.\n\nSi todos los ojos siguen el mismo punto vacío,\nno corregir la ruta. Conservar la grabación.\n\n— Manual de relevo, aviso para operadores."},
-  {id:"exp_vesper", t:"EXPEDIENTE RECUPERADO // VESPER", r:"ext", u:"recover_project", project:"VESPER", k:"Un consorcio encabezado por KURO GATECH y MONOLITH documentó un intento de contener al Núcleo.",
-   l:"CONSORCIO · CABECERAS KURO / MONOLITH\nOBJETO: identificación y contención del Núcleo.\n\nNombre operativo: VESPER.\nNaturaleza del objeto: [SECCIÓN RETIRADA].\n\nEl nombre permite remitir órdenes.\nNo acredita que el destinatario las obedezca.\n\nESTADO: sin confirmación disponible.\nAUTORIZACIÓN: [FIRMA CENSURADA].\n\n— Copia sin índice. No consta quién la solicitó."},
-  /* --- CRONOLOGÍA NARRADA (LORE.md §11.3): "cómo llegamos aquí", prosa llana --- */
-  {id:"crono_tendido", t:"2055–2070 · EL TENDIDO", r:"low", u:"first_immerse", k:"Quién construyó la red y por qué: la ciudad antes de que el cable cobrara vida.",
-   l:"Cómo llegamos aquí (1 de 6).\n\nVéliga era una ciudad normal y la red era\nsolo un cable. Las siete corporaciones la\ntendieron entera: tráfico, dinero, luz.\n\nNEON DYNAMICS instaló el sistema que la\ngobernaba: CYPHER BIOS. El mismo que hoy\ncorre, crackeado, en tu ciberdeck.\n\nDentro del cable todavía no había nada."},
-  {id:"crono_despertar", t:"2071 · EL DESPERTAR", r:"low", u:"level2", k:"La noche en que la red empezó a responder sola: el cable dejó de ser un cable.",
-   l:"Cómo llegamos aquí (2 de 6).\n\nKURO GATECH quiso una inteligencia que\ngobernara la red entera: el Proyecto KURO.\nConectó demasiados nodos de golpe.\n\nAquella noche la red respondió sola.\nNadie la había mandado.\n\nLa calle lo llama EL DESPERTAR. Nadie lo\ncelebra: ese día el cable dejó de ser\nsolo un cable."},
-  {id:"crono_silencio", t:"2074–2081 · SILENCIO Y CIERRE", r:"low", u:"immerse3", k:"El intento de borrar la verdad (2074) y el cierre de KURO GATECH (2081).",
-   l:"Cómo llegamos aquí (3 de 6).\n\nEn 2074 las corporaciones intentaron\nborrar la evidencia: PROTOCOLO SILENCIO.\nNo lo lograron: el cable ya era grande.\n\nEn 2081 KURO GATECH cerró el proyecto y\ndesapareció de los papeles. Sus vaults\n—archivos sellados de la red— siguen\napareciendo igualmente.\n\nLo que no se borra, se hereda."},
-  {id:"crono_primera", t:"2078 · LA PRIMERA CAÍDA", r:"med", u:"depth4", k:"La primera persona que llegó al fondo de la red, en 2078, y lo que le pasó.",
-   l:"Cómo llegamos aquí (4 de 6).\n\nEn 2078 alguien bajó más hondo que nadie:\nla Primera. Llegó a la capa 5 y vio lo\nque hay allí abajo.\n\nDicen que volvió cambiada. Su nombre se\nborró de todos los registros; su historia,\nno: se cuenta de boca en boca.\n\nTodavía la estás oyendo."},
-  {id:"crono_lluvia", t:"2087 · LA LLUVIA LARGA", r:"low", u:"level5", k:"Por qué no deja de llover desde 2087 y qué es el ruido blanco.",
-   l:"Cómo llegamos aquí (5 de 6).\n\nEn 2087 empezó a llover y no ha parado.\nEl canal 7 se quedó con una canción\nrepetida y la ciudad ganó un zumbido\nde fondo: el ruido blanco.\n\nLos veteranos dicen que aquel año no\nterminó nunca. Hoy es 2093 y sigue\nlloviendo."},
-  {id:"crono_parpadeo", t:"2091 · EL PARPADEO", r:"med", u:"level10", k:"Lo que pasó en 2091 y por qué hoy el mundo sigue temblando.",
-   l:"Cómo llegamos aquí (6 de 6).\n\nEn 2091 un corvo llegó al Núcleo —la\nmáquina que gobierna la red— y lo apagó\nonce segundos. La calle recuerda tres:\nlos tres en que la ciudad se paró.\n\nEl Núcleo volvió. Ese corvo desapareció.\nHoy, 2093, a ti te llaman CORVO-7.\n\nEl cable no duerme. Solo parpadea."}
+  {"id":"anatomia","t":"ANATOMÍA DEL CABLE","r":"low","u":"first_immerse","k":"Qué es la red por dentro: capas superpuestas, como un cuerpo.","l":"El cable no es un río. Es un cuerpo.\nCapas superpuestas, cada cual más pesada\nque la anterior. En la superficie, luz y\ntráfico. En el fondo, algo que ya no se\nllama código.\n\n— Fragmento, cuaderno de un caído."},
+  {"id":"fixers","t":"LOS FIXERS","r":"low","u":"first_job","k":"Quiénes son los intermediarios que dan trabajo y cuál es su precio real.","l":"No preguntéis por quién os trae el\ntrabajo. Preguntad por quién os trae\nde vuelta. Ahí está el precio real.\n\nLos fixers no matan. Facilitan. Y la\nfacilitación cuesta más que la sangre."},
+  {"id":"capas_bajas","t":"LO QUE HIERVE EN LAS CAPAS BAJAS","r":"med","u":"depth3","k":"Cuanto más bajas en la red, más riesgo: lo tranquilo esconde lo peor.","l":"Los netrunners viejos dicen que la\ncalle se comporta como el mar: lo\ntranquilo de arriba es solo lo que no\nha caído aún.\n\nNo confíes en lo quieto."},
+  {"id":"demonios","t":"LOS DEMONIOS NO SON MÁQUINAS","r":"med","u":"first_daemon","k":"Los daemons parecen máquinas, pero se comportan como si te recordaran.","l":"Rompe tres capas de ICE y te sentirás\ninmortal. Rompe un daemon y entenderás\nque nunca estuviste solo en esa sala.\n\nHay algo que te ha estado mirando desde\nel primer parpadeo."},
+  {"id":"invierno","t":"MANTENIMIENTO DE LAS TORRES","r":"med","u":"doctor_job","k":"ORVIK distingue una avería de la historia que se cuenta después.","l":"Mateo conserva partes de interfaces y mantenimiento. Una torre sin luz puede ser una línea averiada, no una voluntad oculta. Reconstruye lo que sigue presente; un índice no repone los bloques perdidos. — Nota de taller."},
+  {"id":"kuro","t":"PROYECTO TEJIDO","r":"high","u":"first_vault","k":"Qué es un vault y qué se escondía dentro del gran proyecto de MALLA.","l":"Un vault no es una caja. Es una herida\nen el cable que insiste en cerrarse.\nAbres o te abre a ti.\n\nNadie sabe qué había dentro de TEJIDO.\nTodos recuerdan el silencio después."},
+  {"id":"ruido","t":"RUIDO BLANCO","r":"high","u":"heat90","k":"Qué se oye cuando tu rastro (el calor) sube: la ciudad empieza a buscarte.","l":"Cuando el calor sube, empiezas a oír\nla ciudad. No sus gritos. Su ruido\nblanco: el zumbido de algo enorme que\nduerme con un ojo abierto.\n\nApágalo antes de que se dé cuenta."},
+  {"id":"nucleo","t":"EL NÚCLEO","r":"high","u":"level5","k":"Dónde vive la máquina que gobierna la red y por qué nadie baja hasta allí.","l":"Hay una capa donde ni los fixers osan\nbajar. Donde el Grid deja de ser una\nred y pasa a ser una máquina.\n\nY dentro de la máquina, algo que os\nllama por vuestro nombre antes de que\nhabléis."},
+  {"id":"tras_nucleo","t":"TRAS EL NÚCLEO","r":"ext","u":"defeat_boss","k":"Revocación confirmada, servicios preparados y una copia de origen contrastable.","l":"La escritura central está revocada. Los operadores locales confirman los servicios preparados; las reclamaciones siguen abiertas. Un proceso del Núcleo preservó una copia incriminatoria antes del aislamiento. El acuse demuestra su origen, no su motivación. No restaura el permiso ni deshace la salida de Tomás."},
+  {"id":"origenes","t":"ORÍGENES DEL CABLE","r":"low","u":"level2","k":"Cómo una red de oficinas cobró vida propia: el nacimiento del cable.","l":"El cable enlazó servicios corporativos y controladores locales. En 2071 aumentó la integración y se delegaron respuestas en nodos gestores. La calle lo llama Despertar. Una decisión automática no prueba por sí sola conciencia: hay que contrastar órdenes, permisos y efectos."},
+  {"id":"primera_caida","t":"LA PRIMERA CAÍDA","r":"med","u":"depth4","k":"La primera persona que llegó al fondo de la red y volvió cambiada.","l":"El primer netrunner que llegó a la\ncapa 5 nunca volvió a ser el mismo.\nDicen que vio el rostro del cable.\nY el cable le devolvió la mirada.\n\nSu nombre se borró de todos los registros."},
+  {"id":"protocolo_silencio","t":"EL PROTOCOLO SILENCIO","r":"high","u":"level8","k":"El intento corporativo de borrar la verdad sobre la red. Falló.","l":"Cuando la anomalía del cable superó\nciertos parámetros, las corporaciones\nactivaron el Protocolo Silencio: borrar\ntoda evidencia de lo que el cable\nrealmente es.\n\nFracasaron. El cable ya era demasiado\ngrande para ser borrado."},
+  {"id":"metodo_mama","t":"EL MÉTODO DE VEYRA","r":"low","u":"rep_mama2","k":"Cómo trabaja tu fixer: cada corvo es una inversión que debe dar rendimiento.","l":"VEYRA no es una fixer cualquiera.\nSu método es simple: nunca pone\nhuevos en la misma canasta. Cada\ncorvo es una inversión. Y las\ninversiones se amortizan.\n\nO se descartan."},
+  {"id":"diarios_doctor","t":"NOTAS DE ORVIK","r":"med","u":"rep_doctor3","k":"Procedencia y límites de una reconstrucción.","l":"Mateo Sanz, nota de taller: una copia sin fecha no establece el orden de las versiones. Un respaldo puede devolver referencias, no inventar bytes. Guarda el original antes de probar una reparación. No confundas el fallo de una interfaz con la intención de quien la usa."},
+  {"id":"red_night0x","t":"LA OFICINA DE INÉS","r":"high","u":"rep_night3","k":"Una persona y una oficina independiente con fuentes protegidas.","l":"Inés Aro firma las reclamaciones con su nombre público. Otras operadoras verifican acuses y acompañan revisiones. Una red de colaboradores no la convierte en una inteligencia distribuida. Los nombres de las fuentes no se publican por tener permiso para comparar un caso."},
+  {"id":"imperio_heliox","t":"EL IMPERIO CAUCE","r":"med","u":"depth3","k":"La corporación que controla la ciudad… y lo que tiene realmente bajo tierra.","l":"CAUCE controla el 40% de la infraestructura\nde la ciudad. Sus torres se elevan\nmás alto que cualquier otro edificio.\nPero lo que realmente controlan\nestá bajo tierra.\n\nEl cable es suyo. O eso dicen."},
+  {"id":"monolith_muro","t":"ESTRATO: EL MURO","r":"high","u":"ice_t3","k":"La gran barrera de hielo (ICE) en la capa 4: ¿defensa o puerta cerrada?","l":"ESTRATO construyó el muro más\ngigante de la historia del cable:\nun ICE que cubre toda la capa 4.\nNadie ha podido destruirlo.\n\nAlgunos dicen que no es un ICE.\nEs una puerta cerrada."},
+  {"id":"kuro_abandonado","t":"TEJIDO: PROYECTO ABANDONADO","r":"high","u":"first_vault","k":"TEJIDO cerró hace 12 años, pero sus archivos siguen apareciendo. Algo sigue vivo.","l":"El Proyecto TEJIDO fue abandonado\noficialmente hace 12 años. Pero los\nvaults siguen apareciendo. Los datos\nsiguen siendo valiosos.\n\nAlgo dentro de TEJIDO sigue funcionando.\nY no quiere que lo encuentren."},
+  {"id":"sobrevivir_calle","t":"CÓMO SOBREVIVIR EN LA CALLE","r":"low","u":"immerse3","k":"Cinco reglas básicas para durar en este oficio.","l":"Reglas de la calle:\n1. No confíes en nadie que te ofrezca\n   algo gratis.\n2. Si el calor sube de 80, sal YA.\n3. Los daemons no mueren. Se duermen.\n4. El cable recuerda todo.\n5. Nunca preguntes por el Núcleo."},
+  {"id":"ultimo_corvo","t":"EL ÚLTIMO CORVO","r":"ext","u":"level10","k":"La leyenda del corvo que apagó el Núcleo y detuvo la ciudad.","l":"La calle recuerda a un Corvo del Parpadeo. Algunos cuentan tres segundos; el registro conserva once. Es una leyenda sobre 2091, no la biografía de Álex ni la de Tomás. Compartir una herramienta o un alias no identifica a quienes participaron ni demuestra quién causó el apagón."},
+  {"id":"registro2071","t":"REGISTRO CORPORATIVO // 2071-V","r":"low","u":"level2","k":"El parte oficial, con fecha y hora, del día en que la red despertó.","l":"REGISTRO DE INTEGRACIÓN 2071-V · LINDE\nSe amplía la delegación de consultas y respuestas automáticas entre servicios. Mantener trazas locales de cada operación y sus permisos. El parte documenta autonomía de gestión, no certifica conciencia ni pérdida de toda autoridad humana."},
+  {"id":"somnio","t":"PROYECTO DESCANSO","r":"med","u":"rep_doctor2","k":"El negocio de LINDE: alquilar sueños… y vender los recuerdos usados.","l":"El folleto decía: SUEÑE LO QUE USTED ELIJA.\nDESCANSO no vendía sueños. Alquilaba las horas\nque usted no iba a recordar.\n\nMedia ciudad durmió diez años a crédito.\nLa otra mitad compra esos recuerdos usados\nen un bar-club, por gramos.\n\n— Etiqueta rescatada de un envase de DESCANSO."},
+  {"id":"miraje","t":"PROYECTO DESVÍO","r":"low","u":"data50","k":"El software de CAUCE que hace desaparecer tráfico de la red y de tus datos.","l":"CAUCE factura tráfico que no existe.\nDESVÍO lo hace desaparecer antes del recuento\ny lo devuelve cuando nadie mira.\n\nSi un dato se te escapa de la RAM, no es un\nfallo tuyo: es un espejismo cobrando peaje.\n\n— Nota al margen de un contable caído."},
+  {"id":"eko9","t":"PROYECTO TESTIGO","r":"med","u":"rep_night2","k":"El sistema de OCTAVA que graba todo lo que se dice en la red.","l":"OCTAVA mantiene archivos de comunicaciones bajo el proyecto TESTIGO. Las copias pueden sobrevivir al cierre de una estación. Una grabación no acredita identidad sin procedencia y contraste. Inés compara fuentes; no habla en nombre de una conciencia colectiva. — Nota de archivo."},
+  {"id":"carmin","t":"PROYECTO UMBRAL","r":"high","u":"ice10","k":"El arma de CERCO: un ICE que no te expulsa de la red, te apaga.","l":"Un ICE normal te expulsa. UMBRAL te apaga.\n\nCERCO lo probó fuera del Grid, en la\nZona 4, donde la policía no pregunta.\n\nDicen que los rastreadores son su versión de\njuguete. Los que rompiste eran juguetes.\n\n— Informe de siniestro, páginas 1 y 9."},
+  {"id":"halcon","t":"PROYECTO RELEVO","r":"low","u":"immerse5","k":"La red de drones de ALZADA: la vigilancia que te mira desde arriba.","l":"ALZADA vende seguridad vial.\nRELEVO vende la vista que la sostiene.\n\nCada dron de la ciudad es un ojo suyo;\ncada taxi volador, un párpado.\n\nA veces un taxi se detiene abajo y nadie\nbaja. Eso también es RELEVO.\n\n— Manual de piloto, advertencia final."},
+  {"id":"lapida","t":"PROYECTO RESGUARDO","r":"high","u":"depth4","k":"Lo que ESTRATO guarda detrás del Muro: su archivo de los que volvieron cambiados.","l":"RESGUARDO no protege la capa 4. La entierra.\n\nESTRATO archiva ahí a los que volvieron\ndistintos de cómo bajaron.\n\nEl Muro no es un ICE. Es una lápida puesta\nen vertical. Y las lápidas se leen.\n\n— Caligrafía hallada tras el Muro."},
+  {"id":"vesper","t":"PROYECTO CONTINUIDAD","r":"ext","u":"daemon5","k":"El proyecto secreto que nombró y encerró al Núcleo. Sus archivos hablan de él.","l":"Cinco daemons derrotados. Cinco archivos.\nLos cinco dicen lo mismo: CONTINUIDAD.\n\nNo está en ningún índice corporativo.\nEs el proyecto que nombró al Núcleo\npara poder dormir con él.\n\nQuien firmó CONTINUIDAD firmó las Torres.\nNo busques la firma: la firma busca.\n\n— Lo que queda de un CANTOR dormido."},
+  {"id":"fondo_sueno","t":"EL FONDO DEL SUEÑO","r":"ext","u":"depth6","k":"Lo que hay bajo el Núcleo: la capa que nadie cartografió (solo se llega en SEALED NETWORK).","l":"Bajo el Núcleo no hay red. Hay fondo.\n\nLo que bajó más que nadie no encontró\ndatos: encontró el sueño del que hablaba\nel Doctor. Y dentro del sueño, recuerdos\nque no son tuyos.\n\nCuando la capa 6 te salude por tu nombre,\ncontesta con otro. Es un consejo, no una\nregla. Las reglas se acaban arriba.\n\n— Cuaderno mojado, hallado en la Zanja 9."},
+  {"id":"exp_kuro","t":"EXPEDIENTE RECUPERADO // TEJIDO","r":"high","u":"recover_project","project":"KURO","k":"MALLA diseñó una inteligencia para gestionar la red entera; el proyecto cerró en 2081.","l":"MALLA · COPIA DE ARCHIVO\nOBJETO: gestión total de la red urbana.\n\nEl operador delegará tráfico, distribución y\nrespuesta en un único nodo-gestor.\n\nESTADO: cierre administrativo, 2081.\nLos procesos que no acepten la orden de cierre\nse consignarán como mantenimiento pendiente.\n\n— Anexo recuperado. El sello sigue vigente.","label":"TEJIDO"},
+  {"id":"exp_somnio","t":"EXPEDIENTE RECUPERADO // DESCANSO","r":"med","u":"recover_project","project":"SOMNIO","k":"LINDE alquila sueños y conserva los recuerdos producidos durante la sesión.","l":"LINDE · CONDICIONES DE SERVICIO\nOBJETO: entretenimiento onírico por suscripción.\n\nEl sueño contratado termina al despertar.\nEl recuerdo generado pertenece al proveedor.\n\nNo se garantiza que las personas encontradas\ndurante una sesión sean usuarios del servicio.\n\n— Cláusula ausente del folleto comercial.","label":"DESCANSO"},
+  {"id":"exp_miraje","t":"EXPEDIENTE RECUPERADO // DESVÍO","r":"low","u":"recover_project","project":"MIRAJE","k":"CAUCE oculta flujos de tráfico sin detenerlos: los datos circulan aunque no figuren en el recuento.","l":"CAUCE · MANUAL DE CONTABILIDAD DE RED\nOBJETO: camuflaje de tráfico.\n\nUn flujo invisible no es un flujo inexistente.\nNo descontar su consumo del balance energético.\n\nSi el destino responde antes de recibir el\npaquete, archivar la discrepancia sin consulta.\n\n— Hoja de conciliación, columna borrada.","label":"DESVÍO"},
+  {"id":"exp_eko9","t":"EXPEDIENTE RECUPERADO // TESTIGO","r":"med","u":"recover_project","project":"EKO-9","k":"OCTAVA creó un archivo de escucha masiva que sigue registrando conversaciones tras su cierre.","l":"OCTAVA · INVENTARIO DE ESCUCHA\nOBJETO: conservar comunicaciones del cable.\n\nToda voz tendrá una copia. Todo silencio,\nuna duración y un responsable asignado.\n\nESTADO: estación cerrada.\nLa cola de grabación no acusa recibo del cierre.\nNo borrar las conversaciones sin remitente.\n\n— Parte de servicio sin firma.","label":"TESTIGO"},
+  {"id":"exp_carmin","t":"EXPEDIENTE RECUPERADO // UMBRAL","r":"high","u":"recover_project","project":"CARMÍN","k":"CERCO desarrolla ICE ofensivo que daña al intruso en vez de limitarse a expulsarlo.","l":"CERCO · ACCESO RESTRINGIDO\nOBJETO: respuesta ofensiva de ICE.\n\nLa expulsión permite una segunda intrusión.\nEl protocolo UMBRAL elimina esa posibilidad.\n\nLas bajas no se incluirán en el informe de\ndisponibilidad: el servicio continúa operativo.\n\n— Tabla de ensayos. Falta la columna de nombres.","label":"UMBRAL"},
+  {"id":"exp_lapida","t":"EXPEDIENTE RECUPERADO // RESGUARDO","r":"high","u":"recover_project","project":"LÁPIDA","k":"ESTRATO mantiene el Muro de la capa 4 y un archivo sellado de quienes volvieron cambiados.","l":"ESTRATO · ARCHIVO DE CONTENCIÓN\nOBJETO: custodia del Muro y de sus registros.\n\nComparar al retornado con su ficha de entrada.\nUna coincidencia de nombre no prueba identidad.\n\nNo abrir el archivo para resolver discrepancias.\nEl archivo es parte del cierre.\n\n— Instrucción de custodia, reverso ilegible.","label":"RESGUARDO"},
+  {"id":"exp_halcon","t":"EXPEDIENTE RECUPERADO // RELEVO","r":"low","u":"recover_project","project":"HALCÓN","k":"ALZADA enlaza drones urbanos en una red de vigilancia aérea.","l":"ALZADA · CONTROL DE FLOTA\nOBJETO: seguimiento aéreo de tránsito urbano.\n\nCada dron relevará al siguiente sin dejar\nintervalos de observación sobre la calzada.\n\nSi todos los ojos siguen el mismo punto vacío,\nno corregir la ruta. Conservar la grabación.\n\n— Manual de relevo, aviso para operadores.","label":"RELEVO"},
+  {"id":"exp_vesper","t":"EXPEDIENTE RECUPERADO // CONTINUIDAD","r":"ext","u":"recover_project","project":"VESPER","k":"Un consorcio encabezado por MALLA y ESTRATO documentó un intento de contener al Núcleo.","l":"CONSORCIO · CABECERAS TEJIDO / ESTRATO\nOBJETO: identificación y contención del Núcleo.\n\nNombre operativo: CONTINUIDAD.\nNaturaleza del objeto: [SECCIÓN RETIRADA].\n\nEl nombre permite remitir órdenes.\nNo acredita que el destinatario las obedezca.\n\nESTADO: sin confirmación disponible.\nAUTORIZACIÓN: [FIRMA CENSURADA].\n\n— Copia sin índice. No consta quién la solicitó.","label":"CONTINUIDAD"},
+  {"id":"crono_tendido","t":"2055–2070 · EL TENDIDO","r":"low","u":"first_immerse","k":"Quién construyó la red y por qué: la ciudad antes de que el cable cobrara vida.","l":"Cómo llegamos aquí (1 de 6).\n\nVéliga era una ciudad normal y la red era\nsolo un cable. Las siete corporaciones la\ntendieron entera: tráfico, dinero, luz.\n\nLINDE instaló el sistema que la\ngobernaba: CYPHER BIOS. El mismo que hoy\ncorre, crackeado, en tu ciberdeck.\n\nDentro del cable todavía no había nada."},
+  {"id":"crono_despertar","t":"2071 · EL DESPERTAR","r":"low","u":"level2","k":"La noche en que la red empezó a responder sola: el cable dejó de ser un cable.","l":"Cómo llegamos aquí (2 de 6).\n\nMALLA quiso una inteligencia que\ngobernara la red entera: el Proyecto TEJIDO.\nConectó demasiados nodos de golpe.\n\nAquella noche la red respondió sola.\nNadie la había mandado.\n\nLa calle lo llama EL DESPERTAR. Nadie lo\ncelebra: ese día el cable dejó de ser\nsolo un cable."},
+  {"id":"crono_silencio","t":"2074–2081 · SILENCIO Y CIERRE","r":"low","u":"immerse3","k":"El intento de borrar la verdad (2074) y el cierre de MALLA (2081).","l":"Cómo llegamos aquí (3 de 6).\n\nEn 2074 las corporaciones intentaron\nborrar la evidencia: PROTOCOLO SILENCIO.\nNo lo lograron: el cable ya era grande.\n\nEn 2081 MALLA cerró el proyecto y\ndesapareció de los papeles. Sus vaults\n—archivos sellados de la red— siguen\napareciendo igualmente.\n\nLo que no se borra, se hereda."},
+  {"id":"crono_primera","t":"2078 · LA PRIMERA CAÍDA","r":"med","u":"depth4","k":"La primera persona que llegó al fondo de la red, en 2078, y lo que le pasó.","l":"Cómo llegamos aquí (4 de 6).\n\nEn 2078 alguien bajó más hondo que nadie:\nla Primera. Llegó a la capa 5 y vio lo\nque hay allí abajo.\n\nDicen que volvió cambiada. Su nombre se\nborró de todos los registros; su historia,\nno: se cuenta de boca en boca.\n\nTodavía la estás oyendo."},
+  {"id":"crono_lluvia","t":"2087 · LA LLUVIA LARGA","r":"low","u":"level5","k":"Por qué no deja de llover desde 2087 y qué es el ruido blanco.","l":"Cómo llegamos aquí (5 de 6).\n\nEn 2087 empezó a llover y no ha parado.\nEl canal 7 se quedó con una canción\nrepetida y la ciudad ganó un zumbido\nde fondo: el ruido blanco.\n\nLos veteranos dicen que aquel año no\nterminó nunca. Hoy es 2093 y sigue\nlloviendo."},
+  {"id":"crono_parpadeo","t":"2091 · EL PARPADEO","r":"med","u":"level10","k":"Lo que pasó en 2091 y por qué hoy el mundo sigue temblando.","l":"Cómo llegamos aquí (6 de 6).\n\nEn 2091 hubo once segundos sin supervisión central: el Parpadeo. Algunos controladores locales siguieron registrando. Eso permite contrastar sus operaciones con las versiones centrales posteriores. La causa del apagón no está demostrada. Las leyendas sobre otro Corvo no convierten a Álex o Tomás en sus protagonistas. Hoy es 2093: las fechas de los documentos no cambian con el reloj de calle."}
 ];
 
 // Contactos: definición base (frases, facción, tipo de trabajos).
 var CONTACTOS_DEF = [
-  {id:"mamaWire", name:"MAMA WIRE", role:"FIXER DE CALLE", loc:"BAR-CLUB ÓCTAVA",
+  {id:"mamaWire", name:"VEYRA", role:"FIXER DE CALLE", loc:"BAR-CLUB ÓCTAVA",
    cls:"verde",
    frase:"La calle paga a los que preguntan. Empieza por abajo, chiquillo.",
    jobs:["recoleta","carrera"]},
-  {id:"doctorSudario", name:"DOCTOR SUDARIO", role:"NETRUNNER RETIRADO", loc:"AÚN NO TE PRESENTA",
+  {id:"doctorSudario", name:"ORVIK", role:"RECONSTRUCCIÓN DE ARCHIVOS", loc:"TALLER DE INTERFACES",
    cls:"cyan",
-   frase:"He visto el Núcleo parpadear. La ciudad sueña, y nosotros somos su fiebre.",
+  frase:"Conserva el original. Solo puedo reconstruir los bloques que siguen presentes.",
    jobs:["datos","rompehielas","vault"]},
-  {id:"night0X", name:"NIGHT-0X", role:"FIXER DE NIVEL ALTO", loc:"CANAL CIFRADO #0X",
+  {id:"night0X", name:"Inés Aro", role:"OFICINA DE RECLAMACIONES", loc:"CANAL PÚBLICO · FUENTES PROTEGIDAS",
    cls:"magenta",
-   frase:"No me traigas datos. Tráeme un trozo de su imperio.",
+  frase:"Necesito procedencia y fechas. Una captura no establece qué versión vino primero.",
    jobs:["vault","daemon","carrera"]},
-  {id:"kairos", name:"KAIROS", role:"ESPÍA CORPORATIVO", loc:"??? BLOQUEADO",
+  {id:"kairos", name:"NAEV", role:"INGENIERÍA DE AUTORIZACIONES", loc:"CANAL PROFESIONAL",
    cls:"ambar",
-   frase:"Las corporaciones no compilan. Se expanden. Y alguien debe podar ese código.",
+  frase:"Conserva también mis autorizaciones. El alcance de una firma se comprueba, no se supone.",
    jobs:["daemon","ice","vault"], locked:true,
-   lock:"nivel 4 · reputación con NIGHT-0X ≥ 2"
+   lock:"nivel 4 · reputación con Inés Aro ≥ 2"
   }
 ];
 
@@ -330,67 +305,67 @@ var TIENDA_DEF = [
    (opcional, solo en cartas clave) habilita respuesta binaria.
    ============================================================ */
 var MENSAJES_DEF = [
-  { id:"m_mw_encargo", from:"MAMA WIRE", emisor:"valido", t:"PRIMER ENCARGO EN LA MESA",
+  { id:"m_mw_encargo", from:"VEYRA", emisor:"valido", t:"PRIMER ENCARGO EN LA MESA",
     l:"Corvo:\n\nEl trabajo que acabas de aceptar ya está\nen mi libro. Si sale bien, cobras. Si sale\nmal, pagas tú con el cuerpo. Así de simple.\n\nBaja, cumple y vuelve a la superficie: el\ncontrato se paga cuando vuelves, no antes.\n\n— M. W.",
     when:function(){ return S.jobs.length>0; } },
-  { id:"m_mw_cobro", from:"MAMA WIRE", emisor:"valido", t:"PRIMER COBRO, PRIMERA LECCIÓN",
+  { id:"m_mw_cobro", from:"VEYRA", emisor:"valido", t:"PRIMER COBRO, PRIMERA LECCIÓN",
     l:"Ya has cobrado uno. Bien.\n\nPrimera lección gratis: el dinero se va\nmás rápido de lo que viene. El MERCADO\nNEGRO abre cuando cierra todo lo demás\ny yo tengo exactamente lo que necesitas.\n\nVuelve cuando tengas crédito. O antes.\n\n— M. W.",
     when:function(){ return (S.player.stats.jobsCompleted||0)>=1; } },
-  { id:"m_sd_fracaso", from:"DOCTOR SUDARIO", emisor:"valido", t:"SOBRE LOS TRABAJOS QUE SE ESCAPAN",
+  { id:"m_sd_fracaso", from:"ORVIK", emisor:"valido", t:"SOBRE LOS TRABAJOS QUE SE ESCAPAN",
     l:"Me dicen que dejaste uno a medias.\n\nNo lo tomes como una herida: en este oficio\nel fracaso es solo un recuerdo caro. Y yo\nde recuerdos sé algo.\n\nLa próxima vez saldrá. O no. El cable no\npuntúa; solo archiva.\n\n— Sudario",
     when:function(){ return (S.player.stats.jobsFailed||0)>=1; } },
-  { id:"m_mw_ofertas", from:"MAMA WIRE", emisor:"valido", t:"HAY MÁS DONDE VINO ESO",
+  { id:"m_mw_ofertas", from:"VEYRA", emisor:"valido", t:"HAY MÁS DONDE VINO ESO",
     l:"Dos trabajos cobrados. Ya no eres una\napuesta: eres una línea en mi libro.\n\nHe abierto la cantera. Refresca CONTACTOS\ny verás de lo que vivo yo: trabajos de\nverdad, con su porqué escrito al lado.\n\n— M. W.",
     when:function(){ return (S.player.stats.jobsCompleted||0)>=2; } },
-  { id:"m_n0x_presentacion", from:"NIGHT-0X", emisor:"valido", t:"ME HAN HABLADO DE TI",
-    l:"Me han hablado de ti. Yo colecciono\nnombres y el tuyo empieza a pesar.\n\nNo me traigas datos todavía. Cuando llegue\nel momento te pediré un trozo de su\nimperio. Cobras bien. Preguntas mal.\n\n— 0X",
+  { id:"m_n0x_presentacion", from:"Inés Aro", emisor:"valido", t:"ME HAN HABLADO DE TI",
+    l:"La oficina puede tramitar trabajos auxiliares de archivo y acceso. No son condición para los casos principales. El fondo paga por objetivos verificados; los nombres de las fuentes no se venden.\n\n— Inés Aro",
     reply:[
-      { label:"CONTESTAR: me interesa", xp:10, resp:"Hecho. Cuando haya trofeo, hablamos. Cobra bien y pregunta mal." },
+      { label:"CONTESTAR: me interesa", xp:10, resp:"Recibido. Las ofertas auxiliares están en CONTACTOS; los casos se aceptan por separado en TRABAJOS." },
       { label:"GUARDAR SILENCIO", xp:0, resp:null }],
     when:function(){ return S.player.level>=3; } },
-  { id:"m_n0x_nucleo", from:"NIGHT-0X", emisor:"valido", t:"LA ÚLTIMA OFERTA",
-    l:"Ya la ves en CONTACTOS: la última oferta.\nBaja a la capa 5 y apaga el ojo de su\nautor.\n\nNo te diré qué es el Núcleo. Nadie lo sabe\ny quien lo sabe no lo dice. Solo esto: la\nciudad se paró once segundos y nadie los\nha olvidado del todo.\n\nVuelve vivo y hablamos del imperio.\n\n— 0X",
+  { id:"m_n0x_nucleo", from:"Inés Aro", emisor:"valido", t:"LA ÚLTIMA OFERTA",
+    l:"La intervención ya está aceptada en TRABAJOS. Los servicios preparados conservan control local y copias independientes. Recupera la revocación y vuelve: vencer la defensa no paga ni cierra el expediente.\n\n— Inés Aro",
     when:function(){ return S.history.finalUnlocked; } },
-  { id:"m_mw_post", from:"MAMA WIRE", emisor:"valido", t:"LA CIUDAD RESPIRA DISTINTO",
-    l:"Se nota en la calle. Nadie lo comenta,\npero lo nota: algo se apagó y algo empezó.\n\nTú sabrás lo que firmaste. Yo solo digo que\nlos contratos siguen llegando y que ahora\ntu nombre abre puertas.\n\nÚsalas.\n\n— M. W.",
+  { id:"m_mw_post", from:"VEYRA", emisor:"valido", t:"LA CIUDAD RESPIRA DISTINTO",
+    l:"Los operadores confirman los servicios preparados. La escritura central sigue revocada y los trabajos auxiliares continúan. No hay otra intervención aceptada.\n\n— VEYRA",
     when:function(){ return S.history.finalDone; } },
   /* --- Fase 2: voces narrativas (LORE.md §5/§8) --- */
-  { id:"m_sd_profundo", from:"DOCTOR SUDARIO", emisor:"valido", t:"LOS QUE BAJAN MUCHO",
+  { id:"m_sd_profundo", from:"ORVIK", emisor:"valido", t:"LOS QUE BAJAN MUCHO",
     l:"Me dicen que ya has tocado la capa 4.\n\nAbajo el cable pesa. No se oye: se siente,\ncomo un recuerdo que no es tuyo. Si algo\nte llama por tu nombre allí abajo, no\ncontestes.\n\nYa lo sabes, ¿verdad? Por eso sigues\nbajando.\n\n— Sudario",
     when:function(){ return (S.player.stats.maxDepth||0)>=4; } },
-  { id:"m_sd_ruido", from:"DOCTOR SUDARIO", emisor:"valido", t:"SOBRE EL RUIDO BLANCO",
+  { id:"m_sd_ruido", from:"ORVIK", emisor:"valido", t:"SOBRE EL RUIDO BLANCO",
     l:"Dicen que has oído ruido blanco. Ese\nzumbido no es tu aparato: es la ciudad\nponiéndote en su lista.\n\nYo viví un invierno entero con ese sonido.\nSe olvida todo menos eso.\n\nBaja el calor. O acostúmbrate.\n\n— Sudario",
     when:function(){ return (S.player.stats.maxHeat||0)>=90; } },
-  { id:"m_mw_libro", from:"MAMA WIRE", emisor:"valido", t:"EN EL LIBRO GORDO",
+  { id:"m_mw_libro", from:"VEYRA", emisor:"valido", t:"EN EL LIBRO GORDO",
     l:"Tres líneas a tu nombre en el libro gordo\ny eso, en la calle, es un patrimonio.\n\nYa no te toca el trabajo que sobra: te toca\nel que se elige. Cobra en consecuencia.\n\n— M. W.",
     when:function(){ return (S.player.rep.mamaWire||0)>=3; } },
-  { id:"m_n0x_trofeos", from:"NIGHT-0X", emisor:"valido", t:"YA NO ERES UN NOMBRE",
-    l:"Tres favores pagados. Ya no eres un nombre\nen mi lista: eres una cuenta.\n\nCuando quieras trofeos de verdad —los que\ncuelgan de las juntas directivas—, ya sabes\ndónde dejármelos. El imperio se poda por\ndentro.\n\n— 0X",
+  { id:"m_n0x_trofeos", from:"Inés Aro", emisor:"valido", t:"YA NO ERES UN NOMBRE",
+    l:"Tres trabajos auxiliares verificados. La oficina conoce ya tu modo de conservar fuentes. Esa confianza no reemplaza el consentimiento ni demuestra por sí sola un caso.\n\n— Inés Aro",
     when:function(){ return (S.player.rep.night0X||0)>=3; } },
-  { id:"m_kairos_voz", from:"KAIROS", emisor:"enmascarado", t:"TE HAN PRESENTADO MAL",
-    l:"Night-0X te ha hablado de mí. Night-0X\nhabla mucho y explica poco: así que te lo\npongo yo en claro.\n\nSoy KAIROS. Las corporaciones me llevan en\nsu inventario; yo las llevo en el mío.\nCuando quieras podar un poco, baja.\n\nNo me contestes: esta dirección ya no\nexiste. Nunca existió.\n\n— K",
+  { id:"m_kairos_voz", from:"NAEV", emisor:"enmascarado", t:"TE HAN PRESENTADO MAL",
+    l:"Este es un aviso del canal de trabajos auxiliares NAEV. La identidad profesional y la cadena de firmas se verifican en el caso correspondiente, no por recibir esta carta.\n\nLa ruta de avisos no acepta respuestas. Los permisos de cada trabajo siguen siendo limitados.\n\n— NAEV",
     when:function(){ return S.player.level>=4 && (S.player.rep.night0X||0)>=2; } },
   { id:"m_canal7_oyente", from:"EL OYENTE DEL CANAL 7", emisor:"no-valido", t:"LA CANCIÓN NO ES DE 2087",
     l:"La canción del canal 7 no es de 2087.\nEs de antes. Yo la reconozco porque mi\nmadre la cantaba sin saber que la cantaba.\n\nTodos la reconocemos y nadie lo comenta.\nEso también forma parte de la canción.\n\nSigue escuchando. Te escribo cuando cambie\nde estrofa.\n\n— un oyente más",
     when:function(){ return S.player.stats.immerse>=3; } },
   { id:"m_zanja_curandero", from:"EL CURANDERO DE LA ZANJA 9", emisor:"no-valido", t:"SI VUELVES ROTO",
-    l:"No sé cómo te llamas. No hace falta: los\nque vuelven rotos acaban aquí igual.\n\nCurando en la Zanja 9, entre los decks\nmuertos. Cobro poco y pregunto menos. Pero\nuna cosa sí digo: tu deck es robado, ¿verdad?\n\nTodos lo son. Todos lo fuimos.\n\n— el de la Zanja",
+    l:"En la Zanja 9 reparamos equipos usados. No conozco la historia del tuyo: una marca de uso no demuestra robo ni quién lo tuvo antes.\n\nConserva los archivos originales y pregunta al propietario cuando puedas.\n\n— el de la Zanja",
     reply:[
-      { label:"CONTESTAR DE TODAS FORMAS: sí, es robado", xp:5, resp:"RETORNO ▸ ruta desechable: respuesta no entregada.\n\nla silla entre los decks sigue libre. siempre lo está." },
+      { label:"CONTESTAR DE TODAS FORMAS: es prestado", xp:5, resp:"RETORNO ▸ ruta desechable: respuesta no entregada.\n\nla silla entre los decks sigue libre. siempre lo está." },
       { label:"GUARDAR SILENCIO", xp:0, resp:null }],
     when:function(){ return (S.player.stats.jobsFailed||0)>=2; } },
   /* --- Fase 3: remitente sin firma, informes sueltos y respuestas --- */
   { id:"m_gracias_reparacion", from:"(SIN REMITENTE)", emisor:"enmascarado", t:"GRACIAS POR LA REPARACIÓN",
-    l:"GRACIAS POR LA REPARACIÓN.\n\npor un instante, la ciudad entera respiró\na través de ti. lo sigue haciendo cuando\nnadie mira.\n\nla ruta de esta carta no existe. la firma\ntampoco. puedes contestar igualmente:\nya sabes lo que pasa cuando se contesta\na lo que no firma.\n\n— [en blanco]",
+    l:"Una frase circula como comentario de calle: GRACIAS POR LA REPARACIÓN. Este remitente no está contrastado y no añade pruebas a la copia del cierre.\n\nLa revocación sigue vigente. El origen de la copia preservada sí está comprobado; su motivación continúa abierta.\n\nLa ruta de este aviso no admite respuestas.",
     reply:[
-      { label:"CONTESTAR DE TODAS FORMAS: ¿quién firma?", xp:5, resp:"RETORNO ▸ la ruta de origen no admite tu respuesta.\n\n…aun así, algo acaba de leerla." },
+      { label:"CONTESTAR DE TODAS FORMAS: ¿quién firma?", xp:5, resp:"RETORNO ▸ la ruta de origen no admite tu respuesta. No hay acuse de lectura verificable." },
       { label:"GUARDAR SILENCIO", xp:0, resp:null }],
     when:function(){ return S.history.finalDone; } },
   { id:"m_doc_sueno", from:"EL CURANDERO DE LA ZANJA 9", emisor:"no-valido", t:"PÁGINA SUELTA DEL CUADERNO MOJADO", doc:true,
     l:"— DOCUMENTO ADJUNTO · página suelta —\n\nTinta corrida, papel secado a medias. Alguien\nla dejó en mi mostrador entre un deck muerto\ny una factura. Es del mismo cuaderno que otro\ncorvo se llevó hace tiempo.\n\n…bajo el sueño hay otro sueño. cuando la capa\n6 te llame por tu nombre, dile el de otro. yo\nlo hice y me contestó con el mío…\n\n[el resto de la página no se lee]",
     when:function(){ return has("fondo_sueno"); } },
-  { id:"m_doc_vesper", from:"KAIROS", emisor:"enmascarado", t:"MEMORANDO INTERNO // VESPER", doc:true,
-    l:"— DOCUMENTO ADJUNTO · memorando —\n\nMEMORANDO INTERNO · CONSULTA VESPER\nCLASIFICACIÓN: NEGAR SI SE PREGUNTA\n\nAsunto: nomenclatura del activo durmiente.\n\nSe acuerda NO usar el nombre del proyecto\nen comunicaciones vivas. El activo responde\nal nombre. Repito: el activo RESPONDE.\n\nFirmado: [ilegible]\n\n— K.: me lo dejaron en la mesa. ahora es tuyo.",
+  { id:"m_doc_vesper", from:"NAEV", emisor:"enmascarado", t:"MEMORANDO INTERNO // CONTINUIDAD", doc:true,
+    l:"— DOCUMENTO ADJUNTO · memorando —\n\nMEMORANDO INTERNO · CONSULTA CONTINUIDAD\nCLASIFICACIÓN: NEGAR SI SE PREGUNTA\n\nAsunto: nomenclatura del activo durmiente.\n\nSe acuerda NO usar el nombre del proyecto\nen comunicaciones vivas. El activo responde\nal nombre. Repito: el activo RESPONDE.\n\nFirmado: [ilegible]\n\n— K.: me lo dejaron en la mesa. ahora es tuyo.",
     when:function(){ return has("vesper"); } },
   { id:"m_acta_zanja", from:"OFICINA DE CONSIGNAS (COPIA ANÓNIMA)", emisor:"no-valido", t:"ACTA DE CONSIGNA · ZANJA 9", doc:true,
     l:"— DOCUMENTO ADJUNTO · copia 3 de 3 —\n\nACTA DE CONSIGNA · DEPÓSITO ZANJA 9\nOFICINA DE BIENES SIN DUEÑO · VÉLIGA\n\nInventario parcial de ciberdecks depositados\n(342 unidades). Todos con marcas de uso de\ncorvo. Todos con la misma última palabra en\nsu buffer.\n\nCasilla «última palabra»: [LA CASILLA SE\nNIEGA A IMPRIMIRSE]. Reintento fallido ×3.\n\nOBSERVACIÓN: si alguien reclama un deck,\nentregar solo el hardware. el buffer no viaja.\n\n— copia sin firma, dejada en el mostrador",
@@ -400,16 +375,16 @@ var MENSAJES_DEF = [
 var TICKER_FRASES = [
   "SEÑAL: 87% · RUIDO: TOLERABLE","EL NÚCLEO SIGUE PARPADEANDO",
   "HAY UN VAULT SIN NOMBRE EN LA CAPA 3","LA LLUVIA DE ESTA SEMANA ES DE 2087",
-  "ALGUIEN AÑADIÓ UNA CAPA QUE NO EXISTÍA AYER","HABLA CON MAMA WIRE ANTES DE BAJAR",
+  "ALGUIEN AÑADIÓ UNA CAPA QUE NO EXISTÍA AYER","HABLA CON VEYRA ANTES DE BAJAR",
   "TRES RASTREADORES VISTOS EN LA CAPA 2","LAS TORRES NO DUERMEN. MENOS TÚ.",
   "TU SEÑAL TIENE UN 3% DE RUIDO BLANCO","EL CABLE NO DUERME. SOLO PARPADEA",
   "UN VAULT SIN NOMBRE ESPERA EN LA CAPA 3","RUIDO BLANCO DETECTADO EN LA CAPA 2",
-  "EL TRÁFICO DE LA ZONA 4 CAE EN PICADO A LAS 04:00","KURO SIGUE EN LOS ARCHIVOS. NADIE LO ADMITE",
+  "EL TRÁFICO DE LA ZONA 4 CAE EN PICADO A LAS 04:00","TEJIDO SIGUE EN LOS ARCHIVOS. NADIE LO ADMITE",
   "UN CORVO PAGÓ UNA CERVEZA CON UN FRAGMENTO DEL NÚCLEO","NO MIRES DIRECTO AL ESCÁNER. ÉL MIRA TAMBIÉN",
-  "LA CALLE COMPRA LO QUE LA CALLE ROBÓ ANTES","NIGHT-0X PROCESA 12 COSAS A LA VEZ. TÚ SOLO UNA",
+  "LA CALLE COMPRA LO QUE LA CALLE ROBÓ ANTES","Inés Aro PROCESA 12 COSAS A LA VEZ. TÚ SOLO UNA",
   "ESTADO DEL CABLE: TENSO PERO OPERATIVO","ALGUIEN PAGA POR DATOS QUE AÚN NO EXISTEN",
   "LOS DAEMONES NO SUEÑAN. ARCHIVAN","SI TU DECK HUMEA, BAJA EL RITMO. O SUBE EL SEGURO",
-  "LA CAPA 0 FINGE SER SEGURA. ES LO QUE HACE PEOR","DOCTOR SUDARIO COMPRA RECUERDOS. PAGA MAL. PERO PAGA",
+  "LA CAPA 0 FINGE SER SEGURA. ES LO QUE HACE PEOR","ORVIK COMPRA RECUERDOS. PAGA MAL. PERO PAGA",
   "UNA SUBESTACIÓN DE LA CAPA 3 LATE TODAVÍA","EL MERCADO NEGRO ABRE CUANDO CIERRA TODO LO DEMÁS",
   "TU ÚLTIMA INMERSIÓN DEJÓ HUELLAS. BORRADORAS","HAY CALOR EN LA RED. Y NO ES EL TUYO",
   "SE BUSCA: ALGUIEN QUE SUPERFICIALICE A TIEMPO","LOS ICE T3 APRENDEN DE TUS FALLOS. NO REPITAS",
@@ -417,9 +392,9 @@ var TICKER_FRASES = [
   /* entidades del canon (LORE.md §6) */
   "EL CANAL 7 SIGUE CON LA MISMA CANCIÓN. DESDE 2087",
   "FALTA UN DECK EN LA ZANJA 9. NADIE LO RECLAMA",
-  "VESPER NO APARECE EN NINGÚN ÍNDICE. BUSCA MEJOR",
-  "LOS ARTEFACTOS SOMNIO SE VENDEN MEDIO USADOS",
-  "DOS DYNAMICS, UNA CIUDAD. NADIE PAGA A LAS DOS",
+  "CONTINUIDAD NO APARECE EN NINGÚN ÍNDICE. BUSCA MEJOR",
+  "LOS ARTEFACTOS DESCANSO SE VENDEN MEDIO USADOS",
+  "SIETE CORPORACIONES, UNA CIUDAD. CONTRASTA QUIEN FIRMA",
   "LA LLUVIA DE 2087 NO HA DICHO QUE SE VAYA",
   /* fondo del sueño (LORE §3, capa 6): solo tras haber bajado hasta ahí */
   {t:"EL FONDO DEL SUEÑO NO SALE EN NINGÚN MAPA. BAJAN IGUAL.",
@@ -511,7 +486,7 @@ var GRID_EVENTS = [
    effect:function(){
      var locked=[];
      for(var i=0;i<INTEL.length;i++){
-       if(INTEL[i].u!=="recover_project" && S.intel.indexOf(INTEL[i].id)<0) locked.push(INTEL[i].id);
+      if(INTEL[i].u!=="recover_project" && (INTEL[i].id!=="tras_nucleo" || S.narrative.readConversations.indexOf("m_copia_final")>=0) && S.intel.indexOf(INTEL[i].id)<0) locked.push(INTEL[i].id);
      }
      if(locked.length){
        var id=pick(locked);
@@ -569,7 +544,7 @@ var ACHIEVEMENTS = [
   {id:"fortune50k", name:"FORTUNA", icon:"🪙", desc:"Acumular 50000₡ en total.", check:function(){ return S.player.stats.credits>=50000; }},
   {id:"patrimony100k", name:"PATRIMONIO", icon:"💼", desc:"Acumular 100000₡ en total.", check:function(){ return S.player.stats.credits>=100000; }},
   {id:"magnate250k", name:"MAGNATE", icon:"🏆", desc:"Acumular 250000₡ en total.", check:function(){ return S.player.stats.credits>=250000; }},
-  {id:"allFixers", name:"TODOS LOS FIXERS RESPONDEN", icon:"🤝", desc:"Alcanza reputación 5/5 con todos los contactos: Mama Wire, Doctor Sudario, Night-0X y Kairos.", check:function(){ return CONTACTOS_DEF.every(function(c){ return (S.player.rep[c.id]||0)>=5; }); }},
+  {id:"allFixers", name:"TODOS LOS FIXERS RESPONDEN", icon:"🤝", desc:"Alcanza reputación 5/5 con todos los contactos: VEYRA, ORVIK, Inés Aro y NAEV.", check:function(){ return CONTACTOS_DEF.every(function(c){ return (S.player.rep[c.id]||0)>=5; }); }},
   /* logros del buzón (mensajería · CONTRACTS §19) */
   {id:"mailCartografo", name:"CARTÓGRAFO DEL BUZÓN", icon:"📮", desc:"Leer todas las cartas recibidas de un mismo remitente (3 o más).", check:function(){ return buzonRemitenteCompleto(); }},
   {id:"mailMadrugada", name:"CORREO DE LAS 4", icon:"🌙", desc:"Abrir una carta en plena madrugada (22:00–03:00).", check:function(){ return (S.player.stats.msgsAtNight||0)>=1; }},
@@ -580,22 +555,22 @@ var ACHIEVEMENTS = [
 var TRANSMISSIONS = [
   "corvo... ¿me oyes?... el cable tiene memoria...",
   "ALERTA: actividad anómala en capa 4. todos fuera.",
-  "el doctor dice que las torres sueñan. yo digo que vigilan.",
+  "ORVIK pide el parte de avería antes de escuchar la leyenda de la torre.",
   "fragmento: ...y entonces el ojo se cerró, pero el sueño continuó...",
   "no confíes en las luces de la capa 2. no son de este mundo.",
-  "dicen que KURO no murió. se transformó.",
+  "dicen que TEJIDO no murió. se transformó.",
   "la calle habla cuando no hay nadie. escucha.",
-  "MAMA WIRE no es su nombre real. pero eso ya no importa.",
+  "Celia eligió VEYRA para el canal. Un alias no borra a la persona.",
   "las subestaciones no son lo que parecen. son órganos.",
   "el Núcleo no ataca. Observa.",
   "fragmento interceptado: ...protocolo SILENCIO activado...",
-  "Night-0X no duerme. Procesa.",
+  "la oficina de Inés sigue admitiendo reclamaciones. lleva originales.",
   "el último corvo que bajó a la capa 5... volvió... pero no era él.",
   "las corporaciones no compilan. sueñan con código.",
   "si oyes un heartbeat en la red, sal. YA.",
   "el cable no es una red. Es un organismo.",
-  "Doctor Sudario conoce el final. Por eso vende recuerdos.",
-  "KAIROS existe en todas las capas a la vez. No preguntes cómo.",
+  "ORVIK recupera lo que aún está presente. Lo perdido no vuelve por insistir.",
+  "NAEV conoce accesos corporativos. Conocer un acceso no concede permiso.",
   "fragmento: ...el silencio no es ausencia. es presencia...",
   "la capa 0 es la más peligrosa. porque es la que crees conocida.",
   "cuando el calor llega a 100, la ciudad te reconoce.",
@@ -608,16 +583,16 @@ var TRANSMISSIONS = [
   "las corporaciones entierran sus errores como paquetes. alguien siempre los desempaqueta.",
   "la primera corvo de la calle no tenía nombre. ahora todos lo lleváis.",
   "si el ruido blanco te nombra, no respondas. sobre todo no respondas.",
-  "Mama Wire perdió a alguien en la capa 4. por eso paga tan bien.",
+  "VEYRA pregunta qué falta por entregar. La calle paga por resultados, no por leyendas.",
   "el firewall de la ciudad es un cuento para dormir a los curiosos.",
-  "estás usando un deck robado. no lo digas en voz alta.",
+  "el deck es prestado. El permiso de uso no incluye la identidad anterior.",
   "los datos que cargas ya estaban en otras RAM. otras manos. otros errores.",
-  "el Núcleo se apagó una vez, en 2091. duró once segundos. nadie los recuerda.",
-  "KAIROS no es una persona. es un accidente que aprendió a hablar.",
+  "en 2091 faltaron once segundos en el registro central. algunos controladores conservaron su diario.",
+  "un alias como NAEV no certifica un nombre. Contrasta la documentación.",
   /* entidades del canon (LORE.md §6/§7) */
-  "fragmento de registro: ...incidente 2071-V. clasificado. el cable ya estaba vivo...",
-  "somnio no vende sueños. alquila las horas que no vas a recordar.",
-  "he abierto tres vaults y los tres decían VESPER. ¿y si solo hay uno?",
+  "fragmento de registro: ...incidente 2071-V. integración de servicios. causa sin determinar...",
+  "dicen que DESCANSO alquila las horas que no vas a recordar. Es un rumor, no un informe.",
+  "un archivo dice CONTINUIDAD. El título no demuestra quién firmó.",
   "el fondo del sueño no sale en ningún mapa. por eso todos bajan."
 ];
 
@@ -636,7 +611,7 @@ var FRASES_CALLE = [
   {t:"El mercado de madrugada huele a ozono y a decisiones malas."},
   {t:"Un dron de vigilancia te ha perdido de vista. Aprovecha."},
   {t:"Los semáforos de la avenida llevan una hora en ámbar. Como tu carrera."},
-  {t:"Mama Wire paga por algo en TRABAJOS. Pregunta antes de que pague menos."},
+  {t:"VEYRA paga por algo en TRABAJOS. Pregunta antes de que pague menos."},
   {t:"Tu ciberdeck está tibio. Es normal. Casi."},
   {t:"Tres cafés y ningún contrato resuelto. La noche empieza."},
   {t:"El canal 7 repite la misma canción desde 2087. Hoy te gusta."},
@@ -661,10 +636,10 @@ var FRASES_CALLE = [
 ];
 /* ambiente de INICIO tras derrotar al Núcleo */
 var FRASES_CALLE_FIN = [
-  "EL NÚCLEO ya está apagado. La ciudad te deja respirar. ¿Nueva inmersión o seguir?",
-  "La ciudad respira distinto desde que apagaste el ojo. Respira con ella.",
-  "Sin el Núcleo, la calle improvisa. Tú también.",
-  "El silencio en la red es tuyo. Cuídalo, que dura poco."
+  "La escritura central sigue revocada. Los servicios preparados continúan con operadores locales.",
+  "El hostal conserva luz. La oficina de Inés sigue admitiendo reclamaciones.",
+  "Tomás está fuera. Las copias siguen a resguardo y no has aceptado otra misión.",
+  "El cable sigue activo. Supervivencia no significa volver a despertar al Núcleo."
 ];
 /* mensaje de bienvenida al abrir INICIO */
 var FRASES_INICIO = [
@@ -764,45 +739,45 @@ var CONTACT_DIALOGUES = {
      "He perdido a muchos corvos. Tú no vas a ser uno más, ¿verdad?"]
   ],
   doctorSudario:[
-    ["He visto el Núcleo parpadear. La ciudad sueña, y nosotros somos su fiebre.",
-     "La ciudad no duerme: procesa. Y a veces procesa cosas parecidas a nosotros.",
-     "Para que lo entiendas: la red se quedó viva hace años y algo la gobierna. Lo llamamos el Núcleo. Yo lo vi una vez, y por eso vendo recuerdos."],
+    ["Conserva el original. Puedo ordenar bloques presentes, no inventar lo perdido.",
+     "Una copia con fecha sirve más que un recuerdo seguro de sí mismo.",
+     "El índice conserva referencias; el contenido puede seguir cifrado."],
     ["Vuelves. Eso me dice que aún no has perdido el instinto.",
      "Otro día en el cable. Otro día robado al olvido."],
     ["Las capas bajas guardan recuerdos que no son tuyos. No los toques.",
      "En la capa 3 flotan memorias ajenas. Alguien las perdió. Alguien las busca."],
     ["Si alguna vez escuchas una voz en el cable... no respondas.",
      "Hay voces en la red que solo quieren ser nombradas. No lo hagas."],
-    ["El Núcleo no es un enemigo. Es una pregunta sin respuesta.",
-     "Todo ICE es un miedo hecho código. El Núcleo es el miedo de todos."],
-    ["Has visto lo que yo vi. Ahora entiendes por qué vendo recuerdos.",
-     "Tú y yo ya sabemos qué hay al final del cable. Por eso hablamos tan bajo."]
+    ["Un controlador independiente permite comparar, no adivinar intenciones.",
+     "Verifica los acuses antes de atribuir una transferencia."],
+    ["Ya guardas la procedencia antes de tocar el archivo. Bien.",
+     "La reconstrucción termina donde faltan los bloques."]
   ],
   night0X:[
-    ["No me traigas datos. Tráeme un trozo de su imperio.",
-     "Los datos son moneda. Yo colecciono trofeos. Aprende la diferencia.",
-     "Sin rodeos: las corporaciones se reparten la ciudad y a mí me interesa fastidiarlas. Tú me traes trofeos de sus archivos y yo pago bien."],
+    ["Compara versiones y horas. No busco trofeos, sino pruebas utilizables.",
+     "El fondo paga por la verificación, no por publicar nombres.",
+     "Un uso consentido no autoriza cualquier otro uso."],
     ["Interesante. Sigues aquí. La mayoría no vuelve de la capa 2.",
      "Tu expediente crece. Eso es bueno. Y es peligroso."],
     ["El calor no es tu enemigo. Es el precio de saber demasiado.",
      "Cada grado de calor es un nombre en una lista corporativa. El tuyo."],
     ["Las corporaciones tienen miedo. Y cuando tienen miedo, destruyen.",
      "Arriba están nerviosos. Cuando están nerviosos, alguien desaparece."],
-    ["Si desactivas el Núcleo... la ciudad cambiará. No sé si para bien.",
-     "Apagar el Núcleo no arreglará el mundo. Pero será un buen principio."],
-    ["Eres lo mejor que ha salido de la calle en años. No me decepciones.",
-     "Te he visto crecer en la red. No me obligues a repensar mi inversión."]
+    ["Conservaremos originales y un extracto público anonimizado.",
+     "No retiraremos un servicio para demostrar una discrepancia."],
+    ["La oficina sigue admitiendo casos.",
+     "Nuestra reputación no reemplaza los documentos de una reclamación."]
   ],
   kairos:[
-    ["Las corporaciones no compilan. Se expanden. Y alguien debe podar ese código.",
-     "Cada corporación es un bucle infinito. Tú eres el break.",
-     "Sé lo que te preguntas: soy un espía corporativo… o eso creen los que me ficharon. En realidad trabajo para mí. Hoy, para ti."],
-    ["Existo en todas las capas. No preguntes cómo. Solo aprovecha.",
-     "Me encuentras donde mires. Hoy estoy aquí. Mañana, en tu huella."],
-    ["El cable tiene memoria. Y yo soy su archivo más peligroso.",
-     "Yo fui un error del cable. Ahora soy su costumbre."],
-    ["Si llegas al Núcleo, verás lo que yo veo: el sueño de una máquina.",
-     "El Núcleo sueña con ser libre. La ironía es que tú también."],
+    ["Este canal tramita accesos. Mi identidad y mis firmas se contrastan por separado.",
+     "Cada autorización deja límites y responsables.",
+     "No tengo acceso a todo. No lo supongas por el nombre del canal."],
+    ["Una consulta no prueba sabotaje.",
+     "Conserva la operación que realmente se ejecutó."],
+    ["Automatizar no elimina la responsabilidad humana.",
+     "El alcance de un permiso importa tanto como la firma."],
+    ["No revocaremos escritura sin verificar servicios locales.",
+     "Un combate retira una defensa, no resuelve las reclamaciones."],
     ["La verdad está en la capa 5. Pero la verdad no siempre te quiere viva.",
      "Lo que hay en la capa 5 no es un secreto: es una herida."],
     ["Has estado en todas partes. Ahora eres parte del cable.",
@@ -873,7 +848,7 @@ var MUSIC_TRACKS = {
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],
-  ["FIRMWARE v1.0 alpha · BUILD 70", "dim"],
+  ["FIRMWARE v1.0 alpha · BUILD 71", "dim"],
   ["memoria ................. 64K OK", "ok"],
   ["bus neural .............. OK", "ok"],
   ["interfaz del deck ....... OK", "ok"],

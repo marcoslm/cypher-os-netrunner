@@ -135,7 +135,7 @@ for(const c in jobTypes){
       const corpName = o.title.substring("EL VAULT DE ".length);
       const paired = T.PROYECTO_CORP[o.project];
       if(paired){ if(corpName !== paired) vaultPairOk = false; }
-      else if(corpName !== "KURO GATECH" && corpName !== "MONOLITH") vaultPairOk = false;
+      else if(corpName !== "MALLA" && corpName !== "ESTRATO") vaultPairOk = false;
     }
   }
 }
@@ -287,7 +287,10 @@ T.ACTIONS.replyMsg({ getAttribute(k){ return k === "data-id" ? "m_gracias_repara
 ok(S3.mensajes.find(m => m.id === "m_gracias_reparacion").replyTo === 0 &&
    (S3.player.stats.msgsVoidReplies || 0) === 1, "no se puede responder dos veces a la misma carta");
 T.checkUnlocks();
-ok(S3.intel.indexOf("tras_nucleo") >= 0, "cruce bandeja→INTEL: la carta desbloquea TRAS EL NÚCLEO");
+ok(S3.intel.indexOf("tras_nucleo") < 0, "una carta opcional no adelanta TRAS EL NÚCLEO");
+S3.narrative.readConversations.push("m_copia_final");
+T.checkUnlocks();
+ok(S3.intel.indexOf("tras_nucleo") >= 0, "la copia contrastada del cierre habilita TRAS EL NÚCLEO");
 ok(src.js.indexOf('["inicio","red","contactos","mensajes"') >= 0,
    "MENSAJES en VIEW_ORDER (Ctrl+4 abre la bandeja)");
 ok(src.html.indexOf('data-view="mensajes"') >= 0 && src.html.indexOf("notif-mensajes") >= 0,
