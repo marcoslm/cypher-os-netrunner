@@ -1041,7 +1041,12 @@ button.btn::before,.navbtn::before{
 .archive-tabs .btn[aria-pressed="true"]{--tab-edge:var(--cyan);color:var(--cyan);background:rgba(77,216,255,.12);box-shadow:inset 0 -3px var(--cyan);}
 .archive-tabs .btn:focus-visible{--tab-edge:var(--cyan);--tab-stroke:2px;outline:0;}
 #panel-scroll .archive-tabs .btn{min-height:44px;max-width:var(--tab-max);}
-@media(max-width:420px){#panel-scroll .archive-tabs .btn{padding:10px 8px;font-size:11px;}}
+@media(max-width:420px){
+  #panel-scroll .archive-tabs .btn{padding:10px 8px;font-size:11px;}
+  .archive-card{grid-template-columns:48px minmax(0,1fr);gap:10px;padding:10px;}
+  .archive-icon{width:48px;height:56px;flex-basis:48px;}
+  .archive-glyph{font-size:20px;}
+}
 #intro-menu{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.85fr);gap:24px 30px;margin-top:24px;
   padding-top:24px;border-top:1px solid rgba(77,216,255,.25);animation:deckMenu .35s ease-out;}
 #intro-menu.hidden{display:none;}

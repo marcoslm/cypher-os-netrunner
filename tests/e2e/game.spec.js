@@ -556,14 +556,20 @@ for(const width of [320,1280]){
     await page.setViewportSize({width,height:width===320?800:900});
     await game.setup();await nav(page,'archivos').click();
     const cards=page.locator('.archive-card');
+    const panel=page.locator('.archive-panel.deck-panel');
     await expect(page.locator('.archive-grid')).toHaveCount(1);
+    await expect(panel).toHaveCount(1);
+    await expect(panel.locator(':scope > .panel-h')).toContainText('ANTERIORES');
+    await expect(panel.locator(':scope > .archive-tools')).toHaveCount(1);
     await expect(cards).not.toHaveCount(0);
     const cardCount=await cards.count();
+    await expect(panel.locator('.archive-grid .archive-card')).toHaveCount(cardCount);
     await expect(page.locator('.archive-icon')).toHaveCount(cardCount);
     await expect(page.locator('.archive-status--unread')).not.toHaveCount(0);
     await expect(page.locator('.archive-icon--mail')).not.toHaveCount(0);
     await expect(page.locator('.archive-card.is-locked')).not.toHaveCount(0);
     await page.locator('[data-action="archiveTab"][data-tab="recovered"]').click();
+    await expect(panel.locator(':scope > .panel-h')).toContainText('RECUPERADOS');
     await expect(page.locator('.archive-icon--network')).not.toHaveCount(0);
     await page.locator('[data-action="archiveTab"][data-tab="previous"]').click();
     for(const card of await cards.all()){

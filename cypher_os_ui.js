@@ -2025,10 +2025,8 @@ function renderArchivos(){
   html+='<div class="archive-tabs" role="group" aria-label="Procedencia de archivos">'+
     '<button class="btn small" data-action="archiveTab" data-tab="previous" aria-pressed="'+(_archiveTab==="previous")+'">ANTERIORES</button>'+
     '<button class="btn small" data-action="archiveTab" data-tab="recovered" aria-pressed="'+(_archiveTab==="recovered")+'">RECUPERADOS</button></div>';
-  html+='<p>RECUPERACIÓN · '+(narrative.recoveryStage==="needs_index"?'El índice necesita un respaldo externo. Los bloques originales se conservan.':narrative.recoveryStage==="complete_known"?'Índice restaurado y copias conocidas accesibles.':'El índice está reconstruido; hay copias que requieren clave.')+'</p>';
-  if(narrative.files.l_casos==="sealed") html+='<div class="panel-actions">'+(narrative.keys.indexOf("k_casos")>=0?'<button class="btn cyan" data-action="applyStoryKey"'+(inImmersion?' disabled':'')+'>APLICAR CLAVE</button>':'<button class="btn" data-action="openStoryConversation" data-id="m_ines_clave">CONSULTAR PERMISO DE INÉS</button>')+'</div>';
-  html+='<div class="panel-toolbar archive-tools"><label for="archive-filter">Estado</label><select id="archive-filter"><option value="all">Todos</option><option value="readable">Legibles</option><option value="pending">Pendientes</option><option value="sealed">Cifrados</option></select></div><div class="archive-grid">';
-  var count=0;
+  var recoveryText=narrative.recoveryStage==="needs_index"?'El índice necesita un respaldo externo. Los bloques originales se conservan.':narrative.recoveryStage==="complete_known"?'Índice restaurado y copias conocidas accesibles.':'El índice está reconstruido; hay copias que requieren clave.';
+  var cardsHtml="", count=0;
   STORY_FILES.forEach(function(file){
     if(file.id==="r_copia_final" && narrative.readConversations.indexOf("m_copia_final")<0) return;
     var state=narrative.files[file.id], previous=file.origin==="local"||file.origin==="inherited-mail";
@@ -2037,9 +2035,14 @@ function renderArchivos(){
        (_archiveFilter==="pending" && ["damaged","partial"].indexOf(state)<0) ||
        (_archiveFilter==="sealed" && state!=="sealed")) return;
     count++;
-    html+=archiveCardHtml(file,state,STORY_DOCUMENTS[file.id],narrative);
+    cardsHtml+=archiveCardHtml(file,state,STORY_DOCUMENTS[file.id],narrative);
   });
-  html+='</div>'+(count?'':'<p class="muted">No hay archivos en esta selección.</p>');
+  var tabTitle=_archiveTab==="previous"?"ANTERIORES":"RECUPERADOS";
+  html+='<section class="deck-panel archive-panel"><h2 class="panel-h archive-panel-title">'+tabTitle+' <span class="muted text-xs">'+count+' pieza'+(count===1?'':'s')+'</span></h2>'+
+    '<div class="panel-toolbar archive-tools"><label for="archive-filter">Estado</label><select id="archive-filter"><option value="all">Todos</option><option value="readable">Legibles</option><option value="pending">Pendientes</option><option value="sealed">Cifrados</option></select></div>'+
+    '<p class="sub archive-recovery">RECUPERACIÓN · '+recoveryText+'</p>';
+  if(narrative.files.l_casos==="sealed") html+='<div class="panel-actions">'+(narrative.keys.indexOf("k_casos")>=0?'<button class="btn cyan" data-action="applyStoryKey"'+(inImmersion?' disabled':'')+'>APLICAR CLAVE</button>':'<button class="btn" data-action="openStoryConversation" data-id="m_ines_clave">CONSULTAR PERMISO DE INÉS</button>')+'</div>';
+  html+='<div class="archive-grid">'+cardsHtml+'</div>'+(count?'':'<p class="muted">No hay archivos en esta selección.</p>')+'</section>';
   scroller(html); updateTopbar();
   if(_archiveOpen) showArchiveWindow(); else closeOverlay();
   var filter=document.getElementById("archive-filter");
