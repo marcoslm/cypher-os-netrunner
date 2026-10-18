@@ -177,7 +177,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="legend-row"><span class="lg-key verde">NORMAL</span><span class="lg-desc">más tiempo en combate, daño normal, y puedes RECONEXIONAR al caer.</span></div>'+
 '<div class="legend-row"><span class="lg-key ambar">HARDCORE</span><span class="lg-desc">combates más rápidos, daño ×1.5, el calor es más pegajoso, y al flatlinear solo hay NUEVO REGISTRO.</span></div>'+
 '<div class="legend-row"><span class="lg-key magenta">LEGENDARIO</span><span class="lg-desc">se desbloquea al derrotar al Núcleo. Los grids van +1 capa más profundos y los ICE suben de tier.</span></div>'+
-'<p class="help-p">La dificultad también se puede cambiar desde <b>ESTADO</b> cuando estás en la calle: pide confirmación, no altera la red actual y solo aplica daños/enfriamiento/RECONEXIÓN futuros. Está bloqueada en inmersión, combate y flatline.</p>'+
+'<p class="help-p">La dificultad se elige únicamente en la <b>intro</b>. Para cambiarla durante una partida, vuelve desde <b>PARTIDA → VOLVER A INTRO</b> cuando estés en la calle, elige el modo y pulsa <b>COMENZAR</b>: conservas tu progreso. <b>ESTADO</b> solo muestra el modo actual. Una red en curso conserva sus reglas y una partida HARDCORE terminada no se puede revivir cambiando de modo.</p>'+
 '</div>'+
 '</div>'+
 

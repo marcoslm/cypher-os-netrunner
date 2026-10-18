@@ -1,25 +1,41 @@
 'use strict';
 const {test,expect,makeImmersion}=require('./fixtures');
 const nav=(page,view)=>page.locator(`.navbtn[data-view="${view}"]`);
-const btn=(page,diff)=>page.locator(`#panel-scroll [data-action="setDifficulty"][data-diff="${diff}"]`);
 const confirm=page=>page.locator('#confirm-overlay');
-
-test('dificultad F07A: cambio en calle con confirmación real y persistencia',async({page,game})=>{
-  await game.setup({state:{offers:[]}});
-  await nav(page,'estado').click();
-  await expect(btn(page,'normal')).toHaveAttribute('aria-pressed','true');
-  await expect(btn(page,'legendario')).toBeDisabled();
-  await btn(page,'hardcore').click();
-  await expect(confirm(page)).toBeVisible();await expect(confirm(page)).toContainText('HARDCORE');
-  await confirm(page).locator('[data-action="confirmNo"]').click();
-  expect((await game.snapshot()).state.difficulty).toBe('normal');
-  await btn(page,'hardcore').click();
+const current=page=>page.locator('.deck-columns-state > .deck-panel').first().locator('.row').filter({hasText:'DIFICULTAD'}).locator('.val');
+async function openDifficultyMenu(page,game){
+  await game.openSaveTools();await page.locator('#btn-intro').click();
+  await expect(confirm(page)).toBeVisible();
   await confirm(page).locator('[data-action="confirmYes"]').click();
-  expect((await game.snapshot()).state.difficulty).toBe('hardcore');
-  expect((await game.snapshot()).saved.difficulty).toBe('hardcore');
-  await expect(btn(page,'hardcore')).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('#intro')).toBeVisible();
+}
+
+test('dificultad: ESTADO informa y el cambio desde intro conserva progreso y persistencia',async({page,game})=>{
+  await game.setup({state:{offers:[]},player:{credits:4321}});
+  const before=await game.snapshot();
+  await nav(page,'estado').click();
+  await expect(current(page)).toHaveText('NORMAL');
+  await expect(page.locator('[data-action="setDifficulty"]')).toHaveCount(0);
+  await expect(page.locator('.panel-h').filter({hasText:/^DIFICULTAD$/})).toHaveCount(0);
+  await game.openSaveTools();await page.locator('#btn-intro').click();
+  await expect(confirm(page)).toBeVisible();
+  await confirm(page).locator('[data-action="confirmNo"]').click();
+  await expect(page.locator('#intro')).toBeHidden();
+  expect((await game.snapshot()).state.difficulty).toBe('normal');
+  await openDifficultyMenu(page,game);
+  await expect(page.locator('input[name="diff"][value="normal"]')).toBeChecked();
+  await expect(page.locator('#legendary-opt')).toBeHidden();
+  await page.locator('input[name="diff"][value="hardcore"]').check();
+  await game.resume();await page.locator('#intro-start').click();await game.skipBoot();
+  const after=await game.snapshot();
+  expect(after.state.difficulty).toBe('hardcore');expect(after.saved.difficulty).toBe('hardcore');
+  expect(after.state.player.credits).toBe(before.state.player.credits);
+  expect(after.state.player.xp).toBe(before.state.player.xp);
+  expect(after.state.jobs).toEqual(before.state.jobs);expect(after.state.narrative).toEqual(before.state.narrative);
+  await nav(page,'estado').click();await expect(current(page)).toHaveText('HARDCORE');
   await game.reload();await nav(page,'estado').click();
-  await expect(btn(page,'hardcore')).toHaveAttribute('aria-pressed','true');
+  await expect(current(page)).toHaveText('HARDCORE');
+  await expect(page.locator('[data-action="setDifficulty"]')).toHaveCount(0);
 });
 
 test('dificultad F-04: una red restaurada conserva sus reglas aunque la intro elija otro modo',async({page,game})=>{
@@ -30,22 +46,31 @@ test('dificultad F-04: una red restaurada conserva sus reglas aunque la intro el
   const after=await game.snapshot();
   expect(after.state.difficulty).toBe('normal');
   expect(after.immersion).not.toBeNull();
-  expect(after.immersion.grid.nodes.map(n=>n.id)).toEqual(before.immersion.grid.nodes.map(n=>n.id));
+  expect(after.immersion.grid).toEqual(before.immersion.grid);
   await game.expectMessage('conserva su dificultad');
+  await game.expectMessage('intro desde PARTIDA');
   await page.locator('.navbtn[data-view="estado"]').click();
-  await expect(page.locator('[data-action="setDifficulty"][data-diff="normal"]')).toHaveAttribute('aria-pressed','true');
+  await expect(current(page)).toHaveText('NORMAL');
+  await expect(page.locator('[data-action="setDifficulty"]')).toHaveCount(0);
 });
-test('dificultad F07A: bloqueada en inmersión y LEGENDARIO requiere al Núcleo',async({page,game})=>{
+test('dificultad: intro bloqueada en inmersión y LEGENDARIO requiere al Núcleo',async({page,game})=>{
   await game.setup({immersion:makeImmersion(),state:{offers:[]}});
   await nav(page,'estado').click();
-  for(const diff of ['normal','hardcore','legendario']) await expect(btn(page,diff)).toBeDisabled();
-  await expect(page.locator('#panel-scroll')).toContainText('bloqueado durante inmersión');
+  await expect(page.locator('[data-action="setDifficulty"]')).toHaveCount(0);
+  await expect(current(page)).toHaveText('NORMAL');
+  const before=await game.snapshot();
+  await game.openSaveTools();await page.locator('#btn-intro').click();
+  await expect(confirm(page)).toBeHidden();await expect(page.locator('#intro')).toBeHidden();
+  await game.expectMessage('superficializa antes de volver a la intro');
   expect((await game.snapshot()).state.difficulty).toBe('normal');
+  expect((await game.snapshot()).immersion).toEqual(before.immersion);
+  await game.setup({state:{offers:[]}});await openDifficultyMenu(page,game);
+  await expect(page.locator('#legendary-opt')).toBeHidden();
   await game.setup({state:{offers:[],history:{finalDone:true}}});
-  await nav(page,'estado').click();
-  await expect(btn(page,'legendario')).toBeEnabled();
-  await btn(page,'legendario').click();
-  await confirm(page).locator('[data-action="confirmYes"]').click();
+  await openDifficultyMenu(page,game);await expect(page.locator('#legendary-opt')).toBeVisible();
+  await page.locator('input[name="diff"][value="legendario"]').check();
+  await game.resume();await page.locator('#intro-start').click();await game.skipBoot();
   expect((await game.snapshot()).state.difficulty).toBe('legendario');
   expect((await game.snapshot()).saved.difficulty).toBe('legendario');
+  await nav(page,'estado').click();await expect(current(page)).toHaveText('LEGENDARIO');
 });

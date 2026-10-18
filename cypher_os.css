@@ -428,6 +428,7 @@ h1.title{
 .deck-columns>.deck-panel,.deck-columns-full>.deck-panel{margin:0;}
 .deck-columns-full{grid-column:1/-1;min-width:0;display:flex;flex-direction:column;gap:var(--ui-space);}
 @media(min-width:1200px){.deck-columns{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(min-width:1600px){.deck-columns-state{grid-template-columns:repeat(3,minmax(0,1fr));}}
 .row.street-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;}
 .street-info{min-width:0;line-height:1.45;}
 .street-desc{overflow-wrap:anywhere;}
@@ -538,9 +539,6 @@ button.btn::before,.navbtn::before{
 .ticker b{color:var(--cyan);}
 .home-access>.panel-actions{margin:var(--ui-gap) 0 0;}
 .quick{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0;}
-.diff-live-row{justify-content:flex-start;margin:10px 0;}
-.diff-live{min-width:7em;}
-.diff-live[aria-pressed="true"]{--control-edge:var(--ambar);color:var(--ambar);}
 
 /* ---- GRID / CANVAS ---- */
 #gridwrap{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);

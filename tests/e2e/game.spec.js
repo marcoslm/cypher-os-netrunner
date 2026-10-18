@@ -11,7 +11,8 @@ async function expectDashboardColumns(page,width,count,name,testInfo) {
   const panels=grid.locator(':scope > .deck-panel');
   await expect(panels).toHaveCount(count);
   const columns=await grid.evaluate(element=>getComputedStyle(element).gridTemplateColumns.split(/\s+/).filter(Boolean).length);
-  expect(columns).toBe(width>=1200?2:1);
+  const expectedColumns=name==='estado' && width>=1600?3:width>=1200?2:1;
+  expect(columns).toBe(expectedColumns);
   const bounds=await grid.boundingBox();
   const boxes=await panels.evaluateAll(elements=>elements.map(element=>{
     const rect=element.getBoundingClientRect();
@@ -20,7 +21,13 @@ async function expectDashboardColumns(page,width,count,name,testInfo) {
   if(width>=1200){
     expect(Math.abs(boxes[0].y-boxes[1].y)).toBeLessThanOrEqual(1);
     expect(boxes[1].x).toBeGreaterThan(boxes[0].x+boxes[0].width-1);
-    expect(boxes[0].width).toBeLessThanOrEqual(bounds.width/2+1);
+    expect(boxes[0].width).toBeLessThanOrEqual(bounds.width/expectedColumns+1);
+    if(expectedColumns===3){
+      expect(Math.abs(boxes[0].y-boxes[2].y)).toBeLessThanOrEqual(1);
+      expect(boxes[2].x).toBeGreaterThan(boxes[1].x+boxes[1].width-1);
+      expect(Math.abs(boxes[0].x-boxes[3].x)).toBeLessThanOrEqual(1);
+      expect(boxes[3].y).toBeGreaterThanOrEqual(boxes[0].y+boxes[0].height-1);
+    }
   } else {
     expect(Math.abs(boxes[1].x-boxes[0].x)).toBeLessThanOrEqual(1);
     expect(boxes[1].y).toBeGreaterThanOrEqual(boxes[0].y+boxes[0].height-1);
@@ -896,9 +903,15 @@ for(const width of [320,768,1280,1920]){
     }
     await page.screenshot({path:testInfo.outputPath(`deck-sin-efectos-${width}.png`)});
     await nav(page,'estado').click();
-    await expect(page.locator('.deck-panel')).toHaveCount(9);
+    await expect(page.locator('.deck-panel')).toHaveCount(8);
     await expect(page.locator('.deck-panel .box')).toHaveCount(0);
-    await expectDashboardColumns(page,width,9,'estado',testInfo);
+    await expect(page.locator('.deck-columns-state > .deck-panel > .panel-h')).toHaveText([
+      'CUERPO','SKILLS (puntos disponibles: 0)','UPGRADES','INVENTARIO','REPUTACIÓN','HISTORIAL','ESTADÍSTICAS AVANZADAS','MEJOR REGISTRO'
+    ]);
+    await expect(page.locator('[data-action="setDifficulty"]')).toHaveCount(0);
+    const difficulty=page.locator('.deck-panel').first().locator('.row').filter({hasText:'DIFICULTAD'});
+    await expect(difficulty.locator('.val')).toHaveText(await page.evaluate(()=>diffLabel(S.difficulty)));
+    await expectDashboardColumns(page,width,8,'estado',testInfo);
     await expect(page.locator('#panel-scroll')).toHaveJSProperty('scrollLeft',0);
     if(width>=768){
       await page.addStyleTag({content:'#panel-scroll{font-size:200%} #panel-scroll h2,#panel-scroll p,#panel-scroll .row{font-size:inherit}'});
