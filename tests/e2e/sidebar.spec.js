@@ -73,13 +73,25 @@ for(const viewport of [{width:320,height:600},{width:1280,height:900}]){
     const groupStyle=await groups.evaluateAll(elements=>elements.map(element=>{
       const style=getComputedStyle(element);
       return {background:style.backgroundColor,clip:style.clipPath,border:style.borderTopWidth,
-        buttons:Array.from(element.querySelectorAll('.navbtn')).length};
+        padding:style.paddingTop,buttons:Array.from(element.querySelectorAll('.navbtn')).length};
     }));
     expect(groupStyle.map(group=>group.buttons)).toEqual([2,5,3,2]);
-    expect(groupStyle.map(group=>group.background)).toEqual(['rgb(4, 12, 9)','rgb(4, 12, 9)','rgb(4, 12, 9)','rgb(4, 12, 9)']);
+    expect(groupStyle.map(group=>group.background)).toEqual(['rgba(0, 0, 0, 0)','rgba(0, 0, 0, 0)','rgba(0, 0, 0, 0)','rgba(0, 0, 0, 0)']);
+    const expectedPadding=viewport.width<=720?'2px':'4px';
     for(const group of groupStyle){
-      expect(group.clip).toContain('polygon');expect(group.border).toBe('0px');
+      expect(group.clip).toBe('none');expect(group.border).toBe('0px');expect(group.padding).toBe(expectedPadding);
     }
+    const separation=await groups.evaluateAll(elements=>elements.map(group=>{
+      const buttons=Array.from(group.querySelectorAll('.navbtn'));
+      return buttons.length>1?buttons[1].getBoundingClientRect().top-buttons[0].getBoundingClientRect().bottom:null;
+    }));
+    const cross=await page.evaluate(()=>{
+      const groups=Array.from(document.querySelectorAll('#sidebar .sidebar-group'));
+      const last=groups[0].querySelector('.navbtn:last-child').getBoundingClientRect();
+      const next=groups[1].querySelector('.navbtn').getBoundingClientRect();
+      return next.top-last.bottom;
+    });
+    expect(cross).toBeGreaterThan(Math.max(...separation.filter(Boolean))+4);
     await expect(page.locator('#sidebar .sidebar-group--system')).toHaveCount(1);
     const idle=page.locator('#sidebar [data-view="trabajos"]');
     const idleBorder=await idle.evaluate(element=>getComputedStyle(element,'::before').backgroundColor);
