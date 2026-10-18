@@ -1357,11 +1357,31 @@ function progText(j){
     13. AYUDA / CÓMO JUGAR
     ============================================================ */
 
+function helpPanelize(root){
+  var headings=Array.prototype.slice.call(root.children).filter(function(el){
+    return el.classList && el.classList.contains("panel-h");
+  });
+  for(var i=0;i<headings.length;i++){
+    var heading=headings[i], content=heading.nextElementSibling;
+    if(!content || !content.classList || !content.classList.contains("helpbox")) continue;
+    var section=document.createElement("section");
+    section.className="deck-panel help-topic";
+    var title=document.createElement("h2");
+    title.className="panel-h";
+    title.innerHTML=heading.innerHTML;
+    root.insertBefore(section,heading);
+    root.removeChild(heading);
+    content.classList.remove("box");
+    section.appendChild(title);
+    section.appendChild(content);
+  }
+}
 function renderAyuda(){
   if(typeof HELP_HTML === 'undefined'){
     scroller('<div class="muted">ERROR: archivo de ayuda no cargado (cypher_os_help.js).</div>');
   } else {
     scroller(HELP_HTML);
+    helpPanelize(document.getElementById("panel-scroll"));
     var subtitle=document.querySelector("#panel-scroll .sub");
     if(subtitle) subtitle.insertAdjacentHTML("afterend",'<div class="panel-actions"><button class="btn" data-action="replayPrologue"'+(inImmersion?' disabled':'')+'>RELEER PRÓLOGO</button></div>');
   }

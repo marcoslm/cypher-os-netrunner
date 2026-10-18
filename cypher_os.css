@@ -435,6 +435,8 @@ h1.title{
 /* ============================================================
     AYUDA / HELP
     ============================================================ */
+.help-topic>.helpbox{padding:0 6px 2px;}
+.help-topic>.helpbox:last-child{margin-bottom:0;}
 .helpbox{font-size:14px;line-height:1.6;overflow-wrap:anywhere;min-width:0;}
 .helpbox .sub{margin-bottom:6px;}
 .help-p{margin:0 0 10px;color:var(--texto);}

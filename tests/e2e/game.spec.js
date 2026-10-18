@@ -625,6 +625,28 @@ for(const width of [320,768,1280]){
   });
 }
 
+for(const width of [320,1280]){
+  test(`AYUDA: paneles temáticos reutilizan deck-panel a ${width} px`,async({page,game},testInfo)=>{
+    await page.setViewportSize({width,height:width===320?600:900});
+    await game.setup();await nav(page,'ayuda').click();
+    const topics=page.locator('#panel-scroll .help-topic');
+    await expect(topics).toHaveCount(19);
+    await expect(page.locator('#panel-scroll .help-topic .box')).toHaveCount(0);
+    await expect(page.locator('#panel-scroll .help-topic > .panel-h')).toHaveCount(19);
+    await expect(page.locator('#panel-scroll .help-topic > .helpbox')).toHaveCount(19);
+    await expect(topics.first()).toContainText('EL MUNDO EN 30 SEGUNDOS');
+    await expect(topics.last()).toContainText('MENSAJES · la bandeja del deck');
+    for(const topic of await topics.all()){
+      await expect(topic).toHaveCSS('clip-path','none');
+      expect(await topic.evaluate(el=>getComputedStyle(el,'::before').clipPath)).toContain('evenodd');
+      expect(await topic.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+    }
+    await expect(action(page,'replayPrologue')).toBeVisible();
+    expect(await page.locator('#panel-scroll').evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:testInfo.outputPath(`ayuda-paneles-${width}.png`)});
+  });
+}
+
 for(const width of [320,768,1280,1920]){
   test(`GUI ciberdeck: marcos, ventanas y efectos a ${width} px`,async({page,game},testInfo)=>{
     await page.setViewportSize({width,height:width===320?480:width===1920?1080:900});
