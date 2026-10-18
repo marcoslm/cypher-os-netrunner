@@ -48,12 +48,22 @@ async function run(options={}){
  });
  await check('BIOS tras hallazgo ignora atajos y omitir muestra diagnostico sin activar',g=>{
   g.run('_deckPrefs.animations=true;beginIntro();ACTIONS.storySkip();');g.advance(600);
-  assert.equal(g.run('entryMode()'),'boot');assert.equal(g.run('gameInputLayer().id'),'intro');
+  assert.equal(g.run('entryMode()'),'boot');assert.equal(g.run('gameInputLayer().id'),'deck-entry');
+  assert.equal(g.sb.document.getElementById('os').inert,false);
+  assert.equal(g.sb.document.getElementById('deck-entry').inert,false);
+  assert.equal(g.sb.document.activeElement.id,'intro-skip');
+  for(const id of ['topbar','sidebar','panel-scroll','msgbar','term'])assert.equal(g.sb.document.getElementById(id).inert,true,id);
   keys(g,'intro-skip');g.emitElement('intro-skip','keydown',{key:'s',ctrlKey:true});
   assert.equal(g.run('entryMode()'),'boot');assert.equal(g.run('inImmersion'),null);
     g.run('openControlPanel();beginIntro();');assert.equal(g.run('controlPanelOpen()'),false);assert.equal(g.run('S.narrative.entry'),'diagnostic');
   g.emitElement('intro-skip','click');g.advance(520);
-    assert.equal(g.run('entryMode()'),'diagnostic');assert.equal(g.sb.document.getElementById('os').inert,true);
+    assert.equal(g.run('entryMode()'),'diagnostic');assert.equal(g.run('gameInputLayer().id'),'deck-entry');
+    assert.equal(g.sb.document.activeElement.id,'deck-entry-heading');
+    keys(g,'deck-entry-heading');
+    g.sb.document.getElementById('cmd').focus();
+    assert.equal(g.sb.document.getElementById('deck-entry').contains(g.sb.document.activeElement),true);
+    g.run('executeCommand("dip");showView("estado");');
+    assert.equal(g.run('inImmersion'),null);
     assert.equal(clocks(g).length,0);assert.equal(g.run('S.narrative.recoveryStage'),'not_started');
     g.emitElement(g.sb.document.querySelector('[data-action="storyRecover"]'),'click');assert.equal(clocks(g).length,1);
  });
@@ -64,6 +74,8 @@ async function run(options={}){
    g.emitElement('intro-start','click');
    assert.equal(g.run('entryMode()'),null);assert.equal(clocks(g).length,1);
    assert.equal(g.sb.document.getElementById('os').inert,false);assert.equal(g.run('_introBootTimer'),null);
+  assert.equal(g.sb.document.getElementById('deck-entry').hidden,true);
+  for(const id of ['topbar','sidebar','panel-scroll','term'])assert.equal(g.sb.document.getElementById(id).inert,false,id);
   }
   g.run('ACTIONS.dipGrid();');assert.ok(g.run('inImmersion'));
  });

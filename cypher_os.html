@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>CYPHER://OS  ·  v9.2.7</title>
-<link rel="stylesheet" href="cypher_os.css?v=70">
+<link rel="stylesheet" href="cypher_os.css?v=72">
 </head>
 <body>
 
@@ -94,6 +94,15 @@
     <!-- Panel principal -->
     <div id="panel">
       <div id="panel-scroll"></div>
+      <section id="deck-entry" aria-label="Entrada de CORVO-7" hidden>
+        <div id="deck-post" class="deck-panel">
+          <header class="panel-h deck-entry-head"><span>CORVO-7 / CYPHER BIOS</span><span id="intro-power" class="deck-power" role="status" aria-live="polite" aria-atomic="true">ENCENDIENDO</span></header>
+          <div class="bios-heading"><span>CYPHER BIOS v9.2.7</span><span>LINDE</span></div>
+          <div id="boot" role="region" aria-label="Registro de arranque" tabindex="-1"><div id="boot-body"></div></div>
+          <div class="panel-actions"><button type="button" id="intro-skip" class="btn hidden" disabled>OMITIR ARRANQUE</button></div>
+        </div>
+        <div id="deck-diagnostic" class="deck-panel" hidden></div>
+      </section>
 
       <!-- Overlay (modales genéricos, resúmenes y finales) -->
       <div id="overlay"><div id="overlay-inner"></div></div>
@@ -114,18 +123,9 @@
 <!-- Overlay de combat (ICE / daemon) -->
 <div id="combat"></div>
 
-<!-- Una consola: encendido, BIOS y opciones de sesión. -->
 <div id="intro" class="intro-menu-mode" aria-label="Entrada de CYPHER://OS">
-  <section id="intro-body" aria-label="Consola CORVO-7">
-    <header class="deck-header">
-      <span class="deck-id">◈ CORVO-7 <span>/ CIBERDECK</span></span>
-      <span id="intro-power" class="deck-power" role="status" aria-live="polite" aria-atomic="true">ENCENDIENDO</span>
-    </header>
-    <div class="deck-screen">
+  <section id="intro-body" aria-label="Presentación de CYPHER://OS">
       <div id="story-entry" class="hidden"></div>
-      <div class="bios-heading"><span>CYPHER BIOS v9.2.7</span><span>LINDE</span></div>
-      <div id="boot" role="region" aria-label="Registro de arranque" tabindex="0"><div id="boot-body"></div></div>
-      <button type="button" id="intro-skip" class="btn hidden" disabled>OMITIR ARRANQUE</button>
       <div id="intro-menu" class="hidden" inert>
         <div class="intro-identity">
           <div class="intro-sub">SISTEMA CLANDESTINO / v9.2.7</div>
@@ -148,8 +148,6 @@
           <p id="intro-fs-status" class="intro-hint" role="status" aria-live="polite" aria-atomic="true"></p>
         </div>
       </div>
-    </div>
-    <footer class="deck-footer"><span>LINDE / CYPHER BIOS</span><span>REUTILIZADO POR LA CALLE</span></footer>
   </section>
 </div>
 
@@ -219,9 +217,9 @@
 <script src="cypher_os_help.js?v=43"></script>
 <script src="cypher_os_data.js?v=7"></script>
 <script src="cypher_os_core.js?v=6"></script>
-<script src="cypher_os_audio.js?v=6"></script>
+<script src="cypher_os_audio.js?v=7"></script>
 <script src="cypher_os_grid.js?v=9"></script>
 <script src="cypher_os_combat.js?v=5"></script>
-<script src="cypher_os_ui.js?v=37"></script>
+<script src="cypher_os_ui.js?v=38"></script>
 </body>
 </html>

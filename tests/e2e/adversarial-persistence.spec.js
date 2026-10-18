@@ -29,6 +29,7 @@ test('importación adversa: rechaza un contador numérico dañado sin reemplazar
   bad.player.stats.totalCreditsSpent = 'dañado';
   const before = await game.snapshot();
   await game.importFile(bad, 'contador-danado.json');
+  await game.expectMessage('archivo inválido');
   const imported = await game.snapshot();
   const message = await page.locator('#msg').getAttribute('aria-label');
   let afterPurchase = null;

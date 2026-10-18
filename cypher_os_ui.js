@@ -93,10 +93,7 @@ function finishIntroBoot(){
   if(_entryMode!=="boot") return;
   clearTimeout(_introBootTimer); _introBootTimer=null;
   while(_introBootIndex<BOOT_LINES.length){ if(!appendBootLine()) break; }
-  var intro=document.getElementById("intro"), menu=document.getElementById("intro-menu");
   var skip=document.getElementById("intro-skip"), log=document.getElementById("boot");
-  if(intro){ intro.classList.remove("intro-booting"); intro.classList.add("intro-ready"); }
-  if(menu){ menu.classList.add("hidden"); menu.inert=true; menu.setAttribute("inert",""); }
   if(skip){ skip.classList.add("hidden"); skip.disabled=true; }
   if(log){ log.scrollTop=log.scrollHeight; log.setAttribute("tabindex","0"); }
   var power=document.getElementById("intro-power");
@@ -106,12 +103,12 @@ function finishIntroBoot(){
 }
 function runBoot(){
   stopMusic(); stopAmbient();
+  clearInterval(loopId); loopId=null; stopGlitchLoop();
   clearTimeout(_introBootTimer); _introBootTimer=null;
-  var intro=document.getElementById("intro"), body=document.getElementById("boot-body");
-  if(!intro || !body) return;
+  var body=document.getElementById("boot-body");
+  if(!body) return;
   _entryMode="boot"; _introBootIndex=0; _bootStarted=false;
-  intro.classList.remove("hidden","intro-ready","intro-memory","intro-menu-mode","intro-story-mode"); intro.classList.add("intro-booting");
-  var story=document.getElementById("story-entry"); if(story) story.classList.add("hidden");
+  var story=document.getElementById("story-entry"); if(story){ story.classList.add("hidden"); story.innerHTML=""; }
   body.innerHTML="";
   var menu=document.getElementById("intro-menu"), skip=document.getElementById("intro-skip");
   if(menu){ menu.classList.add("hidden"); menu.inert=true; menu.setAttribute("inert",""); }
@@ -122,6 +119,7 @@ function runBoot(){
   if(power) power.textContent="ENCENDIENDO";
   var memoryStatus=document.getElementById("intro-memory-status");
   if(memoryStatus) memoryStatus.textContent="";
+  updateTopbar();
   syncGameInputLock();
   if(skip && skip.focus) skip.focus({preventScroll:true});
   if(!decorativeMotion()){ finishIntroBoot(); return; }
@@ -160,12 +158,14 @@ function renderStoryEntry(){
   stopGlitchLoop(); stopMusic(); stopAmbient();
   _entryMode=_storyReplay ? "replay" : S.narrative.entry;
   var intro=document.getElementById("intro"), menu=document.getElementById("intro-menu");
-  intro.classList.remove("hidden","intro-menu-mode","intro-booting","intro-ready"); intro.classList.add("intro-story-mode");
+  intro.classList.remove("intro-menu-mode","intro-booting","intro-ready"); intro.classList.add("intro-story-mode");
   menu.classList.add("hidden"); menu.inert=true; menu.setAttribute("inert","");
   var skip=document.getElementById("intro-skip"); skip.classList.add("hidden"); skip.disabled=true;
-  var story=document.getElementById("story-entry"), html="";
+  var exterior=_entryMode!=="diagnostic";
+  var story=document.getElementById(exterior?"story-entry":"deck-diagnostic"), html="";
+  var other=document.getElementById(exterior?"deck-diagnostic":"story-entry"); other.innerHTML="";
   story.classList.remove("hidden");
-  if(S.narrative.entry==="prologue" || _storyReplay){
+  if(exterior){
     var page=_storyReplay ? _storyReplayPage : S.narrative.prologuePage, scene=STORY_PROLOGUE[page];
     html='<p class="story-kicker">14 OCT 2093 · ÁLEX RIBA</p><h1 id="story-heading" tabindex="-1">'+escapeHtml(scene.title)+'</h1>';
     scene.paragraphs.forEach(function(text){ html+='<p>'+escapeHtml(text)+'</p>'; });
@@ -173,14 +173,15 @@ function renderStoryEntry(){
       '<button class="btn cyan" data-action="storyContinue">'+(page===2?(_storyReplay?'VOLVER A AYUDA':'RECOGER EL DECK'):'CONTINUAR')+'</button>'+
       '<button class="btn" data-action="storySkip">'+(_storyReplay?'CERRAR RELECTURA':'OMITIR PRÓLOGO')+'</button></div>';
   } else {
-    html='<p class="story-kicker">CORVO-7 · DIAGNÓSTICO LOCAL</p><h1 id="story-heading" tabindex="-1">Cierre interrumpido</h1>'+
+    html='<h1 class="panel-h" id="deck-entry-heading" tabindex="-1">Cierre interrumpido</h1><p class="story-kicker">CORVO-7 · DIAGNÓSTICO LOCAL</p>'+
       '<p>El último cierre no se completó. Parte del archivo personal está dañada.</p>'+
       '<p>Las funciones de trabajo están disponibles. La recuperación conservará los datos originales. Puede continuar utilizando el equipo durante el proceso.</p>'+
       '<div class="story-actions"><button class="btn cyan" data-action="storyRecover">INICIAR RECUPERACIÓN</button></div>';
   }
   story.innerHTML=html+(_storyReplay?'':'<button class="btn small" data-action="storyMenu">VOLVER AL MENÚ</button>');
+  if(!exterior) updateTopbar();
   syncGameInputLock();
-  var heading=document.getElementById("story-heading"); if(heading) heading.focus();
+  var heading=document.getElementById(exterior?"story-heading":"deck-entry-heading"); if(heading) heading.focus();
 }
 ACTIONS.storyPrevious=function(){
   if(_storyReplay){ _storyReplayPage=Math.max(0,_storyReplayPage-1); renderStoryEntry(); return; }
@@ -475,12 +476,23 @@ if(_controlsOverlay){
    Antes del primer COMENZAR, S=null identifica la intro inicial. */
 var _entryMode=null;
 function entryMode(){ return _entryMode || (!S ? "intro" : null); }
+function syncEntrySurface(){
+  var mode=entryMode(), internal=mode==="boot" || mode==="diagnostic";
+  var intro=document.getElementById("intro"), entry=document.getElementById("deck-entry");
+  if(intro) intro.classList.toggle("hidden",!mode || internal);
+  if(entry) entry.hidden=!internal;
+  var post=document.getElementById("deck-post"), diagnostic=document.getElementById("deck-diagnostic");
+  if(post) post.hidden=mode!=="boot";
+  if(diagnostic) diagnostic.hidden=mode!=="diagnostic";
+  var panel=document.getElementById("panel-scroll"); if(panel) panel.hidden=internal;
+  var os=document.getElementById("os"); if(os) os.classList.toggle("deck-entry-active",internal);
+}
 function gameInputLayer(){
   if(confirmOpen()) return document.getElementById("confirm-overlay");
   if(controlPanelOpen() && (combatActive || (S && S.player.cpu<=0))) closeControlPanel(false);
   if(controlPanelOpen()) return document.getElementById("controls-overlay");
   var mode=entryMode();
-  if(mode) return document.getElementById("intro"); /* BIOS forma parte de esta misma consola. */
+  if(mode) return document.getElementById(mode==="boot" || mode==="diagnostic" ? "deck-entry" : "intro");
   if(S && S.player.cpu<=0) return document.getElementById("flatline");
   if(combatActive) return document.getElementById("combat");
   return null;
@@ -491,7 +503,7 @@ function layerContains(layer, node){
 function layerControls(layer){
   if(!layer) return [];
   return Array.prototype.filter.call(layer.querySelectorAll('button:not([disabled]),input:not([disabled]),[tabindex="0"]'), function(n){
-    return (!n.closest || !n.closest(".hidden")) && (!n.getClientRects || n.getClientRects().length>0);
+    return (!n.closest || (!n.closest(".hidden") && !n.closest("[hidden]"))) && (!n.getClientRects || n.getClientRects().length>0);
   });
 }
 function focusInputLayer(layer, last){
@@ -501,12 +513,19 @@ function focusInputLayer(layer, last){
   if(target.focus) target.focus();
 }
 function syncGameInputLock(){
+  syncEntrySurface();
   var layer=gameInputLayer(), os=document.getElementById("os");
+  var internal=!!(layer && layer.id==="deck-entry");
   if(os){
-    os.inert=!!layer;
-    if(layer) os.setAttribute("inert",""); else os.removeAttribute("inert");
+    os.inert=!!layer && !internal;
+    if(os.inert) os.setAttribute("inert",""); else os.removeAttribute("inert");
   }
-  ["intro","controls-overlay"].forEach(function(id){
+  ["topbar","sidebar","save-tools","panel-scroll","msgbar","term","overlay"].forEach(function(id){
+    var el=document.getElementById(id); if(!el) return;
+    el.inert=internal;
+    if(internal) el.setAttribute("inert",""); else el.removeAttribute("inert");
+  });
+  ["intro","deck-entry","controls-overlay"].forEach(function(id){
     var el=document.getElementById(id); if(!el) return;
     var locked=!!(layer && layer!==el);
     el.inert=locked;
@@ -2284,6 +2303,7 @@ function clearSessionRuntime(){
   ACTIONS.closeSkillTree=null;
   clearTimeout(_bannerTimer); _bannerTimer=null; _bannerQueue=[]; _bannerActual=null;
   var banner=document.getElementById("banner"); if(banner) banner.classList.remove("show");
+  syncGameInputLock();
 }
 
 function flatline(){
@@ -2686,6 +2706,7 @@ function importGameState(imported){
     msg("archivo inválido: datos de partida incompletos o dañados.","rojo"); sound.error(); return false;
   }
   var previousS=S, previousImmersion=inImmersion, previousView=currentView;
+  var previousEntry=entryMode(), previousReplay=_storyReplay, previousReplayPage=_storyReplayPage;
   var viewChanged=false;
   try{
     /* Migración sobre el candidato aislado: ante cualquier excepción, volver al
@@ -2714,16 +2735,22 @@ function importGameState(imported){
     return true;
   }catch(err){
     S=previousS; inImmersion=previousImmersion;
+    _entryMode=previousEntry; _storyReplay=previousReplay; _storyReplayPage=previousReplayPage;
     if(viewChanged && previousS){
       /* showView guarda al marcar el panel visto: si falló a mitad, deshacer
          también esa escritura y recuperar el panel de la partida anterior. */
       try{
         var oldFlat=document.getElementById("flatline");
         if(oldFlat) oldFlat.classList.remove("show");
-        showView(previousView || "inicio");
-        if(previousS.player.cpu<=0){
-          clearInterval(loopId); stopMusic(); startAmbient("flatline"); showFlatline();
-        } else startClock();
+        if(previousEntry==="intro") showIntroMenu();
+        else if(previousEntry==="boot") runBoot();
+        else if(previousEntry) renderStoryEntry();
+        else {
+          showView(previousView || "inicio");
+          if(previousS.player.cpu<=0){
+            clearInterval(loopId); stopMusic(); startAmbient("flatline"); showFlatline();
+          } else startClock();
+        }
       }catch(restoreErr){ currentView=previousView; }
       save();
     }

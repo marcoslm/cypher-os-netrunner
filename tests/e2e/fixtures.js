@@ -120,6 +120,8 @@ const test = base.extend({
         if (await page.locator('#intro-skip').isVisible()) await page.locator('#intro-skip').click();
         if (await page.locator('[data-action="storyRecover"]').isVisible()) await page.locator('[data-action="storyRecover"]').click();
         await expect(page.locator('#intro')).toBeHidden();
+        await expect(page.locator('#deck-entry')).toBeHidden();
+        expect(await page.evaluate(() => entryMode())).toBeNull();
         await expect(page.locator('#boot')).toBeHidden();
         await expect(page.locator('#panel-scroll')).not.toBeEmpty();
         if (freeze) await game.freeze();

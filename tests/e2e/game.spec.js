@@ -40,7 +40,7 @@ async function expectDashboardColumns(page,width,count,name,testInfo) {
     const full=page.locator('#panel-scroll .deck-columns-full');
     await expect(full).toHaveCount(1);
     await expect(full.locator(':scope > .deck-panel > .panel-h')).toHaveText(['SITUACIÓN','ACCESOS']);
-    await expect(page.locator('.deck-panel')).toHaveCount(6);
+    await expect(page.locator('#panel-scroll .deck-panel')).toHaveCount(6);
     const situation=full.locator('.home-situation'),access=full.locator('.home-access');
     await expect(situation.locator('.diriz')).toHaveCount(1);
     await expect(situation.locator('.ticker')).toContainText('SEÑAL:');
@@ -726,7 +726,7 @@ for(const width of [320,768,1280]){
       expect(await page.locator('#panel-scroll').evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
     };
     await nav(page,'inicio').click();
-    const panels=page.locator('.deck-panel');
+    const panels=page.locator('#panel-scroll .deck-panel');
     await expect(panels).toHaveCount(6);
     for(const panel of await panels.all()){
       await expect(panel.locator(':scope > .panel-h')).toHaveCount(1);
@@ -892,7 +892,7 @@ for(const width of [320,768,1280,1920]){
     await window.locator('.control-header').scrollIntoViewIfNeeded();
     await page.screenshot({path:testInfo.outputPath(`deck-ajustes-${width}.png`)});
     await page.keyboard.press('Escape');await expect(page.locator('#h-controls')).toBeFocused();
-    for(const panel of await page.locator('.deck-panel').all()){
+    for(const panel of await page.locator('#panel-scroll .deck-panel').all()){
       await expect(panel).toHaveCSS('filter','none');
       await expect(panel).toHaveCSS('clip-path','none');
       expect(await panel.evaluate(element=>getComputedStyle(element,'::before').clipPath)).toContain('evenodd');
@@ -903,13 +903,13 @@ for(const width of [320,768,1280,1920]){
     }
     await page.screenshot({path:testInfo.outputPath(`deck-sin-efectos-${width}.png`)});
     await nav(page,'estado').click();
-    await expect(page.locator('.deck-panel')).toHaveCount(8);
+    await expect(page.locator('#panel-scroll .deck-panel')).toHaveCount(8);
     await expect(page.locator('.deck-panel .box')).toHaveCount(0);
     await expect(page.locator('.deck-columns-state > .deck-panel > .panel-h')).toHaveText([
       'CUERPO','SKILLS (puntos disponibles: 0)','UPGRADES','INVENTARIO','REPUTACIÓN','HISTORIAL','ESTADÍSTICAS AVANZADAS','MEJOR REGISTRO'
     ]);
     await expect(page.locator('[data-action="setDifficulty"]')).toHaveCount(0);
-    const difficulty=page.locator('.deck-panel').first().locator('.row').filter({hasText:'DIFICULTAD'});
+    const difficulty=page.locator('#panel-scroll .deck-panel').first().locator('.row').filter({hasText:'DIFICULTAD'});
     await expect(difficulty.locator('.val')).toHaveText(await page.evaluate(()=>diffLabel(S.difficulty)));
     await expectDashboardColumns(page,width,8,'estado',testInfo);
     await expect(page.locator('#panel-scroll')).toHaveJSProperty('scrollLeft',0);
@@ -985,7 +985,7 @@ for(const density of [1,1.25,2]){
       }
       await page.keyboard.press('Escape');await nav(page,'inicio').click();
       const normal=await page.screenshot();await testInfo.attach('inicio-remates',{body:normal,contentType:'image/png'});
-      const trim=await page.locator('.deck-panel').first().evaluate(element=>{
+      const trim=await page.locator('#panel-scroll .deck-panel').first().evaluate(element=>{
         const style=getComputedStyle(element,'::after');
         return {sizes:style.backgroundSize.split(',').map(value=>value.trim()),positions:style.backgroundPosition.split(',').map(value=>value.trim())};
       });
@@ -1082,7 +1082,7 @@ for(const density of [1,1.25,2]){
         expect(result.samples,name).toBeGreaterThan(0);expect(result.painted,name+' no conserva vertice ni fondo rectangular '+JSON.stringify({bounds,unexpected:result.unexpected})).toBe(0);
         await testInfo.attach(name,{body:image,contentType:'image/png'});
       };
-      await cutout(page.locator('.deck-panel').first(),10,'panel');
+      await cutout(page.locator('#panel-scroll .deck-panel').first(),10,'panel');
       await cutout(action(page,'goArchivos'),6,'comando');
       await cutout(page.locator('#sidebar .navbtn.active'),6,'seleccion');
       await page.addStyleTag({content:'.sidebar-items{background:transparent!important}'});
@@ -1184,7 +1184,7 @@ for(const density of [1,1.25,2]){
         expect(await tab.evaluate(element=>getComputedStyle(element).getPropertyValue('--tab-stroke').trim())).toBe('2px');
       }
       await nav(page,'inicio').click();
-      const panel=page.locator('.deck-panel').first(),screenshot=await panel.screenshot();
+      const panel=page.locator('#panel-scroll .deck-panel').first(),screenshot=await panel.screenshot();
       const corner=await page.evaluate(async encoded=>{
         const image=new Image();image.src='data:image/png;base64,'+encoded;await image.decode();
         const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;

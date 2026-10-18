@@ -83,7 +83,7 @@ var _musicTones=[];
 function backgroundAudioAllowed(){
   var intro=document.getElementById("intro");
   return !(intro && !intro.classList.contains("hidden")) &&
-    !(typeof _entryMode!=="undefined" && (_entryMode==="boot" || _entryMode==="intro"));
+    !(typeof entryMode==="function" && entryMode());
 }
 function channelBus(kind){
   if(!AC) return null;

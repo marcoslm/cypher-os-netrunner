@@ -15,6 +15,23 @@ async function run(options = {}) {
         game.emitElement('intro-start', 'click'); click(game, 'storySkip');
         game.emitElement('intro-skip', 'click');
     }
+    function insideDeck(game) {
+        const document = game.sb.document;
+        const entry = document.getElementById('deck-entry');
+        assert.ok(entry, 'El arranque tiene una superficie dentro del deck');
+        assert.equal(entry.parentNode.id, 'panel');
+        assert.equal(entry.hidden, false);
+        assert.equal(document.getElementById('intro').classList.contains('hidden'), true);
+        assert.equal(game.run('gameInputLayer().id'), 'deck-entry');
+        for (const id of ['os', 'main', 'panel', 'deck-entry']) {
+            assert.equal(!!document.getElementById(id).inert, false, id + ' permite alcanzar la entrada');
+        }
+        for (const id of ['topbar', 'sidebar', 'save-tools', 'panel-scroll', 'msgbar', 'term']) {
+            assert.equal(document.getElementById(id).inert, true, id + ' bloqueado');
+        }
+        assert.equal(game.run('loopId'), null);
+        assert.equal(game.run('backgroundAudioAllowed()'), false);
+    }
     console.log('\nF2 · entrada narrativa y archivo local');
     await check('menu no diegetico sin POST, partida, reloj ni audio', game => {
         game.advance(10000);
@@ -40,12 +57,16 @@ async function run(options = {}) {
         game.emitElement('intro-start', 'click');
         for (let page = 0; page < 3; page++) click(game, 'storyContinue');
         assert.equal(game.run('entryMode()'), 'boot');
+        insideDeck(game);
+        assert.equal(game.sb.document.activeElement.id, 'intro-skip');
         game.advance(320);
         const first = game.sb.document.querySelector('#boot-body .line');
         game.advance(180);
         assert.equal(game.sb.document.querySelector('#boot-body .line'), first);
         game.emitElement('intro-skip', 'click');
         assert.equal(game.run('entryMode()'), 'diagnostic');
+        insideDeck(game);
+        assert.equal(game.sb.document.activeElement.id, 'deck-entry-heading');
         assert.equal(game.run('S.narrative.recoveryStage'), 'not_started');
         const lines = game.sb.document.querySelectorAll('#boot-body .line');
         assert.equal(lines.length, 11);
@@ -60,6 +81,7 @@ async function run(options = {}) {
         game.run('document.getElementById("boot-body").innerHTML="";');
         game.emitElement('intro-start', 'click');
         assert.equal(game.run('entryMode()'), 'diagnostic');
+        insideDeck(game);
         assert.equal(game.sb.document.querySelectorAll('#boot-body .line').length, 0);
         const clock = game.run('S.clock'); game.advance(10000); game.run('gameLoop();');
         assert.equal(game.run('S.clock'), clock);
@@ -68,6 +90,10 @@ async function run(options = {}) {
         assert.equal(game.run('entryMode()'), null);
         assert.equal(game.run('currentView'), 'archivos');
         assert.equal(game.run('S.narrative.entry'), 'active');
+        assert.equal(game.sb.document.getElementById('deck-entry').hidden, true);
+        for (const id of ['topbar', 'sidebar', 'panel-scroll', 'msgbar', 'term']) {
+            assert.equal(game.sb.document.getElementById(id).inert, false, id + ' habilitado');
+        }
         assert.equal(game.list().filter(timer => timer.type === 'interval' && timer.ms === 1000).length, 1);
         assert.equal(game.run('storyBeginRecovery()'), false);
     });
@@ -78,6 +104,21 @@ async function run(options = {}) {
         assert.equal(game.run('_introBootTimer'), null);
         assert.equal(game.run('S.narrative.entry'), 'diagnostic');
         assert.equal(game.run('loopId'), null);
+    });
+    await check('POST natural y doble omision no activan la sesion', game => {
+        game.emitElement('intro-start', 'click'); click(game, 'storySkip');
+        game.advance(10000);
+        insideDeck(game);
+        assert.equal(game.run('entryMode()'), 'diagnostic');
+        assert.equal(game.run('_introBootTimer'), null);
+        const before = clone(game.run('S'));
+        game.run('finishIntroBoot();finishIntroBoot();');
+        assert.deepEqual(clone(game.run('S')), before);
+        click(game, 'storyMenu');
+        assert.equal(game.sb.document.getElementById('deck-entry').hidden, true);
+        assert.equal(game.sb.document.getElementById('os').inert, true);
+        game.emitElement('intro-start', 'click');
+        insideDeck(game);
     });
     await check('lote inicial contiene solo tres piezas legibles y un indice danado', game => {
         diagnostic(game); click(game, 'storyRecover');
@@ -118,7 +159,20 @@ async function run(options = {}) {
         assert.equal(game.run('importGameState(window.pendingState)'), true);
         assert.equal(game.run('entryMode()'), 'diagnostic');
         assert.equal(game.run('loopId'), null);
-        assert.equal(game.sb.document.getElementById('os').inert, true);
+        insideDeck(game);
+    });
+    await check('importacion fallida restaura diagnostico, foco y reloj detenido', game => {
+        diagnostic(game);
+        const before = clone(game.run('S'));
+        const active = clone(before);
+        game.sb.activeCandidate = active;
+        game.run('var pendingOriginal=S;S=window.activeCandidate;storyBeginRecovery();S=pendingOriginal;');
+        game.run('var originalShowView=showView;showView=function(){throw new Error("fallo de vista");};');
+        assert.equal(game.run('importGameState(window.activeCandidate)'), false);
+        game.run('showView=originalShowView;');
+        assert.deepEqual(clone(game.run('S')), before);
+        insideDeck(game);
+        assert.equal(game.sb.document.activeElement.id, 'deck-entry-heading');
     });
     console.log(`Entrada F2: ${passes} correctas · ${fails} fallos`);
     return options.summary ? { passes, fails, total: passes + fails } : fails;

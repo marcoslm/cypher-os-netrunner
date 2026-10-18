@@ -138,8 +138,14 @@ async function run(options = {}) {
     assert.equal(music(g).serial,serial);assert.equal(g.run('AMBIENT.activeMode'),null);
     assert.equal(g.run('_musicTones.length'),0);
     assert.equal(g.run('_deckPrefs.mus && _deckPrefs.amb && S.mus && S.amb'),true);
-    g.run('finishIntroBoot();');
+    g.run('S.narrative.entry="diagnostic";finishIntroBoot();');
+    assert.equal(g.run('entryMode()'),'diagnostic');
+    assert.equal(g.sb.document.getElementById('intro').classList.contains('hidden'),true);
     assert.equal(g.run('backgroundAudioAllowed()'),false);
+    g.run('updateMusic();updateAmbient();playCanal7();startAmbient("street");playMusicScene("ui",false);');
+    emit(g,'ended');emit(g,'error');oldMeta();
+    assert.equal(music(g).scene,null);assert.equal(music(g).el.paused,true);
+    assert.equal(g.run('AMBIENT.activeMode'),null);assert.equal(g.run('_musicTones.length'),0);
   });
 
   await check('retornar detiene canal 7 y MP3; COMENZAR reanuda posición y ambiente sin cambiar preferencias', g => {
