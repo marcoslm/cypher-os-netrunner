@@ -96,6 +96,20 @@ test('música: con catálogo disponible las escenas de calor y combate reproduce
   await solveCodeCombat(page);
 });
 
+test('música: el prólogo reproduce su pista propia y la detiene al entrar al deck', async ({ page, game }) => {
+  const { present } = await catalog(page);
+  test.skip(!present.includes('assets/music/cyos-prologo-antes-del-cable.mp3'), 'Requiere la pista opcional del prólogo.');
+  await page.locator('#intro-start').click();
+  await expect(page.locator('#story-entry')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => ({
+    scene: MUSIC.scene, track: MUSIC.playing.prologue?.t?.f, paused: MUSIC.el?.paused,
+    ready: (MUSIC.el?.readyState || 0) >= 2
+  }))).toEqual({ scene: 'prologue', track: 'assets/music/cyos-prologo-antes-del-cable.mp3', paused: false, ready: true });
+  await page.locator('[data-action="storySkip"]').click();
+  await expect.poll(() => page.evaluate(() => ({ scene: MUSIC.scene, paused: MUSIC.el?.paused }))).toEqual({ scene: null, paused: true });
+  await expect(page.locator('#deck-entry')).toBeVisible();
+});
+
 test('música: volver a intro silencia MP3 y ambiente sin cambiar ajustes; COMENZAR reanuda', async ({ page, game }) => {
   const { present } = await catalog(page);
   test.skip(!present.some(f => f.startsWith('assets/music/cyos-ui-')), 'Requiere música local opcional de calle.');
