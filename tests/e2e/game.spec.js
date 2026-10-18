@@ -578,7 +578,7 @@ for(const width of [320,768,1280]){
     for(const view of ['trabajos','contactos','mensajes','archivos']){
       await nav(page,view).click();
       const tabs=page.locator('.archive-tabs'),tab=tabs.locator('button').first();
-      await expect(tabs).toHaveCSS('position','sticky');await expect(tabs).toHaveCSS('gap','8px');await expect(tabs).toHaveCSS('justify-content','flex-start');
+      await expect(tabs).toHaveCSS('position','sticky');await expect(tabs).toHaveCSS('gap','8px');await expect(tabs).toHaveCSS('justify-content','flex-start');await expect(tabs).toHaveCSS('background-color','rgb(3, 10, 8)');
       await expect(tab).toHaveCSS('max-width','220px');
       const tabBox=await tab.boundingBox(),tabWidth=tabBox.width,tabsBox=await tabs.boundingBox();
       expect(tabWidth).toBeLessThanOrEqual(221);expect(tabWidth).toBeGreaterThanOrEqual(tabsBox.width<448?1:219);
