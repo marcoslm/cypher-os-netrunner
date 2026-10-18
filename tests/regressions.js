@@ -351,7 +351,8 @@ async function run(options = {}){
     assert.equal(g.run("inImmersion"),null);
     assert.equal(g.saved()._inImmersion,null);
     assert.equal(g.sb.document.getElementById("os").inert,true);
-    assert.equal(g.run('entryMode()'),'prologue');
+    assert.equal(g.run('entryMode()'),'intro');
+    assert.equal(g.sb.document.getElementById('intro-menu').classList.contains('hidden'),false);
   });
 
   await check("cancelar runtime invalida timers de memoria y vault sin recompensar", () => {

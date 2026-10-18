@@ -65,7 +65,7 @@ test('vault F01: aceptar y generar conserva el nodo sorteado al guardar, exporta
   await page.locator('#btn-reset').click();
   await page.locator('#confirm-overlay [data-action="confirmYes"]').click();
   expect((await game.snapshot()).immersion).toBeNull();
-  await game.skipBoot();
+  await game.boot();
   await game.importFile(exported,'vault-f01.json');
   await game.expectMessage('de vuelta en el grid');
   for (const reload of [false,true]) {
@@ -124,7 +124,7 @@ test('exportar/reset/importar cuatro veces conserva datos, ICE vencido, subestac
     await page.locator('#btn-reset').click();
     await page.locator('#confirm-overlay [data-action="confirmYes"]').click();
     expect((await game.snapshot()).immersion).toBeNull();
-    await game.skipBoot();
+    await game.boot();
     await game.importFile(exported,'ciclo.json');
     await game.expectMessage('de vuelta en el grid');
     const restored=await game.snapshot();

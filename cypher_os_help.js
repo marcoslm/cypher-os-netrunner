@@ -215,7 +215,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="helprow-item"><span class="kbd">GUARDAR</span><span class="muted">guarda a mano (también hay autoguardado)</span></div>'+
 '<div class="helprow-item"><span class="kbd">EXPORTAR</span><span class="muted">descarga tu partida como archivo .json</span></div>'+
 '<div class="helprow-item"><span class="kbd">IMPORTAR</span><span class="muted">restaura una partida desde un .json</span></div>'+
-'<div class="helprow-item"><span class="kbd">RESET</span><span class="muted">borra todo (con confirmación) · conserva tu mejor registro</span></div>'+
+'<div class="helprow-item"><span class="kbd">RESET</span><span class="muted">borra todo (con confirmación) y vuelve a la pantalla inicial · conserva tu mejor registro</span></div>'+
 '<div class="helprow-item"><span class="kbd">VOLVER A INTRO</span><span class="muted">guarda y vuelve a la intro para cambiar la dificultad sin recargar; solo en la calle —desde el Grid, superficializa primero— y COMENZAR reanuda tu partida intacta</span></div>'+
 '<div class="helprow-item"><span class="kbd">CONSULTAS</span><span class="muted">REGISTRO abre el diario de sesión con filtros y exportación (también Ctrl+9 o log); no es una operación de guardado</span></div>'+
 '</div>'+

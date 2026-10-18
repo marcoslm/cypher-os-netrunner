@@ -2852,7 +2852,17 @@ if(_btnReset) _btnReset.addEventListener("click", function(){
       S=nuevoEstado(); S.best=prevBest;
       ensureStateIntegrity(); generateOffers();
       addLog("RESET ▸ partida nueva desde cero.");
-      save(); renderStoryEntry(); syncGameInputLock();
+      var persisted=save();
+      /* El reinicio confirmado vuelve a la pantalla inicial con COMENZAR,
+         no al prólogo. Si el storage falla, la partida nueva sigue en memoria. */
+      _resumeAfterIntro=persisted?null:S;
+      stopMusic(); stopAmbient();
+      showIntroMenu();
+      updateLegendaryOption(); initDifficultySelect();
+      var introEl=document.getElementById("intro");
+      if(introEl) introEl.classList.toggle("intro-memory",!persisted);
+      var introStatus=document.getElementById("intro-memory-status");
+      if(introStatus) introStatus.textContent=persisted?"":"Sesión en memoria. No se pudo guardar: recargar puede perder tu progreso.";
       msg("partida nueva. de nuevo en la calle, corvo.","cyan");
       updateTopbar();
     }

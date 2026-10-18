@@ -155,7 +155,7 @@ test('lateral F05B: recarga conserva elección e importar/RESET/NUEVO REGISTRO n
   expect(await preference(page)).toEqual({sidebarCollapsed:false});
   await game.openSaveTools();await page.locator('#btn-reset').click();await page.locator('#confirm-overlay [data-action="confirmYes"]').click();
   await expect(sidebar(page)).toBeVisible();expect(await preference(page)).toEqual({sidebarCollapsed:false});
-  await game.skipBoot();
+  await game.boot();
   await button(page).click();await game.fatal();
   await page.locator('#flatline [data-action="newRecord"]').click();
   await page.locator('#confirm-overlay [data-action="confirmYes"]').click();
