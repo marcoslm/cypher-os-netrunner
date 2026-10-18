@@ -21,6 +21,9 @@ for(const width of [320,1280]){
       await expect(panel.locator('.box')).toHaveCount(0);
       await expect(panel).toHaveCSS('clip-path','none');
       expect(await panel.evaluate(el=>getComputedStyle(el,'::before').clipPath)).toContain('evenodd');
+      if(await panel.locator('.offer').count()){
+        expect(await panel.locator('.offer').first().evaluate(el=>getComputedStyle(el,'::after').backgroundColor)).toBe('rgba(77, 255, 166, 0.043)');
+      }
       expect(await panel.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
     }
     expect(await page.locator('#panel-scroll').evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
