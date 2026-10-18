@@ -290,7 +290,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 
 /* ⑱ MENSAJES */
 '<div class="panel-h">⑱ MENSAJES · la bandeja del deck</div><div class="box helpbox">'+
-'<p class="help-p">Los fixers y otros contactos te escriben <b>cartas</b> según lo que hagas (tu primer trabajo, un cobro, un fracaso…). A diferencia de la línea inferior, <b>aquí todo se queda</b>. <b>ENTRADA</b> reúne lo recibido y <b>ARCHIVO</b> el correo anterior: elige una fila y la carta se abre en el panel de lectura; <b>VOLVER A LA LISTA</b> te devuelve a la bandeja.</p>'+
+'<p class="help-p">Los fixers y otros contactos te escriben <b>cartas</b> según lo que hagas (tu primer trabajo, un cobro, un fracaso…). A diferencia de la línea inferior, <b>aquí todo se queda</b>. <b>ENTRADA</b> reúne lo recibido y <b>ARCHIVO</b> el correo anterior: elige una fila y la carta se abre en el panel de lectura sin perder de vista la lista.</p>'+
 '<div class="helprow">'+
 '<div class="helprow-item"><span class="kbd">● punto magenta</span><span class="muted">carta sin leer en el menú MENSAJES</span></div>'+
 '<div class="helprow-item"><span class="kbd">EMISOR</span><span class="muted">al pie de cada carta. Si dice <b>«sin respuesta»</b>, tu respuesta no llegará: quien escribió quemó su ruta para no exponerse. Es lo normal por aquí. En muy pocas cartas aparece el botón de <b>contestar de todas formas</b>: el envío vuelve… pero contestar a lo que no firma tiene su recompensa</span></div>'+

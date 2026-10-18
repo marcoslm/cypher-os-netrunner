@@ -702,7 +702,7 @@ for(const width of [320,768,1280]){
     await expect(page.locator('.mail-index')).toContainText('1 carta');
     const letter=page.locator(`[data-action="openMsg"][data-id="${mail}"]`);await letter.click();
     await expect(page.locator('#message-heading')).toBeFocused();
-    await expect(page.locator('.panel-back [data-action="closeMsg"]')).toBeVisible();
+    await expect(page.locator('[data-action="closeMsg"]')).toHaveCount(0);
     await expect(page.locator('.archive-tabs')).toHaveCount(1);
     await expect(page.locator('.mail-layout')).toHaveCount(1);
     await expect(page.locator('.mail-index')).toBeVisible();
@@ -710,12 +710,13 @@ for(const width of [320,768,1280]){
     await expect(letter).toHaveClass(/selected/);await expect(letter).toHaveAttribute('aria-pressed','true');
     await fits();
     await page.screenshot({path:testInfo.outputPath(`carta-${width}.png`)});
-    await action(page,'closeMsg').click();await expect(letter).toBeFocused();
+    await page.locator('[data-action="mailTab"][data-tab="current"]').click();
+    await expect(letter).not.toHaveClass(/selected/);
     await expect(page.locator('.mail-reader-empty')).toBeVisible();
-    await expect(page.locator('.mail-layout')).toHaveCount(1);
     await page.locator('[data-action="mailTab"][data-tab="previous"]').click();
     await expect(page.locator('.mail-index')).toContainText('ARCHIVO');
     await expect(page.locator('.mail-reader')).toContainText('CORREO ENVIADO POR TOMÁS');
+    await expect(page.locator('.panel-back [data-action="closeMsg"]')).toHaveCount(0);
     await page.locator('[data-action="openArchive"][data-id="l_contacto"]').click();
     await expect(page.locator('.panel-back [data-action="closeArchive"]')).toHaveText('VOLVER A MENSAJES');
     await action(page,'closeArchive').click();await expect(nav(page,'mensajes')).toHaveClass(/active/);

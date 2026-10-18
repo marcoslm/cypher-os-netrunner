@@ -1899,7 +1899,6 @@ function mailIndexHtml(openId){
 }
 function mailReaderHtml(m,def){
   return '<section class="deck-panel mail-reader"><h2 class="panel-h" id="message-heading" tabindex="-1">'+escapeHtml(def.t)+'</h2>'+
-    '<div class="panel-back"><button class="btn small" data-action="closeMsg">VOLVER A LA LISTA</button></div>'+
     '<article class="msgcard archive-document">'+
       '<div class="msg-head"><b class="cyan">'+escapeHtml(def.from)+'</b> <span class="muted text-xs">'+timeStr(m.hora)+'</span></div>'+
       '<div class="msg-body'+(def.doc?" msgdoc":"")+'">'+escapeHtml(def.l).replace(/\n/g,"<br>")+'</div>'+
@@ -1957,10 +1956,6 @@ ACTIONS.openMsg = function(btn){
   if(S.clock>=1320 || S.clock<180) S.player.stats.msgsAtNight=(S.player.stats.msgsAtNight||0)+1;
   save(); checkAchievements(); renderMensajes();
   var heading=document.getElementById("message-heading"); if(heading) heading.focus();
-};
-ACTIONS.closeMsg = function(){
-  var id=S._msgOpen; S._msgOpen=null; renderMensajes();
-  var trigger=document.querySelector('[data-action="openMsg"][data-id="'+id+'"]'); if(trigger) trigger.focus();
 };
 /* respuesta binaria (CONTRACTS §19): solo cartas con `reply`; la opción 0 es "contestar".
    En emisores sin ruta el envío se devuelve… pero contestar de todas formas cuenta
