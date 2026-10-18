@@ -2,19 +2,10 @@
 
 > *El cable no duerme. Solo parpadea.*
 
-Mini-RPG cyberpunk de netrunners para navegador. Eres CORVO-7: aceptas trabajos, bajas a la red -ICE, daemons y cosas peores-, robas datos y vuelves a cobrar.
-En fase alpha: campana jugable y regresiones automatizadas, con lectura, equilibrio con personas y dispositivos fisicos todavia pendientes. Pueden aparecer bugs sin identificar, incluidos algunos que impidan terminar una partida.
+Mini-RPG cyberpunk de netrunners para navegador. Eres CORVO-7: aceptas trabajos, exploras la red, te enfrentas a sus defensas y mejoras tu equipo.
 
-## Revision Narrativa En Desarrollo
+Incluye una campaña jugable de principio a fin. Sigue en desarrollo, en fase alpha, con ajustes y pruebas pendientes. Puede contener errores, incluso alguno que impida terminar una partida. Los futuros cambios de código pueden romper la compatibilidad con partidas guardadas de versiones anteriores.
 
-El codigo de desarrollo incorpora una campana completa de ocho casos: llegada con prologo, diagnostico y recuperacion explicita, factura del hostal, archivo de Tomas, contraste de registros, firmas y custodia, continuidad de servicios e intervencion final. Las pruebas protegidas se recuperan en el Grid, se conservan al volver por el puerto y se verifican en la calle; no se venden como datos genericos. Los hechos abren los casos, no el nivel ni la reputacion. El combate final retira una defensa: el cierre y el pago ocurren al entregar la revocacion. El epilogo se puede retomar y releer sin otro premio. Despues siguen disponibles trabajos genericos y SEALED NETWORK, sin reactivar al jefe final.
+**[Jugar online](https://marcoslm.github.io/cypher-os-netrunner/cypher_os.html)**
 
-F7 incorpora RASTREO (retener una direccion ficticia y cerrar su lectura antes de responder) y DESVIO (rotar conexiones para abrir un enlace), junto a CLAVES, MEMORIA y ESCANER. Seis familias de programas tienen siluetas locales originales y dano recibido ascendente con porcentaje, sin imagenes externas. Se mantienen la ficha inicial en pausa, teclado/tactil, huida y reglas de entrega. La validacion automatizada no sustituye pruebas de lectura, equilibrio con personas o dispositivos fisicos.
-
-La revision de claridad explica que se investiga, por que importa cada copia y que hacer despues, con resumen sencillo junto al registro original. TRABAJOS separa INVESTIGACION y CONTRATOS; CONTACTOS separa PERSONALES y OFERTAS. La historia busca poder seguirse sin conocimientos de gestion ni del mundo ficticio; ese objetivo editorial sigue pendiente de prueba con lectores.
-
-El formato anterior a esta revision narrativa requiere una partida nueva: esos guardados no se cargan ni se convierten, pero tampoco se eliminan. Los checkpoints de la revision actual (`story_v1`) siguen siendo validos. Los archivos exportados anteriores pueden conservarse como respaldo; los ajustes de audio y pantalla siguen siendo preferencias del dispositivo, independientes de la partida.
-
-**[Jugar online en GitHub Pages](https://marcoslm.github.io/cypher-os-netrunner/cypher_os.html)** — abre el enlace y pulsa COMENZAR, sin instalar nada.
-
-También puedes jugar sin conexión: descarga el repositorio, abre `cypher_os.html` y pulsa COMENZAR. Sin dependencias. El progreso se guarda en el navegador.
+También puedes jugar sin conexión: descarga el repositorio y abre `cypher_os.html`. Sin instalación ni dependencias. El progreso se guarda en el navegador.
