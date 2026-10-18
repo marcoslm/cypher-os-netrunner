@@ -68,6 +68,19 @@ for(const viewport of [{width:320,height:600},{width:1280,height:900}]){
     const navigation=page.locator('#sidebar .navbtn[data-view]');
     expect(await navigation.evaluateAll(elements=>elements.map(element=>element.getAttribute('data-view')))).toEqual(order);
     await expect(page.locator('#sidebar [data-view="registro"]')).toHaveCount(0);
+    const groups=page.locator('#sidebar .sidebar-group');
+    await expect(groups).toHaveCount(4);
+    const groupStyle=await groups.evaluateAll(elements=>elements.map(element=>{
+      const style=getComputedStyle(element);
+      return {background:style.backgroundColor,clip:style.clipPath,border:style.borderTopWidth,
+        buttons:Array.from(element.querySelectorAll('.navbtn')).length};
+    }));
+    expect(groupStyle.map(group=>group.buttons)).toEqual([2,5,3,2]);
+    expect(new Set(groupStyle.map(group=>group.background)).size).toBe(1);
+    for(const group of groupStyle){
+      expect(group.clip).toContain('polygon');expect(group.border).toBe('0px');
+    }
+    await expect(page.locator('#sidebar .sidebar-group--system')).toHaveCount(1);
     await navigation.first().focus();
     for(const view of order){
       await expect(page.locator(`#sidebar [data-view="${view}"]`)).toBeFocused();

@@ -249,7 +249,11 @@ html.glow-off .deck-stat{animation:none;}
     linear-gradient(var(--verde),var(--verde)) bottom right 16px/42px 3px no-repeat,
     repeating-linear-gradient(135deg,var(--borde-claro) 0 2px,transparent 2px 5px) top 0 right 24px/22px 4px no-repeat,
     repeating-linear-gradient(135deg,var(--borde-claro) 0 2px,transparent 2px 5px) bottom 0 left 24px/22px 4px no-repeat;}
-.sidebar-items{display:flex;flex:1 1 auto;min-height:0;min-width:0;flex-direction:column;gap:2px;overflow-y:auto;}
+.sidebar-items{display:flex;flex:1 1 auto;min-height:0;min-width:0;flex-direction:column;gap:6px;overflow-y:auto;}
+.sidebar-group{display:flex;flex:0 0 auto;flex-direction:column;gap:2px;min-width:0;padding:3px;
+  background:rgba(77,216,255,.035);
+  clip-path:polygon(0 4px,4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%);}
+.sidebar-group--system{margin-top:auto;}
 html.sidebar-collapsed #sidebar{display:none;}
 .navbtn{
   position:relative;flex:0 0 auto;
@@ -282,7 +286,7 @@ html.sidebar-collapsed #sidebar{display:none;}
 /* Operaciones de partida (F05A v2): popover-diálogo anclado al botón PARTIDA.
    Vive fuera del flujo del lateral para no comer scroll en pantallas bajas y se
    une al botón con una traza verde, como un cable de datos entre ambos. */
-#save-tools-toggle{margin-top:auto;padding-right:22px;}
+#save-tools-toggle{padding-right:22px;}
 #save-tools-toggle::after{content:"▸";position:absolute;right:4px;top:8px;color:var(--cyan);}
 #save-tools-toggle[aria-expanded="true"]::after{content:"▾";}
 #save-tools{
@@ -1306,6 +1310,8 @@ body.glitch-random{animation:glitchRandom .2s ease-out;}
 /* ---- responsivo ---- */
 @media(max-width:720px){
   #sidebar{flex-basis:60px;}
+  .sidebar-items{gap:4px;}
+  .sidebar-group{padding:2px 1px;clip-path:polygon(0 3px,3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%);}
   #sidebar .navbtn span.lbl{display:none;}
   #sidebar .navbtn{text-align:center;padding:8px 4px;}
   #sidebar .navbtn .ic{display:block;}

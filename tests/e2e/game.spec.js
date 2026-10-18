@@ -869,6 +869,9 @@ for(const density of [1,1.25,2]){
       };
       await cutout(page.locator('.deck-panel').first(),10,'panel');
       await cutout(action(page,'goArchivos'),6,'comando');
+      /* La bahía de grupo puede asomar por el vértice del botón: para medir la
+         silueta del control se retira esa capa, no el fondo contenedor. */
+      await page.addStyleTag({content:'.sidebar-group{background:transparent!important}'});
       await cutout(page.locator('#sidebar .navbtn.active'),6,'seleccion');
       await page.addStyleTag({content:'.sidebar-items{background:transparent!important}'});
       await cutout(page.locator('#sidebar'),20,'carcasa');
