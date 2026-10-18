@@ -971,14 +971,17 @@ function renderContactos(){
     var unlocked=!c.locked || (S.player.level>=4 && S.player.rep.night0X>=2);
     var rep=S.player.rep[c.id]||0;
     var lockTxt = (c.locked && !unlocked) ? (' · BLOQUEADO ['+(c.lock||'')+']') : '';
-    html+='<div class="contact'+(unlocked?"":" locked")+'">'+
-      '<div class="flex-sb">'+
-        '<div><b class="'+c.cls+'">'+c.name+'</b> <span class="muted">'+c.role+'</span>'+
-        '<div class="muted contact-loc">'+c.loc+'</div></div>'+
-        '<div class="rep-dots">'+repDots(rep)+'</div></div>'+
-      '<div class="sep"></div>'+
-      '<div class="muted contact-quote">“'+getContactDialogue(c, rep)+'”'+lockTxt+'</div>'+
-      '<div class="offers" id="offers-'+c.id+'"></div></div>';
+    html+='<section class="deck-panel contact'+(unlocked?"":" locked")+'" data-contact="'+c.id+'">'+
+      '<h2 class="panel-h contact-head">'+
+        '<span class="contact-name"><b class="'+c.cls+'">'+c.name+'</b> <span class="muted">'+c.role+'</span></span>'+
+        '<span class="rep-dots" aria-label="reputación '+rep+' de 5">'+repDots(rep)+'</span>'+
+      '</h2>'+
+      '<div class="contact-body">'+
+        '<div class="muted contact-loc">'+c.loc+'</div>'+
+        '<div class="muted contact-quote">“'+getContactDialogue(c, rep)+'”'+lockTxt+'</div>'+
+        '<div class="offers" id="offers-'+c.id+'"></div>'+
+      '</div>'+
+    '</section>';
   });
   html+='<div class="panel-actions"><button class="btn" data-action="refreshOffers">⟳ REFRESCAR OFERTAS</button></div>';
   scroller(html);

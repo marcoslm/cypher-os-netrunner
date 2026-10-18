@@ -2,7 +2,32 @@
 const {test,expect,makeImmersion,downloadJSON}=require('./fixtures');
 const nav=(page,view)=>page.locator(`.navbtn[data-view="${view}"]`);
 const contacts=['mamaWire','doctorSudario','night0X','kairos'];
+const contactNames={mamaWire:'VEYRA',doctorSudario:'ORVIK',night0X:'Inés Aro',kairos:'NAEV'};
 const dossierIds=['exp_kuro','exp_somnio','exp_miraje','exp_eko9','exp_carmin','exp_lapida','exp_halcon','exp_vesper'];
+for(const width of [320,1280]){
+  test(`fixers F03: paneles de contacto con sus ofertas a ${width} px`,async({page,game},testInfo)=>{
+    await page.setViewportSize({width,height:width===320?800:900});
+    await game.setup({player:{level:4,rep:{night0X:2}}});
+    await nav(page,'contactos').click();
+    const panels=page.locator('.contact.deck-panel');
+    await expect(panels).toHaveCount(4);
+    await expect(page.locator('.contact .rep-dots')).toHaveCount(4);
+    for(const contact of contacts){
+      const panel=page.locator(`.contact[data-contact="${contact}"]`);
+      await expect(panel).toHaveCount(1);
+      await expect(panel.locator(':scope > .panel-h')).toHaveCount(1);
+      await expect(panel.locator(':scope > .panel-h')).toContainText(contactNames[contact]);
+      await expect(panel.locator(':scope > .contact-body > .offers')).toHaveCount(1);
+      await expect(panel.locator('.box')).toHaveCount(0);
+      await expect(panel).toHaveCSS('clip-path','none');
+      expect(await panel.evaluate(el=>getComputedStyle(el,'::before').clipPath)).toContain('evenodd');
+      expect(await panel.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+    }
+    expect(await page.locator('#panel-scroll').evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:testInfo.outputPath(`contactos-paneles-${width}.png`)});
+  });
+}
+
 async function expectOfferCounts(page,offers,exhausted=false) {
   for(const contact of contacts) {
     const own=offers.filter(o=>o.contact===contact),max=exhausted||contact==='mamaWire'?2:3;

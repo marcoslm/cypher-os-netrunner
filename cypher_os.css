@@ -625,11 +625,11 @@ button.btn::before,.navbtn::before{
   background:rgba(77,216,255,.08);}
 
 /* ---- contactos / ofertas ---- */
-.contact{padding:0;margin:24px 0;}
-.contact>.flex-sb{gap:var(--ui-gap);flex-wrap:wrap;border-bottom:1px solid var(--borde);padding-bottom:8px;margin-bottom:12px;}
-.contact>.sep{display:none;}
 .contact.locked{opacity:.6;}
-.rep-dots{letter-spacing:3px;color:var(--ambar);}
+.contact>.panel-h{display:flex;align-items:center;justify-content:space-between;gap:var(--ui-gap);flex-wrap:wrap;}
+.contact-name{min-width:0;overflow-wrap:anywhere;}
+.contact-body{min-width:0;}
+.rep-dots{letter-spacing:3px;color:var(--ambar);white-space:nowrap;}
 .offers{margin-top:8px;}
 .offer{border:1px solid var(--borde);border-radius:3px;padding:8px 10px;
   margin-top:6px;font-size:13px;display:flex;justify-content:space-between;gap:10px;
@@ -1095,7 +1095,7 @@ html.motion-off #boot .line:last-child::after{animation:none;}
 
 /* componentes: contactos */
 .contact-loc{font-size:11px;}
-.contact-quote{font-size:12px;font-style:italic;}
+.contact-quote{font-size:12px;font-style:italic;margin:4px 0 0;}
 
 /* componentes: ofertas y trabajos */
 .job-meta-sub{font-size:11px;margin-top:2px;}
