@@ -18,9 +18,10 @@ async function run(options = {}) {
   const emit = (g, type) => g.emitElement(music(g).el, type);
   console.log('\nMÚSICA · catálogo nuevo y archivos opcionales…');
 
-  await check('20 pistas nuevas, seis escenas y volúmenes de producción', g => {
+  await check('21 pistas nuevas, siete escenas y volúmenes de producción', g => {
     const catalog = JSON.parse(JSON.stringify(g.run('MUSIC_TRACKS')));
     const expected = {
+      prologue: [['prologo-antes-del-cable', .24]],
       ui: [['ui-cable-no-duerme', .25], ['ui-lluvia-larga', .24], ['ui-octava', .25], ['ui-mercado-de-calle', .24]],
       grid: [['grid-inmersion', .26], ['grid-el-tejido', .25], ['grid-los-recuerdos', .26], ['grid-ruido-blanco', .25]],
       gridHot: [['hot-el-muro', .28], ['hot-caza-abierta', .28], ['hot-paranoia', .26]],
@@ -31,7 +32,27 @@ async function run(options = {}) {
     for (const scene of Object.keys(expected)) {
       assert.deepEqual(catalog[scene], expected[scene].map(([name, v]) => ({ f: 'assets/music/cyos-' + name + '.mp3', v })));
     }
-    assert.equal(new Set(Object.values(catalog).flat().map(t => t.f)).size, 20);
+    assert.equal(new Set(Object.values(catalog).flat().map(t => t.f)).size, 21);
+  });
+
+  await check('el prólogo y su relectura usan su propia escena sin ambiente', g => {
+    g.run('S=nuevoEstado();S.mus=true;S._tutorialDone=true;stopMusic();renderStoryEntry();');
+    assert.equal(g.run('entryMode()'),'prologue');
+    assert.equal(g.run('musicScene()'),'prologue');
+    assert.equal(music(g).scene,'prologue');
+    assert.equal(music(g).playing.prologue.t.f,'assets/music/cyos-prologo-antes-del-cable.mp3');
+    assert.equal(music(g).el.paused,false);
+    assert.equal(g.run('backgroundAudioAllowed()'),false);
+    assert.equal(g.run('backgroundAudioAllowed(true)'),true);
+    g.run('MUSIC.el.duration=400;MUSIC.el.currentTime=42;S.narrative.prologuePage=1;renderStoryEntry();');
+    assert.equal(music(g).scene,'prologue');
+    assert.equal(music(g).el.currentTime,42);
+    g.run('_storyReplay=true;_storyReplayPage=0;renderStoryEntry();');
+    assert.equal(g.run('musicScene()'),'prologue');
+    assert.equal(music(g).scene,'prologue');
+    g.run('_storyReplay=false;storyFinishPrologue();runBoot();');
+    assert.equal(music(g).el.paused,true);
+    assert.equal(g.run('MUSIC.scene'),null);
   });
 
   await check('la bolsa rota todas las pistas y no repite en el cambio de bolsa', g => {
@@ -74,12 +95,12 @@ async function run(options = {}) {
 
   await check('sin ningún archivo todos los intentos son acotados y no alteran la partida', g => {
     const before = JSON.stringify(g.run('S'));
-    for (const scene of ['ui', 'grid', 'gridHot', 'combat', 'boss', 'vault']) {
+    for (const scene of ['prologue', 'ui', 'grid', 'gridHot', 'combat', 'boss', 'vault']) {
       g.run(`playMusicScene(${JSON.stringify(scene)},false);`);
       while (music(g).playing[scene].t) emit(g, 'error');
       assert.equal(music(g).el.paused, true);
     }
-    assert.equal(Object.keys(music(g).unavailable).length, 20);
+    assert.equal(Object.keys(music(g).unavailable).length, 21);
     assert.equal(JSON.stringify(g.run('S')), before);
     assert.equal(g.pending(), 0);
   });
@@ -115,8 +136,11 @@ async function run(options = {}) {
     assert.equal(music(g).scene, null); assert.equal(music(g).el.paused, true);
   });
 
-  await check('las seis escenas conservan prioridades e histéresis de calor', g => {
+  await check('las siete escenas conservan prioridades e histéresis de calor', g => {
     assert.equal(g.run('musicScene()'), 'ui');
+    g.run('_entryMode="prologue";'); assert.equal(g.run('musicScene()'), 'prologue');
+    g.run('_entryMode="replay";'); assert.equal(g.run('musicScene()'), 'prologue');
+    g.run('_entryMode=null;');
     g.run('inImmersion={};S.player.heat=71;'); assert.equal(g.run('musicScene()'), 'grid');
     g.run('S.player.heat=72;'); assert.equal(g.run('musicScene()'), 'gridHot');
     g.run('MUSIC.scene="gridHot";S.player.heat=68;'); assert.equal(g.run('musicScene()'), 'gridHot');

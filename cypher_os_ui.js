@@ -196,6 +196,7 @@ function runBoot(){
 
 function showIntroMenu(){
   clearTimeout(_introBootTimer); _introBootTimer=null;
+  stopMusic(); stopAmbient();
   _entryMode=S ? "intro" : null; _bootStarted=false;
   var intro=document.getElementById("intro"), menu=document.getElementById("intro-menu");
   if(intro){ intro.classList.remove("hidden","intro-booting","intro-story-mode"); intro.classList.add("intro-ready","intro-menu-mode"); }
@@ -236,6 +237,9 @@ function renderStoryEntry(){
   story.innerHTML=html+(_storyReplay?'':'<button class="btn small" data-action="storyMenu">VOLVER AL MENÚ</button>');
   if(!exterior) updateTopbar();
   syncGameInputLock();
+  /* El prólogo narrativo y su relectura tienen escena propia; el diagnóstico
+     sigue en silencio. stopMusic() previo conserva la posición al pasar página. */
+  if(exterior && (_entryMode==="prologue" || _entryMode==="replay")) playMusicScene("prologue", false);
   var heading=document.getElementById(exterior?"story-heading":"deck-entry-heading"); if(heading) heading.focus();
 }
 ACTIONS.storyPrevious=function(){

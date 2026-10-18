@@ -24,7 +24,7 @@ async function catalog(page) {
 test('música local: los MP3 del catálogo disponibles se decodifican en Edge por file://', async ({ page, game }) => {
   await game.setup();
   const { files, present } = await catalog(page);
-  expect(files.length).toBeGreaterThanOrEqual(20);
+  expect(files.length).toBeGreaterThanOrEqual(21);
   test.skip(!present.length, 'No hay MP3 locales opcionales en este checkout.');
   for (const file of present) {
     const result = await page.evaluate(file => new Promise(resolve => {

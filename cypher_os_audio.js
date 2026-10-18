@@ -80,11 +80,14 @@ if(_displayMotion){
 }
 var AC = null, FX_BUS=null, MUS_BUS=null;
 var _musicTones=[];
-/* La intro conserva S al volver: la sesión viva no autoriza audio de fondo. */
-function backgroundAudioAllowed(){
+/* La intro conserva S al volver: la sesión viva no autoriza audio de fondo.
+   El prólogo y su relectura son la excepción musical: permiten su pista,
+   pero mantienen ambiente, menú, boot y diagnóstico en silencio. */
+function backgroundAudioAllowed(forMusic){
   var intro=document.getElementById("intro");
-  return !(intro && !intro.classList.contains("hidden")) &&
-    !(typeof entryMode==="function" && entryMode());
+  var mode=typeof entryMode==="function" ? entryMode() : null;
+  if(mode==="prologue" || (forMusic && mode==="replay")) return !!forMusic;
+  return !(intro && !intro.classList.contains("hidden")) && !mode;
 }
 function channelBus(kind){
   if(!AC) return null;
@@ -421,9 +424,10 @@ function updateAmbientStress(){
 
 var MUSIC={ el:null, scene:null, bags:{}, playing:{}, unavailable:{}, serial:0, onMeta:null };
 
-function musicEnabled(){ return backgroundAudioAllowed() && !!S && S.mus!==false; }
+function musicEnabled(){ return backgroundAudioAllowed(true) && !!S && S.mus!==false; }
 /* escena musical actual (histéresis en el calor para no saltar de pista) */
 function musicScene(){
+  if(typeof entryMode==="function" && (entryMode()==="prologue" || entryMode()==="replay")) return "prologue";
   if(combatActive){
     if(VAULT_PUZZLE) return "vault";
     if(COM && COM.node && COM.node.boss) return "boss";

@@ -829,6 +829,8 @@ var STREET_ACTIVITIES = [
 /* Catálogo definitivo: las pistas aún no añadidas se saltan durante la sesión.
    Basta poner los MP3 con estos nombres en assets/music/ y recargar el juego. */
 var MUSIC_TRACKS = {
+  /* prólogo narrativo y su relectura */
+  prologue:[ {f:"assets/music/cyos-prologo-antes-del-cable.mp3", v:.24} ],
   /* calle / menús */
   ui:[ {f:"assets/music/cyos-ui-cable-no-duerme.mp3", v:.25},
        {f:"assets/music/cyos-ui-lluvia-larga.mp3", v:.24},
@@ -859,7 +861,7 @@ var MUSIC_TRACKS = {
 
 /* ---- boot: líneas de la BIOS (las consume cypher_os_ui.js) ---- */
 
-var FIRMWARE_BUILD = 108;
+var FIRMWARE_BUILD = 109;
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],
