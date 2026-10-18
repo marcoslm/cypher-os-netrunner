@@ -645,7 +645,7 @@ function confirmModal(o){
   var ov=document.getElementById("confirm-overlay");
   if(!ov) return;
   ov.innerHTML=
-    '<div class="modal">'+
+    '<div class="modal'+(o.danger?' window-danger':'')+'">'+
     '<h2 class="'+(o.danger?"rojo":"ambar")+'">'+o.title+'</h2>'+
     '<p>'+o.body+'</p>'+
     '<div class="actions">'+
@@ -1459,14 +1459,14 @@ function renderInicio(){
   }
   var html='<div class="logo glow">CYPHER<br><small>:OS v9.2.7</small></div>'+
     '<p>ÁLEX RIBA · equipo CORVO-7'+(S.narrative.aliasAcquired?' · alias registrado':' · sesión local')+'</p>'+
-    '<div class="panel-h">ARCHIVO LOCAL</div><p>Los originales se conservan. '+(S.narrative.recoveryStage==="needs_index"?'El índice personal necesita un respaldo externo.':S.narrative.recoveryStage==="complete_known"?'Índice restaurado y copias conocidas accesibles.':'Índice reconstruido; las copias de casos requieren la clave autorizada de Inés.')+'</p>'+
+    '<section class="deck-panel"><h2 class="panel-h">ARCHIVO LOCAL</h2><p>Los originales se conservan. '+(S.narrative.recoveryStage==="needs_index"?'El índice personal necesita un respaldo externo.':S.narrative.recoveryStage==="complete_known"?'Índice restaurado y copias conocidas accesibles.':'Índice reconstruido; las copias de casos requieren la clave autorizada de Inés.')+'</p>'+
     '<div class="panel-actions"><button class="btn small" data-action="goArchivos">ABRIR ARCHIVOS</button>'+
-    '<button class="btn small" data-action="goStoryWork">CASOS</button></div>'+
-    '<div class="panel-h">ESTADO</div><div class="box">'+
+    '<button class="btn small" data-action="goStoryWork">CASOS</button></div></section>'+
+    '<section class="deck-panel"><h2 class="panel-h">ESTADO</h2>'+
     row2("CPU",Math.round(p.cpu)+"/"+p.maxCpu)+row2("CALOR",Math.round(p.heat)+"/100",p.heat>70?"rojo":(p.heat>40?"ambar":"verde"))+
     row2("CRÉDITOS","₡"+Math.floor(p.credits),"verde")+row2("RAM",dataUsedNow()+"/"+ramCap())+
     row2("NIVEL",p.level+" · XP "+p.xp+"/"+xpParaNivel())+
-    '</div>'+
+    '</section>'+
     '<div class="diriz">'+dir+'</div>'+
     '<div class="panel-actions">'+
     '<button class="btn cyan" data-action="dipGrid">◈ DIP AL GRID</button>'+
@@ -1478,10 +1478,10 @@ function renderInicio(){
     html+='<div class="panel-actions"><button class="btn magenta" data-action="acceptNucleo">✦ INTERVENCIÓN (profundidad 5)</button></div>';
   if(S.history.finalDone)
     html+='<div class="panel-actions"><button class="btn magenta" data-action="startEndless">◈ SEALED NETWORK</button> <span class="muted text-xs">modo supervivencia</span></div>';
-  html+='<div class="panel-h">REPUTACIÓN</div><div class="box">'+repRows()+'</div>';
+  html+='<section class="deck-panel"><h2 class="panel-h">REPUTACIÓN</h2>'+repRows()+'</section>';
   /* actividades de la calle (solo cuando no hay inmersión) */
   if(!inImmersion){
-    html+='<div class="panel-h">ACTIVIDADES DE LA CALLE</div><div class="box">';
+    html+='<section class="deck-panel"><h2 class="panel-h">ACTIVIDADES DE LA CALLE</h2>';
     for(var ai=0;ai<STREET_ACTIVITIES.length;ai++){
       var act=STREET_ACTIVITIES[ai];
       var onCooldown=activityOnCooldown(act);
@@ -1493,7 +1493,7 @@ function renderInicio(){
         (onCooldown?'<span class="muted text-xs"> (cooldown)</span>':'')+
         '</span></div>';
     }
-    html+='</div>';
+    html+='</section>';
   }
   scroller(html); addTicker(); updateTopbar();
   msg(pickFresh("inicio-msg", FRASES_INICIO),"magenta");
@@ -1573,33 +1573,31 @@ function renderEstado(){
   var p=S.player;
   var html='<h1 class="title">ESTADO</h1>'+
     '<div class="sub">Álex Riba · '+(S.narrative.aliasAcquired?'CORVO-7 · alias del equipo':'CORVO-7 · dispositivo prestado')+'</div>'+
-    '<div class="panel-h">CUERPO</div><div class="box">'+
+    '<section class="deck-panel"><h2 class="panel-h">CUERPO</h2>'+
     row2("CPU",Math.round(p.cpu)+"/"+p.maxCpu)+row2("CALOR",Math.round(p.heat)+"/100")+
     row2("FIREWALL",fwVal())+row2("RAM (slots)",dataUsedNow()+"/"+ramCap())+
     row2("CRÉDITOS","₡"+Math.floor(p.credits))+row2("NIVEL",p.level+" · XP "+p.xp+"/"+xpParaNivel())+
-    '</div>'+
-    '<div class="panel-h">SKILLS <span class="muted text-xs">(puntos disponibles: '+p.skillPoints+')</span></div>'+
-    '<div class="box">'+
+    '</section>'+
+    '<section class="deck-panel"><h2 class="panel-h">SKILLS <span class="muted text-xs">(puntos disponibles: '+p.skillPoints+')</span></h2>'+
     skillRow("HACK","claves más cortas · más tiempo para romper ICE",p.hack)+
     skillRow("SIGILO","menos emboscadas · menos calor · huir más fácil",p.sigilo)+
     skillRow("NERVIOS","reduce el daño recibido",p.nervios)+
-    '</div>'+
-    '<div class="panel-actions"><button class="btn cyan" data-action="openSkillTree">★ VER ÁRBOL DE HABILIDADES</button></div>'+
-    '<div class="panel-h">UPGRADES</div><div class="box">'+
+    '<div class="panel-actions"><button class="btn cyan" data-action="openSkillTree">★ VER ÁRBOL DE HABILIDADES</button></div></section>'+
+    '<section class="deck-panel"><h2 class="panel-h">UPGRADES</h2>'+
     row2("RAM","+4 ×"+p.ramUp)+row2("FIREWALL","+10 ×"+p.fwUp)+
     row2("LINK NEURAL","+20 CPU ×"+p.linkUp)+row2("ROMPEHIELOS",-1+" longitud ×"+p.breakerUp)+
-    '</div>'+
-    '<div class="panel-h">INVENTARIO</div><div class="box">'+
+    '</section>'+
+    '<section class="deck-panel"><h2 class="panel-h">INVENTARIO</h2>'+
     row2("DISCOS DECOY",p.decoys)+row2("PAQUETES VIRUS",p.virus)+
-    '</div>'+
-    '<div class="panel-h">DIFICULTAD</div><div class="box">'+difficultyRow()+'</div>'+
-    '<div class="panel-h">REPUTACIÓN</div><div class="box">'+repRows()+'</div>'+
-    '<div class="panel-h">HISTORIAL</div><div class="box">'+
+    '</section>'+
+    '<section class="deck-panel"><h2 class="panel-h">DIFICULTAD</h2>'+difficultyRow()+'</section>'+
+    '<section class="deck-panel"><h2 class="panel-h">REPUTACIÓN</h2>'+repRows()+'</section>'+
+    '<section class="deck-panel"><h2 class="panel-h">HISTORIAL</h2>'+
     row2("INMERSIONES",p.stats.immerse)+row2("ICE DESTRUIDOS",p.stats.ice)+
     row2("DAEMONS DESTRUIDOS",p.stats.daemons)+row2("DATOS EXTRAÍDOS",p.stats.data)+
     row2("CRÉDITOS OBTENIDOS","₡"+p.stats.credits)+row2("PROFUNDIDAD MÁXIMA","capa "+p.stats.maxDepth)+
-    '</div>'+
-    '<div class="panel-h">ESTADÍSTICAS AVANZADAS</div><div class="box">'+
+    '</section>'+
+    '<section class="deck-panel"><h2 class="panel-h">ESTADÍSTICAS AVANZADAS</h2>'+
     row2("TIEMPO TOTAL",Math.floor((p.stats.totalPlayTime||0)/60)+" min")+
     row2("ICE T1/T2/T3",(p.stats.iceByTier&&p.stats.iceByTier[1]||0)+"/"+(p.stats.iceByTier&&p.stats.iceByTier[2]||0)+"/"+(p.stats.iceByTier&&p.stats.iceByTier[3]||0))+
     row2("TRABAJOS COMPLETADOS",p.stats.jobsCompleted||0)+
@@ -1608,12 +1606,12 @@ function renderEstado(){
     row2("DAÑO RECIBIDO",p.stats.totalDamageReceived||0)+
     row2("DAÑO INFLIGIDO",p.stats.totalDamageDealt||0)+
     row2("RACHA MÁX. COMBATES",p.stats.maxCombatStreak||0)+
-    '</div>'+
-    '<div class="panel-h">MEJOR REGISTRO</div><div class="box">'+
+    '</section>'+
+    '<section class="deck-panel"><h2 class="panel-h">MEJOR REGISTRO</h2>'+
     row2("NIVEL MÁX.",S.best.level||"-")+row2("INMERSIONES",S.best.immerse||"-")+
     row2("ICE",S.best.ice||"-")+row2("DAEMONS",S.best.daemons||"-")+
     row2("CRÉDITOS","₡"+(S.best.credits||0))+row2("PROFUNDIDAD","capa "+(S.best.depth||"-"))+
-    '</div>';
+    '</section>';
   scroller(html); updateTopbar();
   msg(pickFresh("view-estado", FRASES_VIEWS.estado),"cyan");
 }
@@ -1750,7 +1748,7 @@ function renderSkillTree(){
   var el=document.getElementById("skilltree-overlay");
   if(!el) return;
   var html='<div class="skilltree-card">'+
-    '<div class="skilltree-title">ÁRBOL DE HABILIDADES</div>'+
+    '<h2 class="skilltree-title">ÁRBOL DE HABILIDADES</h2>'+
     '<div class="skilltree-sub">puntos disponibles: <b>'+S.player.skillPoints+'</b></div>';
   for(var b=0;b<SKILL_TREE.length;b++){
     var br=SKILL_TREE[b];

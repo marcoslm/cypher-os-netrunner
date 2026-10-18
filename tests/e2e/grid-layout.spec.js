@@ -169,6 +169,12 @@ for(const width of [320,1280]){
     await page.emulateMedia({reducedMotion:'reduce'});
     await page.setViewportSize({width,height:width===320?600:900});
     await game.setup({state:{offers:[]}});
+    await page.locator('#h-controls').click();
+    for(const preference of ['crt','glow','animations']){
+      const button=page.locator(`#controls-overlay [data-pref="${preference}"]`);
+      if(await button.getAttribute('aria-pressed')==='true')await button.click();
+    }
+    await page.keyboard.press('Escape');
     await page.locator('.navbtn[data-view="ayuda"]').click();
     const labels=page.locator('.help-layer');
     await expect(labels).toHaveText(['CAPA 0','CAPAS 1-2','CAPAS 3-4','CAPA 5']);
@@ -195,6 +201,50 @@ for(const width of [320,1280]){
     const after=await page.locator('#gridcanvas').boundingBox();
     expect(after).toEqual(before);expect((await game.snapshot()).immersion).toEqual(snapshot.immersion);
     await page.screenshot({path:testInfo.outputPath(`controles-${width}.png`)});
+    await expect(controls).toHaveCSS('clip-path','none');
+    expect(await controls.evaluate(element=>getComputedStyle(element,'::before').clipPath)).toContain('evenodd');
+    const hud=await controls.boundingBox();
+    const contrast=await page.addStyleTag({content:'#grid-stage{background:#ff00ff!important}#grid-map{visibility:hidden}'});
+    const screenshot=await page.screenshot({scale:'device'});
+    const contour=await page.evaluate(async({encoded,bounds})=>{
+      const image=new Image();image.src='data:image/png;base64,'+encoded;await image.decode();
+      const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
+      const context=canvas.getContext('2d');context.drawImage(image,0,0);
+      const {data}=context.getImageData(0,0,image.width,image.height),scale=image.width/innerWidth;
+      const {x,y,width,height}=bounds,cut=10;
+      let painted=0,missing=0;
+      for(let row=1;row<cut-2;row++)for(let column=1;column<cut-2-row;column++){
+        const offset=(Math.floor((y+row)*scale)*image.width+Math.floor((x+column)*scale))*4;
+        if(!(data[offset]>=250&&data[offset+1]<=3&&data[offset+2]>=250))painted++;
+      }
+      const vertices=[[x+cut,y],[x+width,y],[x+width,y+height-cut],[x+width-cut,y+height],[x,y+height],[x,y+cut]];
+      for(let side=0;side<vertices.length;side++){
+        const first=vertices[side],last=vertices[(side+1)%vertices.length],steps=Math.ceil(Math.hypot(last[0]-first[0],last[1]-first[1]));
+        for(let step=0;step<=steps;step++){
+          const expectedX=(first[0]+(last[0]-first[0])*step/steps)*scale,expectedY=(first[1]+(last[1]-first[1])*step/steps)*scale;
+          let found=false;
+          for(let row=Math.floor(expectedY-1.5*scale);row<=Math.ceil(expectedY+1.5*scale);row++)for(let column=Math.floor(expectedX-1.5*scale);column<=Math.ceil(expectedX+1.5*scale);column++){
+            if(row<0||column<0||row>=image.height||column>=image.width)continue;
+            const offset=(row*image.width+column)*4;
+            if(data[offset+1]>45&&data[offset+1]>data[offset]*1.4)found=true;
+          }
+          if(!found)missing++;
+        }
+      }
+      return {painted,missing};
+    },{encoded:screenshot.toString('base64'),bounds:hud});
+    expect(contour).toEqual({painted:0,missing:0});
+    await testInfo.attach('hud-contorno-contraste',{body:screenshot,contentType:'image/png'});
+    await contrast.evaluate(element=>element.remove());
+    const enlarge=await page.addStyleTag({content:'#grid-stats{min-height:1000px}'});
+    const body=page.locator('.grid-overlay-body');
+    await body.evaluate(element=>element.scrollTop=element.scrollHeight);
+    expect(await body.evaluate(element=>element.scrollTop)).toBeGreaterThan(0);
+    expect(await controls.boundingBox()).toEqual(hud);
+    await expect(page.locator('[data-action="doSuperficie"]')).toBeInViewport();
+    expect(await page.locator('#gridcanvas').boundingBox()).toEqual(before);
+    await enlarge.evaluate(element=>element.remove());await body.evaluate(element=>element.scrollTop=0);
+    expect((await game.snapshot()).immersion).toEqual(snapshot.immersion);
     await page.keyboard.press('Escape');await expect(controls).toBeHidden();await expect(toggle).toBeFocused();
     await page.screenshot({path:testInfo.outputPath(`canvas-${width}.png`)});
     expect(await page.locator('#panel-scroll').evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);

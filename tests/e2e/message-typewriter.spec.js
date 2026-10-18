@@ -2,6 +2,61 @@
 const {test,expect}=require('./fixtures');
 const visual=page=>page.locator('#msg-text');
 
+for(const width of [320,1280]){
+  test(`avisos: terminal y estado con perimetro cerrado a ${width}px`,async({page,game},testInfo)=>{
+    await page.setViewportSize({width,height:width===320?480:900});await game.setup({state:{offers:[]}});
+    await page.locator('#h-controls').click();
+    for(const preference of ['crt','glow','animations']){
+      const toggle=page.locator(`#controls-overlay [data-pref="${preference}"]`);
+      if(await toggle.getAttribute('aria-pressed')==='true')await toggle.click();
+    }
+    await page.keyboard.press('Escape');
+    const frames=await page.evaluate(()=>['msgbar','term'].map(id=>{
+      const element=document.getElementById(id),bounds=element.getBoundingClientRect(),style=getComputedStyle(element);
+      return {id,left:bounds.left+parseFloat(style.borderLeftWidth),top:bounds.top+parseFloat(style.borderTopWidth),
+        width:bounds.width-parseFloat(style.borderLeftWidth)-parseFloat(style.borderRightWidth),
+        height:bounds.height-parseFloat(style.borderTopWidth)-parseFloat(style.borderBottomWidth)};
+    }));
+    const image=await page.screenshot({scale:'device'});
+    const missing=await page.evaluate(async({encoded,frames})=>{
+      const bitmap=new Image();bitmap.src='data:image/png;base64,'+encoded;await bitmap.decode();
+      const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
+      const context=canvas.getContext('2d');context.drawImage(bitmap,0,0);
+      const {data}=context.getImageData(0,0,bitmap.width,bitmap.height),scale=bitmap.width/innerWidth;
+      return frames.map(frame=>{
+        const {left,top,width,height}=frame,cut=6;
+        const vertices=[[left+cut,top],[left+width,top],[left+width,top+height-cut],[left+width-cut,top+height],[left,top+height],[left,top+cut]];
+        let gaps=0;
+        for(let side=0;side<vertices.length;side++){
+          const first=vertices[side],last=vertices[(side+1)%vertices.length],steps=Math.ceil(Math.hypot(last[0]-first[0],last[1]-first[1]));
+          for(let step=0;step<=steps;step++){
+            const expectedX=(first[0]+(last[0]-first[0])*step/steps)*scale,expectedY=(first[1]+(last[1]-first[1])*step/steps)*scale;
+            let found=false;
+            for(let row=Math.floor(expectedY-1.5*scale);row<=Math.ceil(expectedY+1.5*scale);row++)for(let column=Math.floor(expectedX-1.5*scale);column<=Math.ceil(expectedX+1.5*scale);column++){
+              if(row<0||column<0||row>=bitmap.height||column>=bitmap.width)continue;
+              const offset=(row*bitmap.width+column)*4;
+              if(data[offset+1]>45&&data[offset+1]>data[offset]*1.4)found=true;
+            }
+            if(!found)gaps++;
+          }
+        }
+        return {id:frame.id,gaps};
+      });
+    },{encoded:image.toString('base64'),frames});
+    expect(missing).toEqual([{id:'msgbar',gaps:0},{id:'term',gaps:0}]);
+    for(const id of ['msgbar','term']){
+      const element=page.locator('#'+id);
+      await expect(element).toHaveCSS('clip-path','none');
+      expect(await element.evaluate(node=>node.scrollWidth-node.clientWidth)).toBeLessThanOrEqual(1);
+      expect(await element.evaluate(node=>getComputedStyle(node,'::before').clipPath)).toContain('evenodd');
+    }
+    expect(frames[1].top).toBeGreaterThanOrEqual(frames[0].top+frames[0].height);
+    await game.command('estado');await expect(page.locator('#panel-scroll h1.title')).toHaveText('ESTADO');
+    await expect(page.locator('#cmd')).toBeFocused();
+    await page.screenshot({path:testInfo.outputPath(`barras-cerradas-${width}.png`)});
+  });
+}
+
 test('avisos: escritura real con cursor, anuncio completo y efecto de la acción inmediato',async({page,game})=>{
   await game.setup({state:{offers:[]}});
   const before=await game.snapshot();

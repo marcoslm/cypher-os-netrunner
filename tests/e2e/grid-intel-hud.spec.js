@@ -132,8 +132,7 @@ test('INFORMES avisa de lo archivado: punto, marca NUEVO y cartel discreto', asy
   await expect(nueva).toHaveClass(/intel-nueva/);
   // Chromium cuantiza el alfa del color; comprobar la señal, no su redondeo textual.
   const colores=await nueva.evaluate(el=>{
-    const style=getComputedStyle(el);
-    return {fondo:style.backgroundColor,borde:style.borderTopColor};
+    return {fondo:getComputedStyle(el,'::after').backgroundColor,borde:getComputedStyle(el,'::before').backgroundColor};
   });
   expect(colores.fondo).toMatch(/^rgba\(77, 255, 166, /);
   expect(parseFloat(colores.fondo.split(',')[3])).toBeCloseTo(0.045,2);

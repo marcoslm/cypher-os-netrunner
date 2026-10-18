@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>CYPHER://OS  ·  v9.2.7</title>
-<link rel="stylesheet" href="cypher_os.css?v=41">
+<link rel="stylesheet" href="cypher_os.css?v=46">
 </head>
 <body>
 
@@ -46,6 +46,8 @@
 
     <!-- Menú lateral -->
     <nav id="sidebar" aria-label="Menú principal">
+      <span class="sidebar-armor" aria-hidden="true"></span>
+      <div class="sidebar-items">
       <button class="navbtn" data-view="inicio"><span class="ic">◈</span><span class="lbl">INICIO</span></button>
       <button class="navbtn" data-view="red"><span class="ic">⬡</span><span class="lbl">RED</span><span class="immersion-mark" aria-hidden="true">INMERSIÓN</span></button>
       <button class="navbtn" data-view="trabajos"><span class="ic">▤</span><span class="lbl">TRABAJOS</span><span class="notif-dot" id="notif-trabajos"></span></button>
@@ -59,11 +61,13 @@
       <button class="navbtn" data-view="registro"><span class="ic">◧</span><span class="lbl">REGISTRO</span></button>
       <button class="navbtn" data-view="ayuda"><span class="ic">?</span><span class="lbl">AYUDA</span></button>
       <button class="navbtn save-tools-toggle" id="save-tools-toggle" aria-haspopup="dialog" aria-controls="save-tools" aria-expanded="false" aria-label="Opciones de partida" title="Guardar, exportar, importar y reset"><span class="ic">◰</span><span class="lbl">PARTIDA</span></button>
+      </div>
     </nav>
 
     <!-- Operaciones de partida: popover-diálogo anclado al botón PARTIDA.
          Vive fuera del flujo del lateral para no desbordar pantallas bajas. -->
     <div id="save-tools" class="save-tools" role="dialog" aria-label="Opciones de partida" hidden>
+      <span class="save-tools-frame" aria-hidden="true"></span>
       <div class="save-tools-head">
         <div class="save-tools-title" aria-hidden="true">PARTIDA ▸ OPERACIONES</div>
         <button type="button" class="btn control-close" id="save-tools-close" data-action="closeSaveTools" aria-label="Cerrar opciones de partida">×</button>
@@ -206,8 +210,8 @@
 <script src="cypher_os_data.js?v=6"></script>
 <script src="cypher_os_core.js?v=6"></script>
 <script src="cypher_os_audio.js?v=6"></script>
-<script src="cypher_os_grid.js?v=8"></script>
+<script src="cypher_os_grid.js?v=9"></script>
 <script src="cypher_os_combat.js?v=5"></script>
-<script src="cypher_os_ui.js?v=20"></script>
+<script src="cypher_os_ui.js?v=21"></script>
 </body>
 </html>

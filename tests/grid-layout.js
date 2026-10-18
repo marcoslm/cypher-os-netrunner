@@ -38,7 +38,10 @@ async function run(options={}) {
     assert.deepEqual(clone(g.run('inImmersion')),before);
     assert.ok(hud.querySelector('[data-action="doSuperficie"]'));
     const info=d.getElementById('grid-info'),actions=d.getElementById('grid-actions');
-    assert.equal(info.parentNode,hud);assert.equal(actions.parentNode,hud);
+    const body=hud.querySelector('.grid-overlay-body');
+    assert.ok(body);assert.ok(body.parentNode===hud,'cuerpo desplazable dentro del marco fijo');
+    assert.ok(info.parentNode===body,'información dentro del cuerpo desplazable');
+    assert.ok(actions.parentNode===body,'acciones dentro del cuerpo desplazable');
     assert.ok(!info.contains(actions),'controles críticos fuera de la información desplazable');
     assert.ok(info.contains(d.getElementById('grid-jobs')));assert.ok(info.contains(d.getElementById('grid-exploration')));
     assert.ok(!info.contains(d.getElementById('adjlist')));assert.ok(!info.contains(d.getElementById('grid-current')));

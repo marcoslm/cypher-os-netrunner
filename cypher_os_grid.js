@@ -1340,6 +1340,7 @@ function renderGridHud(){
         '<div id="grid-tooltip" class="hidden"></div>'+
       '</div>'+
       (immersed?'<button class="btn" id="grid-controls-toggle" data-action="toggleGridControls" aria-label="Mostrar controles del Grid" title="Mostrar controles del Grid" aria-expanded="false" aria-controls="grid-overlay">☰</button><div id="grid-overlay" class="grid-immersed" role="region" aria-label="Controles del Grid" hidden>'+
+        '<div class="grid-overlay-body">'+
         '<div id="grid-context"><div id="gridhud"></div><span id="grid-completion"></span><div id="grid-current"></div></div>'+
           '<div id="grid-navigation"><div id="adjlist" role="group" aria-label="Nodos vecinos"></div></div>'+
           '<div id="grid-info"><details id="grid-exploration"'+(_gridHudPrefs.explorationOpen?' open':'')+'>'+
@@ -1348,7 +1349,7 @@ function renderGridHud(){
             '<summary id="grid-jobs-summary"><span class="grid-summary-label">TRABAJOS</span> <b id="grid-job-ready">0</b></summary><div id="grid-job-items"></div>'+
           '</details></div>'+
         '<div id="grid-actions">'+btn+'</div>'+
-      '</div>':'')+'</div>'+
+      '</div></div>':'')+'</div>'+
     '</div>';
   // Re-adquirir referencia del canvas tras reconstruir el DOM.
   canvas = document.getElementById("gridcanvas");

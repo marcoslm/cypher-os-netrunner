@@ -506,6 +506,15 @@ for(const width of [320,768,1280]){
       expect(await page.locator('#panel-scroll').evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
     };
     await nav(page,'inicio').click();
+    const panels=page.locator('.deck-panel');
+    await expect(panels).toHaveCount(4);
+    for(const panel of await panels.all()){
+      await expect(panel.locator(':scope > .panel-h')).toHaveCount(1);
+      await expect(panel.locator('.box')).toHaveCount(0);
+      await expect(panel).toHaveCSS('clip-path','none');
+      expect(await panel.evaluate(element=>getComputedStyle(element,'::before').clipPath)).toContain('evenodd');
+      expect(await panel.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    }
     const row=page.locator('.panel-actions').filter({has:action(page,'goArchivos')});
     await expect(row).toHaveCSS('gap','10px');await expect(row).toHaveCSS('justify-content','flex-start');
     const first=await action(page,'goArchivos').boundingBox(),second=await action(page,'goStoryWork').boundingBox();
@@ -560,9 +569,219 @@ for(const width of [320,768,1280]){
   });
 }
 
+for(const width of [320,768,1280,1920]){
+  test(`GUI ciberdeck: marcos, ventanas y efectos a ${width} px`,async({page,game},testInfo)=>{
+    await page.setViewportSize({width,height:width===320?480:width===1920?1080:900});
+    await game.setup();await nav(page,'inicio').click();
+    const before=await game.snapshot();
+    expect(await page.evaluate(()=>['verde','cyan','magenta','ambar','rojo'].map(name=>getComputedStyle(document.documentElement).getPropertyValue('--'+name).trim())))
+      .toEqual(['#4dffa6','#4dd8ff','#ff4dc4','#ffc44d','#ff5d6a']);
+    await page.screenshot({path:testInfo.outputPath(`deck-efectos-${width}.png`)});
+    await page.locator('#h-controls').click();
+    const window=page.locator('#controls-overlay .modal');
+    await expect(window).toHaveCSS('clip-path','none');
+    expect(await window.evaluate(element=>getComputedStyle(element,'::before').clipPath)).toContain('evenodd');
+    await expect(page.locator('#os')).toHaveJSProperty('inert',true);
+    for(const preference of ['crt','glow','animations']){
+      const toggle=window.locator(`[data-pref="${preference}"]`);
+      if(await toggle.getAttribute('aria-pressed')==='true')await toggle.click();
+    }
+    expect(await window.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    const reset=window.locator('[data-action="resetControls"]');await reset.scrollIntoViewIfNeeded();await reset.click();
+    expect(await window.evaluate(element=>getComputedStyle(element).backgroundImage)).toContain('linear-gradient');
+    const confirmation=page.locator('#confirm-overlay .modal');
+    await expect(confirmation).toBeVisible();await expect(window).toHaveJSProperty('inert',false);
+    await expect(page.locator('#controls-overlay')).toHaveJSProperty('inert',true);
+    expect(await confirmation.evaluate(element=>getComputedStyle(element,'::before').pointerEvents)).toBe('none');
+    expect(await confirmation.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:testInfo.outputPath(`deck-confirmacion-${width}.png`)});
+    await page.keyboard.press('Escape');await expect(reset).toBeFocused();
+    await window.locator('.control-header').scrollIntoViewIfNeeded();
+    await page.screenshot({path:testInfo.outputPath(`deck-ajustes-${width}.png`)});
+    await page.keyboard.press('Escape');await expect(page.locator('#h-controls')).toBeFocused();
+    for(const panel of await page.locator('.deck-panel').all()){
+      await expect(panel).toHaveCSS('clip-path','none');
+      expect(await panel.evaluate(element=>getComputedStyle(element,'::before').clipPath)).toContain('evenodd');
+      expect(await panel.evaluate(element=>getComputedStyle(element,'::after').backgroundImage)).toContain('linear-gradient');
+      expect(await panel.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    }
+    await page.screenshot({path:testInfo.outputPath(`deck-sin-efectos-${width}.png`)});
+    await nav(page,'estado').click();
+    await expect(page.locator('.deck-panel')).toHaveCount(9);
+    await expect(page.locator('.deck-panel .box')).toHaveCount(0);
+    await expect(page.locator('#panel-scroll')).toHaveJSProperty('scrollLeft',0);
+    if(width>=768){
+      await page.addStyleTag({content:'#panel-scroll{font-size:200%} #panel-scroll h2,#panel-scroll p,#panel-scroll .row{font-size:inherit}'});
+    }
+    expect(await page.locator('#panel-scroll').evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    const term=await page.locator('#term').boundingBox(),status=await page.locator('#msgbar').boundingBox();
+    expect(term.y).toBeGreaterThanOrEqual(status.y+status.height-1);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+    const after=await game.snapshot();
+    expect(after.state.player.credits).toBe(before.state.player.credits);
+    expect(after.state.player.xp).toBe(before.state.player.xp);
+    expect(after.state.narrative).toEqual(before.state.narrative);
+  });
+}
+
 for(const density of [1,1.25,2]){
   test.describe(`contorno de pestanas a DPR ${density}`,()=>{
     test.use({deviceScaleFactor:density});
+    test('GUI ciberdeck: bordes derechos y marcos de elementos',async({page,game},testInfo)=>{
+      const catalog=await page.evaluate(()=>({achievement:ACHIEVEMENTS[0].id,intel:INTEL[0].id}));
+      await game.setup({state:{achievements:[catalog.achievement],intel:[catalog.intel],_intelVistos:[]}});
+      await page.locator('#h-controls').click();
+      for(const preference of ['crt','glow','animations']){
+        const toggle=page.locator(`#controls-overlay [data-pref="${preference}"]`);
+        if(await toggle.getAttribute('aria-pressed')==='true')await toggle.click();
+      }
+      await page.keyboard.press('Escape');await nav(page,'inicio').click();
+      const normal=await page.screenshot();await testInfo.attach('inicio-remates',{body:normal,contentType:'image/png'});
+      const trim=await page.locator('.deck-panel').first().evaluate(element=>{
+        const style=getComputedStyle(element,'::after');
+        return {sizes:style.backgroundSize.split(',').map(value=>value.trim()),positions:style.backgroundPosition.split(',').map(value=>value.trim())};
+      });
+      expect(trim.sizes[1]).toBe('88px 7px');
+      expect(trim.positions[1]).toContain('0px');
+      const contour=async(locator,kind,name)=>{
+        await locator.scrollIntoViewIfNeeded();await page.mouse.move(0,0);
+        const bounds=await locator.boundingBox(),image=await page.screenshot({scale:'device'});
+        const result=await page.evaluate(async({encoded,bounds,kind})=>{
+          const bitmap=new Image();bitmap.src='data:image/png;base64,'+encoded;await bitmap.decode();
+          const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
+          const context=canvas.getContext('2d');context.drawImage(bitmap,0,0);
+          const {data}=context.getImageData(0,0,bitmap.width,bitmap.height),scale=bitmap.width/innerWidth;
+          const width=bounds.width,height=bounds.height;
+          const pixel=(localX,localY)=>{
+            const column=Math.floor((bounds.x+localX)*scale),row=Math.floor((bounds.y+localY)*scale),offset=(row*bitmap.width+column)*4;
+            return Array.from(data.slice(offset,offset+3));
+          };
+          let missing=0,painted=0;
+          for(let localY=12;localY<height-12;localY++){
+            let found=false;
+            for(let localX=width-3;localX<width-.25;localX+=.25){
+              const [red,green,blue]=pixel(localX,localY);
+              if(green>35&&green>red*.7&&!(red>240&&blue>240&&green<5))found=true;
+            }
+            if(!found)missing++;
+          }
+          if(kind==='item'){
+            for(let localY=1;localY<7;localY++)for(let distance=1;distance<7-localY;distance++){
+              const [red,green,blue]=pixel(width-distance,localY);
+              if(!(red>=250&&green<=3&&blue>=250))painted++;
+            }
+          }
+          return {missing,painted};
+        },{encoded:image.toString('base64'),bounds,kind});
+        expect(result.missing,name+' borde derecho continuo').toBe(0);
+        expect(result.painted,name+' bisel superior derecho sin vertice rectangular').toBe(0);
+        await testInfo.attach(name,{body:image,contentType:'image/png'});
+      };
+      const contrasts=await page.addStyleTag({content:'#panel-scroll,.panel-actions,.intel-grid,.grid2,.logros-grid,#grid-stage{background:#ff00ff!important}'});
+      for(const name of ['dipGrid','goTrabajos','goArchivos'])await contour(action(page,name),'button','boton-'+name);
+      await page.keyboard.press('Tab');
+      await nav(page,'tienda').click();
+      await contour(page.locator('.shopitem').first(),'item','producto');
+      await contour(page.locator('.shopitem [data-action="buyItem"]').first(),'button','comprar');
+      await nav(page,'informes').click();await expect(page.locator('.intel-nueva')).not.toHaveCount(0);
+      await contour(page.locator('.intel-nueva').first(),'item','informe-nuevo');
+      await contour(page.locator('.intel').last(),'item','informe-cifrado');
+      await nav(page,'logros').click();
+      await expect(page.locator('.logro.unlocked')).not.toHaveCount(0);await expect(page.locator('.logro.locked')).not.toHaveCount(0);
+      await contour(page.locator('.logro.unlocked').first(),'item','logro-conseguido');
+      await expect(page.locator('.logro.unlocked').first()).toHaveCSS('--item-edge','#ffc44d');
+      await contour(page.locator('.logro.locked').last(),'item','logro-bloqueado');
+      await contrasts.evaluate(element=>element.remove());
+      await page.screenshot({path:testInfo.outputPath('logros-marcos.png')});
+      await nav(page,'tienda').click();await page.screenshot({path:testInfo.outputPath('mercado-marcos.png')});
+      await nav(page,'informes').click();await page.screenshot({path:testInfo.outputPath('informes-marcos.png')});
+      await nav(page,'inicio').click();await page.screenshot({path:testInfo.outputPath('inicio-remates.png')});
+    });
+    test('GUI ciberdeck: esquinas vacias y contornos completos',async({page,game},testInfo)=>{
+      await page.emulateMedia({reducedMotion:'reduce'});await game.setup();
+      await page.locator('#h-controls').click();
+      for(const preference of ['crt','glow','animations']){
+        const toggle=page.locator(`#controls-overlay [data-pref="${preference}"]`);
+        if(await toggle.getAttribute('aria-pressed')==='true')await toggle.click();
+      }
+      await page.keyboard.press('Escape');await nav(page,'inicio').click();
+      const shell=await page.locator('#sidebar').boundingBox();
+      for(const selector of ['#sidebar [data-view="inicio"]','#save-tools-toggle']){
+        const button=await page.locator(selector).boundingBox();
+        expect(button.x-shell.x).toBeGreaterThanOrEqual(12);
+        expect(shell.x+shell.width-button.x-button.width).toBeGreaterThanOrEqual(12);
+        if(selector.includes('inicio'))expect(button.y-shell.y).toBeGreaterThanOrEqual(22);
+        else expect(shell.y+shell.height-button.y-button.height).toBeGreaterThanOrEqual(22);
+      }
+      await page.addStyleTag({content:'#panel-scroll,#main,#controls-overlay,.sidebar-items,.save-tools-head{background:#ff00ff!important}.deck-panel{--frame-surface:#06120e}.deck-panel .panel-actions{background:#ff00ff}#save-tools{outline:0}'});
+      const cutout=async(locator,cut,name)=>{
+        const bounds=await locator.boundingBox();
+        const viewport=page.viewportSize(),image=await page.screenshot({scale:'device'});
+        const result=await page.evaluate(async({encoded,cut,bounds,viewport})=>{
+          const bitmap=new Image();bitmap.src='data:image/png;base64,'+encoded;await bitmap.decode();
+          const canvas=document.createElement('canvas');canvas.width=bitmap.width;canvas.height=bitmap.height;
+          const context=canvas.getContext('2d');context.drawImage(bitmap,0,0);
+          const {data}=context.getImageData(0,0,bitmap.width,bitmap.height),scale=bitmap.width/viewport.width;
+          let painted=0,samples=0;const unexpected=[];
+          for(let row=Math.ceil(bounds.y*scale);row<(bounds.y+cut)*scale;row++)for(let column=Math.ceil(bounds.x*scale);column<(bounds.x+cut)*scale;column++){
+            const localX=(column+.5)/scale-bounds.x,localY=(row+.5)/scale-bounds.y;
+            if(localX<1||localY<1||localX+localY>=cut-2)continue;
+            const offset=(row*bitmap.width+column)*4;samples++;
+            if(!(data[offset]>=250&&data[offset+1]<=3&&data[offset+2]>=250)){painted++;unexpected.push([column,row,...data.slice(offset,offset+3)]);}
+          }
+          return {painted,samples,unexpected};
+        },{encoded:image.toString('base64'),cut,bounds,viewport});
+        expect(result.samples,name).toBeGreaterThan(0);expect(result.painted,name+' no conserva vertice ni fondo rectangular '+JSON.stringify({bounds,unexpected:result.unexpected})).toBe(0);
+        await testInfo.attach(name,{body:image,contentType:'image/png'});
+      };
+      await cutout(page.locator('.deck-panel').first(),10,'panel');
+      await cutout(action(page,'goArchivos'),6,'comando');
+      await cutout(page.locator('#sidebar .navbtn.active'),6,'seleccion');
+      await page.addStyleTag({content:'.sidebar-items{background:transparent!important}'});
+      await cutout(page.locator('#sidebar'),20,'carcasa');
+      const shellBounds=await page.locator('#sidebar').boundingBox(),shellImage=await page.screenshot({scale:'device'});
+      const shellContinuity=await page.evaluate(async({encoded,bounds})=>{
+        const image=new Image();image.src='data:image/png;base64,'+encoded;await image.decode();
+        const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
+        const context=canvas.getContext('2d');context.drawImage(image,0,0);
+        const {data}=context.getImageData(0,0,image.width,image.height),scale=image.width/innerWidth;
+        const left=bounds.x+3,right=bounds.x+bounds.width-4,top=bounds.y+3,bottom=bounds.y+bounds.height-3,cut=16;
+        const vertices=[[left+cut,top],[right-cut,top],[right,top+cut],[right,bottom-cut],[right-cut,bottom],[left+cut,bottom],[left,bottom-cut],[left,top+cut]];
+        let missing=0;
+        for(let side=0;side<vertices.length;side++){
+          const first=vertices[side],last=vertices[(side+1)%vertices.length],steps=Math.ceil(Math.hypot(last[0]-first[0],last[1]-first[1]));
+          for(let step=0;step<=steps;step++){
+            const expectedX=(first[0]+(last[0]-first[0])*step/steps)*scale,expectedY=(first[1]+(last[1]-first[1])*step/steps)*scale;
+            let found=false;
+            for(let row=Math.floor(expectedY-1.5*scale);row<=Math.ceil(expectedY+1.5*scale);row++)for(let column=Math.floor(expectedX-1.5*scale);column<=Math.ceil(expectedX+1.5*scale);column++){
+              if(row<0||column<0||row>=image.height||column>=image.width)continue;
+              const offset=(row*image.width+column)*4;
+              if(data[offset+1]>45&&data[offset+1]>data[offset]*1.4)found=true;
+            }
+            if(!found)missing++;
+          }
+        }
+        return missing;
+      },{encoded:shellImage.toString('base64'),bounds:shellBounds});
+      expect(shellContinuity,'todos los lados y biseles del marco exterior conectan').toBe(0);
+      await page.locator('#save-tools-toggle').click();
+      await cutout(page.locator('#save-tools'),10,'partida');
+      await cutout(page.locator('#save-tools-close'),6,'cierre');
+      await page.keyboard.press('Escape');
+      await page.locator('#h-controls').click();await cutout(page.locator('#controls-overlay .modal'),10,'ventana');
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#sidebar')).toHaveCSS('clip-path','none');
+      expect(await page.locator('#sidebar').evaluate(element=>getComputedStyle(element,'::before').clipPath)).toContain('evenodd');
+      const sidebar=page.locator('#sidebar'),scroll=page.locator('.sidebar-items');
+      await page.setViewportSize({width:320,height:480});
+      const shapeBefore=await sidebar.evaluate(element=>getComputedStyle(element,'::before').height);
+      await scroll.evaluate(element=>element.scrollTop=element.scrollHeight);
+      expect(await sidebar.evaluate(element=>element.scrollHeight-element.clientHeight)).toBeLessThanOrEqual(1);
+      await expect(page.locator('#save-tools-toggle')).toBeInViewport();
+      expect(await sidebar.evaluate(element=>getComputedStyle(element,'::before').height)).toBe(shapeBefore);
+      expect(await scroll.evaluate(element=>element.scrollTop)).toBeGreaterThan(0);
+      await page.screenshot({path:testInfo.outputPath('marcos-contraste.png')});
+    });
     test('diagonal continua y foco sobre el mismo poligono',async({page,game},testInfo)=>{
       await page.emulateMedia({reducedMotion:'reduce'});await game.setup();
       await page.locator('#h-controls').click();
@@ -616,6 +835,26 @@ for(const density of [1,1.25,2]){
         await expect(tab).toBeFocused();
         expect(await tab.evaluate(element=>getComputedStyle(element).getPropertyValue('--tab-stroke').trim())).toBe('2px');
       }
+      await nav(page,'inicio').click();
+      const panel=page.locator('.deck-panel').first(),screenshot=await panel.screenshot();
+      const corner=await page.evaluate(async encoded=>{
+        const image=new Image();image.src='data:image/png;base64,'+encoded;await image.decode();
+        const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
+        const context=canvas.getContext('2d');context.drawImage(image,0,0);
+        const {data}=context.getImageData(0,0,image.width,image.height),scale=devicePixelRatio;
+        let missingRows=0;
+        for(let row=Math.ceil(scale);row<9*scale;row++){
+          const diagonal=10*scale-row;let edge=false;
+          for(let column=Math.max(0,Math.floor(diagonal-2*scale));column<=Math.ceil(diagonal+2*scale);column++){
+            const offset=(row*image.width+column)*4;
+            if(data[offset+1]>70&&data[offset+1]>data[offset]*1.5)edge=true;
+          }
+          if(!edge)missingRows++;
+        }
+        return {missingRows,width:image.width,height:image.height};
+      },screenshot.toString('base64'));
+      expect(corner.missingRows).toBe(0);expect(corner.width).toBeGreaterThan(100*density);expect(corner.height).toBeGreaterThan(50*density);
+      await testInfo.attach('panel-contorno-sin-efectos',{body:screenshot,contentType:'image/png'});
     });
   });
 }
