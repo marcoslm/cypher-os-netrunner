@@ -551,6 +551,25 @@ for(const width of [320,1280]){
   });
 }
 
+for(const width of [320,1280]){
+  test(`INVESTIGACION: caso y acciones dentro de deck-panel a ${width} px`,async({page,game},testInfo)=>{
+    await page.setViewportSize({width,height:width===320?800:900});
+    await game.setup();await nav(page,'trabajos').click();
+    await page.locator('[data-action="workSection"][data-tab="story"]').click();
+    const panel=page.locator('.story-case.deck-panel');
+    await expect(panel).toHaveCount(1);
+    await expect(panel.locator(':scope > .panel-h')).toHaveCount(1);
+    await expect(panel.locator(':scope > .panel-h')).toHaveAttribute('id','case-heading');
+    await expect(panel.locator(':scope > .story-actions')).toHaveCount(1);
+    await expect(panel.locator('.box')).toHaveCount(0);
+    await expect(panel).toHaveCSS('clip-path','none');
+    expect(await panel.evaluate(el=>getComputedStyle(el,'::before').clipPath)).toContain('evenodd');
+    expect(await panel.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+    expect(await page.locator('#panel-scroll').evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:testInfo.outputPath(`investigacion-panel-${width}.png`)});
+  });
+}
+
 for(const width of [320,768,1280]){
   test(`GUI comun: pestanas, acciones y retorno a ${width} px`,async({page,game},testInfo)=>{
     await page.setViewportSize({width,height:width===320?740:900});await game.setup();

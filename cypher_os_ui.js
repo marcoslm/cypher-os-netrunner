@@ -1173,7 +1173,7 @@ function storyFollowupHtml(){
   }
   if(S.narrative.chapters[id]==="locked") return "";
   var item=storyItem(STORY_CHAPTERS,id), detail=STORY_CASE_DETAILS[id], phase=S.narrative.chapters[id];
-  var html='<section class="story-case"><h2 id="case-heading" tabindex="-1">'+escapeHtml(item.title)+'</h2><p class="sub">'+escapeHtml(detail.client)+'</p>';
+  var html='<section class="deck-panel story-case"><h2 class="panel-h" id="case-heading" tabindex="-1">'+escapeHtml(item.title)+'</h2><p class="sub">'+escapeHtml(detail.client)+'</p>';
   if(phase==="offered"){
     html+='<p>'+escapeHtml(detail.purpose)+'</p><p>DESTINO · '+escapeHtml(item.source)+' · capa '+item.depth+'</p><p>'+item.credits+'₡ y '+item.xp+' XP al traer y entregar la copia. Ocupa una unidad de RAM.</p>';
     if(_storyCaseId!==id) html+='<div class="panel-actions"><button class="btn cyan" data-action="consultStoryCase" data-id="'+id+'">CONSULTAR ENCARGO</button></div>';
@@ -1196,11 +1196,11 @@ function storyFollowupHtml(){
     html+='</div>';
     if(id===ids[ids.length-1]) html+='<p>Investigación concluida. Los trabajos genéricos y SEALED NETWORK siguen disponibles; no se ha aceptado otra misión.</p>'+storyEndingActions();
   }
-  html+='</section><div class="story-actions">';
+  html+='<div class="story-actions panel-actions">';
   ids.forEach(function(previous){
     if(S.narrative.chapters[previous]==="resolved") html+='<button class="btn small" data-action="reviewStoryCase" data-id="'+previous+'">'+escapeHtml(storyItem(STORY_CHAPTERS,previous).title)+'</button>';
   });
-  return html+'</div>';
+  return html+'</div></section>';
 }
 function storyEndingActions(){
   var endings=["m_berto_final","m_ines_final","m_nara_final","m_copia_final"], next=null;
@@ -1211,9 +1211,9 @@ function storyEndingActions(){
 }
 function storyCaseHtml(){
   var phase=S.narrative.chapters.c01;
-  var html='<section class="story-case"><h2>LA FACTURA</h2><p class="sub">Cliente: Berto Salas · Hostal La Bajante</p>';
+  var html='<section class="deck-panel story-case"><h2 class="panel-h">LA FACTURA</h2><p class="sub">Cliente: Berto Salas · Hostal La Bajante</p>';
   if(_storyConversation && storyConversationAvailable(S.narrative,_storyConversation)){
-    return '<section class="story-case"><div class="panel-back"><button class="btn small" data-action="closeStoryConversation">'+(_storyReturnView==="contactos"?'VOLVER A CONTACTOS':'VOLVER AL ENCARGO')+'</button></div>'+storyDialogueHtml(_storyConversation)+
+    return '<section class="deck-panel story-case"><div class="panel-back"><button class="btn small" data-action="closeStoryConversation">'+(_storyReturnView==="contactos"?'VOLVER A CONTACTOS':'VOLVER AL ENCARGO')+'</button></div>'+storyDialogueHtml(_storyConversation)+
       (_storyConversation==="m_ines_clave" && S.narrative.keys.indexOf("k_casos")<0?'<div class="panel-actions"><button class="btn cyan" data-action="receiveStoryKey"'+(inImmersion?' disabled':'')+'>RECIBIR CLAVE AUTORIZADA</button></div>':'')+
       (["m_berto_final","m_ines_final","m_nara_final","m_copia_final"].indexOf(_storyConversation)>=0?storyEndingActions():'')+'</section>';
   }
