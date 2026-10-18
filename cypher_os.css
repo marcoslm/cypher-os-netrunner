@@ -421,10 +421,12 @@ h1.title{
 .deck-panel>p{font-size:13px;line-height:1.6;color:var(--texto);}
 .deck-panel>.panel-actions:last-child{margin-bottom:0;}
 .deck-panel>.panel-actions>.btn{flex-shrink:0;}
+.deck-panel-compact::before{background:var(--borde);}
+.deck-panel-compact::after{background:var(--fondo-panel);}
+.deck-panel-compact>.panel-h{font-size:12px;color:var(--gris);padding-top:8px;padding-bottom:6px;margin-bottom:0;border-bottom:0;}
 .deck-columns{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--ui-space);align-items:start;min-width:0;}
-.deck-columns>.deck-panel{margin:0;}
+.deck-columns>.deck-panel,.deck-columns-full>.deck-panel{margin:0;}
 .deck-columns-full{grid-column:1/-1;min-width:0;display:flex;flex-direction:column;gap:var(--ui-space);}
-.deck-columns-full>.diriz,.deck-columns-full>.panel-actions{margin:0;}
 @media(min-width:1200px){.deck-columns{grid-template-columns:repeat(2,minmax(0,1fr));}}
 .row.street-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;}
 .street-info{min-width:0;line-height:1.45;}
@@ -530,13 +532,11 @@ button.btn::before,.navbtn::before{
 .logo small{display:block;font-size:14px;letter-spacing:0;color:var(--cyan);
   text-shadow:0 0 8px rgba(77,216,255,.7);margin-top:4px;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.82;}}
-.diriz{font-size:14px;color:var(--ambar);text-align:left;
-  border:1px solid var(--borde);border-left:3px solid var(--ambar);padding:10px;border-radius:0;margin:10px 0;
-  line-height:1.6;background:rgba(255,196,77,.04);}
-.ticker{font-size:12px;color:var(--gris);height:20px;overflow:hidden;
-  text-align:center;letter-spacing:1px;padding:4px;border-top:1px solid var(--borde);
-  border-bottom:1px solid var(--borde);margin-top:6px;}
+.diriz{font-size:14px;color:var(--ambar);text-align:left;line-height:1.6;overflow-wrap:anywhere;}
+.ticker{font-size:12px;color:var(--gris);line-height:1.6;text-align:left;letter-spacing:0;
+  padding-top:10px;border-top:1px solid var(--borde);margin-top:10px;overflow-wrap:anywhere;}
 .ticker b{color:var(--cyan);}
+.home-access>.panel-actions{margin:var(--ui-gap) 0 0;}
 .quick{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0;}
 .diff-live-row{justify-content:flex-start;margin:10px 0;}
 .diff-live{min-width:7em;}

@@ -28,6 +28,22 @@ async function expectDashboardColumns(page,width,count,name,testInfo) {
   if(name==='inicio'){
     const full=page.locator('#panel-scroll .deck-columns-full');
     await expect(full).toHaveCount(1);
+    await expect(full.locator(':scope > .deck-panel > .panel-h')).toHaveText(['SITUACIÓN','ACCESOS']);
+    await expect(page.locator('.deck-panel')).toHaveCount(6);
+    const situation=full.locator('.home-situation'),access=full.locator('.home-access');
+    await expect(situation.locator('.diriz')).toHaveCount(1);
+    await expect(situation.locator('.ticker')).toContainText('SEÑAL:');
+    await expect(page.locator('.ticker')).toHaveCount(1);
+    await expect(access).toHaveClass(/deck-panel-compact/);
+    await expect(access.locator('.panel-actions > button').evaluateAll(elements=>elements.map(element=>element.dataset.action)))
+      .resolves.toEqual(['dipGrid','goContactos','goTienda','goTrabajos']);
+    for(const block of [situation,access]){
+      expect(await block.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+      await expect(block.locator('.deck-panel,.box')).toHaveCount(0);
+    }
+    const ticker=situation.locator('.ticker');
+    expect(await ticker.evaluate(element=>element.scrollHeight-element.clientHeight)).toBeLessThanOrEqual(1);
+    await expect(ticker).toHaveCSS('overflow','visible');
     const fullBox=await full.boundingBox();
     expect(Math.abs(fullBox.width-bounds.width)).toBeLessThanOrEqual(1);
     expect(fullBox.y).toBeGreaterThanOrEqual(boxes[1].y);
@@ -55,6 +71,7 @@ async function expectDashboardColumns(page,width,count,name,testInfo) {
   if(name==='inicio'){
     await page.locator('#panel-scroll .deck-panel').filter({hasText:'ACTIVIDADES DE LA CALLE'})
       .screenshot({path:testInfo.outputPath(`actividades-${width}.png`)});
+    await grid.locator(':scope > .deck-columns-full').screenshot({path:testInfo.outputPath(`inicio-situacion-accesos-${width}.png`)});
     await page.locator('#panel-scroll').evaluate(element=>{element.scrollTop=0;});
   }
 }
@@ -531,7 +548,7 @@ for(const width of [320,1280]){
     await expect(page.locator('#panel-scroll')).toContainText('Investigación concluida');
     await action(page,'goStoryProofs').click();await scoped('openArchive','r_copia_final').click();
     await expect(page.locator('.archive-text')).toContainText('no por qué decidió preservarla');
-    await nav(page,'inicio').click();await action(page,'startEndless').click();
+    await nav(page,'inicio').click();await page.locator('.home-access [data-action="startEndless"]').click();
     const endless=await game.snapshot();expect(endless.immersion.grid.nodes.some(node=>node.boss||node.storyChapter)).toBe(false);
     expect(endless.state.narrative.awarded).toHaveLength(8);expect(endless.state.player.credits).toBe(paid.state.player.credits);
   });
@@ -699,7 +716,7 @@ for(const width of [320,768,1280]){
     };
     await nav(page,'inicio').click();
     const panels=page.locator('.deck-panel');
-    await expect(panels).toHaveCount(4);
+    await expect(panels).toHaveCount(6);
     for(const panel of await panels.all()){
       await expect(panel.locator(':scope > .panel-h')).toHaveCount(1);
       await expect(panel.locator('.box')).toHaveCount(0);
@@ -868,7 +885,9 @@ for(const width of [320,768,1280,1920]){
       await expect(panel).toHaveCSS('filter','none');
       await expect(panel).toHaveCSS('clip-path','none');
       expect(await panel.evaluate(element=>getComputedStyle(element,'::before').clipPath)).toContain('evenodd');
-      expect(await panel.evaluate(element=>getComputedStyle(element,'::after').backgroundImage)).toContain('linear-gradient');
+      const background=await panel.evaluate(element=>getComputedStyle(element,'::after').backgroundImage);
+      if(await panel.evaluate(element=>element.classList.contains('deck-panel-compact')))expect(background).toBe('none');
+      else expect(background).toContain('linear-gradient');
       expect(await panel.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
     }
     await page.screenshot({path:testInfo.outputPath(`deck-sin-efectos-${width}.png`)});
@@ -1557,7 +1576,7 @@ test('Núcleo: c08 conecta desde la calle y conserva un único jefe tras recarga
   await openGridControls(page);await action(page, 'doSuperficie').click();
   await action(page, 'closeResume').click();
   await expect(action(page, 'acceptNucleo')).toBeVisible();
-  await action(page, 'acceptNucleo').click();
+  await page.locator('.home-access [data-action="acceptNucleo"]').click();
   await expect(page.locator('#gridcanvas')).toBeVisible();
   const connected = await game.snapshot();
   expect(connected.immersion.depth).toBe(5);

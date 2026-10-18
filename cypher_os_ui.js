@@ -1533,7 +1533,9 @@ function renderInicio(){
     row2("NIVEL",p.level+" · XP "+p.xp+"/"+xpParaNivel())+
     '</section>'+
     '<div class="deck-columns-full">'+
-    '<div class="diriz">'+dir+'</div>'+
+    '<section class="deck-panel home-situation"><h2 class="panel-h">SITUACIÓN</h2>'+
+    '<div class="diriz">'+dir+'</div></section>'+
+    '<section class="deck-panel deck-panel-compact home-access"><h2 class="panel-h">ACCESOS</h2>'+
     '<div class="panel-actions">'+
     '<button class="btn cyan" data-action="dipGrid">◈ DIP AL GRID</button>'+
     '<button class="btn" data-action="goContactos">⌘ CONTACTOS</button>'+
@@ -1544,7 +1546,7 @@ function renderInicio(){
     html+='<div class="panel-actions"><button class="btn magenta" data-action="acceptNucleo">✦ INTERVENCIÓN (profundidad 5)</button></div>';
   if(S.history.finalDone)
     html+='<div class="panel-actions"><button class="btn magenta" data-action="startEndless">◈ SEALED NETWORK</button> <span class="muted text-xs">modo supervivencia</span></div>';
-  html+='</div>'+
+  html+='</section></div>'+
     '<section class="deck-panel"><h2 class="panel-h">REPUTACIÓN</h2>'+repRows()+'</section>';
   /* actividades de la calle (solo cuando no hay inmersión) */
   if(!inImmersion){
@@ -1569,7 +1571,7 @@ function renderInicio(){
   msg(pickFresh("inicio-msg", FRASES_INICIO),"magenta");
 }
 function addTicker(){
-  var el=document.getElementById("panel-scroll"); if(!el) return;
+  var el=document.querySelector(".home-situation"); if(!el) return;
   var t=document.createElement("div"); t.className="ticker";
   t.innerHTML="<b>SEÑAL:</b> "+pickTicker();
   el.appendChild(t);
