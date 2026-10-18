@@ -260,7 +260,7 @@ html.sidebar-collapsed #sidebar{display:none;}
   padding:8px 10px;cursor:pointer;border-radius:0;letter-spacing:0;
   transition:background .12s,border-color .12s,color .12s;
   clip-path:polygon(0 6px,6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%);
-  --control-edge:rgba(44,122,92,.38);--control-stroke:1.5px;
+  --control-edge:rgba(44,122,92,.32);--control-stroke:1.5px;
   touch-action:manipulation;-webkit-tap-highlight-color:transparent;
 }
 .navbtn:hover{background:rgba(77,255,166,.07);color:var(--verde);--control-edge:var(--borde-claro);}

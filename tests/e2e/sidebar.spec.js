@@ -97,7 +97,7 @@ for(const viewport of [{width:320,height:600},{width:1280,height:900}]){
     const idleBorder=await idle.evaluate(element=>getComputedStyle(element,'::before').backgroundColor);
     const idleAlpha=parseFloat(idleBorder.split(',')[3]);
     expect(idleAlpha).toBeGreaterThan(.25);expect(idleAlpha).toBeLessThan(.5);
-    expect(await idle.evaluate(element=>getComputedStyle(element).getPropertyValue('--control-edge').trim())).toBe('rgba(44,122,92,.38)');
+    expect(await idle.evaluate(element=>getComputedStyle(element).getPropertyValue('--control-edge').trim())).toBe('rgba(44,122,92,.32)');
     await navigation.first().focus();
     for(const view of order){
       await expect(page.locator(`#sidebar [data-view="${view}"]`)).toBeFocused();
