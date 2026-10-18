@@ -94,7 +94,7 @@ async function run(options = {}) {
         game.emitElement(row, 'click');
         assert.deepEqual(Array.from(game.run('S.narrative.readFiles')), ['l_contacto']);
         assert.deepEqual(clone(game.run('S.player')), original);
-        assert.match(game.sb.document.getElementById('panel-scroll').textContent, /copia enviada, sin ruta de respuesta/);
+        assert.match(game.sb.document.getElementById('overlay-inner').textContent, /copia enviada, sin ruta de respuesta/);
         assert.equal(game.saved().narrative.readFiles.length, 1);
         game.run('afterBoot();');
         assert.equal(game.run('currentView'), 'archivos');

@@ -552,6 +552,48 @@ for(const width of [320,1280]){
 }
 
 for(const width of [320,1280]){
+  test(`ARCHIVOS: rejilla de iconos y ventana a ${width} px`,async({page,game},testInfo)=>{
+    await page.setViewportSize({width,height:width===320?800:900});
+    await game.setup();await nav(page,'archivos').click();
+    const cards=page.locator('.archive-card');
+    await expect(page.locator('.archive-grid')).toHaveCount(1);
+    await expect(cards).not.toHaveCount(0);
+    const cardCount=await cards.count();
+    await expect(page.locator('.archive-icon')).toHaveCount(cardCount);
+    await expect(page.locator('.archive-status--unread')).not.toHaveCount(0);
+    await expect(page.locator('.archive-icon--mail')).not.toHaveCount(0);
+    await expect(page.locator('.archive-card.is-locked')).not.toHaveCount(0);
+    await page.locator('[data-action="archiveTab"][data-tab="recovered"]').click();
+    await expect(page.locator('.archive-icon--network')).not.toHaveCount(0);
+    await page.locator('[data-action="archiveTab"][data-tab="previous"]').click();
+    for(const card of await cards.all()){
+      await expect(card.locator('.archive-card-title')).toHaveCount(1);
+      await expect(card.locator('.archive-card-meta')).toHaveCount(1);
+      await expect(card.locator('.archive-status')).toHaveCount(1);
+    }
+    const open=page.locator('.archive-card[data-action="openArchive"]').first();
+    await expect(open).toHaveCount(1);
+    const id=await open.getAttribute('data-id');
+    await open.click();
+    await expect(page.locator('#overlay')).toHaveClass(/show/);
+    await expect(page.locator('.archive-window')).toBeVisible();
+    await expect(page.locator('#archive-heading')).toBeFocused();
+    await page.screenshot({path:testInfo.outputPath(`archivos-window-${width}.png`)});
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#overlay')).not.toHaveClass(/show/);
+    await expect(page.locator(`[data-action="openArchive"][data-id="${id}"]`)).toBeFocused();
+    const box=await open.boundingBox();
+    await page.mouse.dblclick(box.x+box.width/2,box.y+box.height/2);
+    await expect(page.locator('#overlay')).toHaveClass(/show/);
+    await expect(page.locator('#archive-heading')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#overlay')).not.toHaveClass(/show/);
+    expect(await page.locator('#panel-scroll').evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:testInfo.outputPath(`archivos-grid-${width}.png`)});
+  });
+}
+
+for(const width of [320,1280]){
   test(`INFORMES: cabecera y etiquetas separadas a ${width} px`,async({page,game},testInfo)=>{
     await page.setViewportSize({width,height:width===320?800:900});
     await game.setup({state:{intel:['anatomia'],_intelVistos:[]}});

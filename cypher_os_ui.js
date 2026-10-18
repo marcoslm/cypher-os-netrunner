@@ -628,8 +628,35 @@ function overlayModal(html){
 function closeOverlay(){
   clearType();
   var o = document.getElementById("overlay");
-  if(o) o.classList.remove("show");
+  if(o){ o.classList.remove("show"); o.setAttribute("aria-hidden","true"); }
 }
+var _archiveOverlay=document.getElementById("overlay");
+if(_archiveOverlay){
+  _archiveOverlay.addEventListener("click",function(e){
+    if(e.target===_archiveOverlay && _archiveOpen && e.detail<2) ACTIONS.closeArchive();
+  });
+  _archiveOverlay.addEventListener("dblclick",function(){
+    var heading=document.getElementById("archive-heading");
+    if(_archiveOpen && heading) heading.focus();
+  });
+}
+document.addEventListener("keydown",function(e){
+  var overlay=document.getElementById("overlay");
+  if(!overlay || !overlay.classList.contains("show")) return;
+  if(e.key==="Escape"){
+    e.preventDefault(); e.stopPropagation();
+    if(_archiveOpen) ACTIONS.closeArchive(); else closeOverlay();
+    return;
+  }
+  if(e.key!=="Tab") return;
+  var controls=layerControls(overlay);
+  if(!controls.length){ e.preventDefault(); return; }
+  var active=document.activeElement, heading=document.getElementById("archive-heading");
+  if(active===heading || !layerContains(overlay,active)){ e.preventDefault(); focusInputLayer(overlay,e.shiftKey); return; }
+  var first=controls[0], last=controls[controls.length-1];
+  if(!e.shiftKey && active===last){ e.preventDefault(); first.focus(); }
+  else if(e.shiftKey && active===first){ e.preventDefault(); last.focus(); }
+}, true);
 /* ¿hay algún modal/overlay abierto? (bloquea atajos de teclado) */
 function modalOpen(){
   if(confirmOpen() || controlPanelOpen()) return true;
@@ -688,6 +715,7 @@ function showView(v, skipLog){
   closeSaveTools(false); /* navegación: el menú de partida no sigue a otra vista */
   if(!S || entryMode() || combatActive || (S.player.cpu<=0 && v!=="inicio")) return;
   if(!Object.prototype.hasOwnProperty.call(VIEWS,v)) v="inicio";
+  if(v!=="archivos" && _archiveOpen){ _archiveOpen=null; _archiveReturnView="archivos"; closeOverlay(); }
   currentView = v;
   S._lastView=v;
   if(v !== "red") stopGridRender();
@@ -1946,40 +1974,74 @@ function archiveStateLabel(state){
 function archiveOriginLabel(origin){
   return ({local:"Archivo local anterior", "inherited-mail":"Correo anterior · enviado", network:"Recuperado de la red", "current-mail":"Correspondencia actual"})[origin]||"Origen desconocido";
 }
+function archiveStatusText(state,unread){
+  if(state==="readable") return unread?"SIN LEER":"LEÍDO";
+  return archiveStateLabel(state);
+}
+function archiveIconKind(origin){
+  if(origin==="network") return "network";
+  if(origin==="local") return "local";
+  return "mail";
+}
+function archiveIconHtml(file,state,unread){
+  var kind=archiveIconKind(file.origin);
+  var glyph=kind==="local"?"▤":(kind==="network"?"⌁":"✉");
+  var alert=state==="sealed"?"⌑":((state==="damaged"||state==="partial")?"!":"");
+  return '<span class="archive-icon archive-icon--'+kind+' archive-icon--'+state+(unread?' is-unread':'')+'" aria-hidden="true">'+
+    '<span class="archive-glyph">'+glyph+'</span>'+(unread?'<span class="archive-unread"></span>':'')+
+    (alert?'<span class="archive-alert">'+alert+'</span>':'')+'</span>';
+}
+function archiveCardHtml(file,state,doc,narrative){
+  var unread=state==="readable" && narrative.readFiles.indexOf(file.id)<0;
+  var interactive=state==="readable" && !!doc;
+  var status=archiveStatusText(state,unread);
+  var tag=interactive?"button":"div";
+  var attrs=interactive?' type="button" data-action="openArchive" data-id="'+file.id+'" aria-label="Abrir '+escapeHtml(file.title)+' · '+escapeHtml(status)+'"':'';
+  return '<'+tag+' class="archive-card'+(interactive?'':' is-locked')+'" data-state="'+state+'"'+attrs+'>'+
+    archiveIconHtml(file,state,unread)+'<span class="archive-card-main">'+
+      '<span class="archive-card-title">'+escapeHtml(file.title)+'</span>'+
+      '<span class="archive-card-meta">'+escapeHtml(archiveOriginLabel(file.origin))+(doc?' · '+escapeHtml(doc.date):'')+'</span>'+
+      '<span class="archive-status archive-status--'+state+(unread?' archive-status--unread':'')+'">'+escapeHtml(status)+'</span>'+
+    '</span></'+tag+'>';
+}
+function archiveDocumentHtml(){
+  var id=_archiveOpen, item=storyItem(STORY_FILES,id), doc=STORY_DOCUMENTS[id];
+  if(!id || !item || !doc) return "";
+  return '<div class="panel-back"><button class="btn small" data-action="closeArchive">'+(_archiveReturnView==="mensajes"?'VOLVER A MENSAJES':'VOLVER A ARCHIVOS')+'</button></div><article class="archive-document">'+
+    '<h2 id="archive-heading" tabindex="-1">'+escapeHtml(item.title)+'</h2><p class="archive-meta">'+escapeHtml(archiveOriginLabel(item.origin))+' · '+escapeHtml(doc.date)+
+    '<br>'+escapeHtml(doc.source)+(S._storyAcquired && S._storyAcquired[item.id]!=null?'<br>Recuperado · hora de sesión '+timeStr(S._storyAcquired[item.id]):'')+'</p>'+(doc.summary?'<h3>Qué muestra esta copia</h3><p class="archive-summary">'+escapeHtml(doc.summary)+'</p><h3>Registro conservado</h3>':'')+'<div class="archive-text">'+escapeHtml(doc.text)+'</div></article>';
+}
+function showArchiveWindow(){
+  var body=archiveDocumentHtml(), overlay=document.getElementById("overlay"), inner=document.getElementById("overlay-inner");
+  if(!body || !overlay || !inner) return;
+  inner.innerHTML='<section class="modal archive-window" role="dialog" aria-modal="true" aria-labelledby="archive-heading">'+body+'</section>';
+  overlay.classList.add("show");
+  overlay.setAttribute("aria-hidden","false");
+}
 function renderArchivos(){
   var narrative=S.narrative;
+  if(_archiveOpen && (narrative.files[_archiveOpen]!=="readable" || !STORY_DOCUMENTS[_archiveOpen])) _archiveOpen=null;
   var html='<h1 class="title">ARCHIVOS</h1><p class="sub">Memoria local · CORVO-7</p>';
-  if(_archiveOpen && narrative.files[_archiveOpen]==="readable" && STORY_DOCUMENTS[_archiveOpen]){
-    var item=storyItem(STORY_FILES,_archiveOpen), doc=STORY_DOCUMENTS[_archiveOpen];
-    html+='<div class="panel-back"><button class="btn small" data-action="closeArchive">'+(_archiveReturnView==="mensajes"?'VOLVER A MENSAJES':'VOLVER A ARCHIVOS')+'</button></div><article class="archive-document">'+
-      '<h2 id="archive-heading" tabindex="-1">'+escapeHtml(item.title)+'</h2><p class="archive-meta">'+escapeHtml(archiveOriginLabel(item.origin))+' · '+escapeHtml(doc.date)+
-      '<br>'+escapeHtml(doc.source)+(S._storyAcquired && S._storyAcquired[item.id]!=null?'<br>Recuperado · hora de sesión '+timeStr(S._storyAcquired[item.id]):'')+'</p>'+(doc.summary?'<h3>Qué muestra esta copia</h3><p class="archive-summary">'+escapeHtml(doc.summary)+'</p><h3>Registro conservado</h3>':'')+'<div class="archive-text">'+escapeHtml(doc.text)+'</div></article>';
-  } else {
-    _archiveOpen=null;
-    html+='<div class="archive-tabs" role="group" aria-label="Procedencia de archivos">'+
-      '<button class="btn small" data-action="archiveTab" data-tab="previous" aria-pressed="'+(_archiveTab==="previous")+'">ANTERIORES</button>'+
-      '<button class="btn small" data-action="archiveTab" data-tab="recovered" aria-pressed="'+(_archiveTab==="recovered")+'">RECUPERADOS</button></div>';
-    html+='<p>RECUPERACIÓN · '+(narrative.recoveryStage==="needs_index"?'El índice necesita un respaldo externo. Los bloques originales se conservan.':narrative.recoveryStage==="complete_known"?'Índice restaurado y copias conocidas accesibles.':'El índice está reconstruido; hay copias que requieren clave.')+'</p>';
-    if(narrative.files.l_casos==="sealed") html+='<div class="panel-actions">'+(narrative.keys.indexOf("k_casos")>=0?'<button class="btn cyan" data-action="applyStoryKey"'+(inImmersion?' disabled':'')+'>APLICAR CLAVE</button>':'<button class="btn" data-action="openStoryConversation" data-id="m_ines_clave">CONSULTAR PERMISO DE INÉS</button>')+'</div>';
-    html+='<div class="panel-toolbar archive-tools"><label for="archive-filter">Estado</label><select id="archive-filter"><option value="all">Todos</option><option value="readable">Legibles</option><option value="pending">Pendientes</option><option value="sealed">Cifrados</option></select></div><div class="archive-list">';
-    var count=0;
-    STORY_FILES.forEach(function(file){
-      if(file.id==="r_copia_final" && narrative.readConversations.indexOf("m_copia_final")<0) return;
-      var state=narrative.files[file.id], previous=file.origin==="local"||file.origin==="inherited-mail";
-      if(state==="unknown" || previous!==(_archiveTab==="previous") ||
-         (_archiveFilter==="readable" && state!=="readable") ||
-         (_archiveFilter==="pending" && ["damaged","partial"].indexOf(state)<0) ||
-         (_archiveFilter==="sealed" && state!=="sealed")) return;
-      count++;
-      var doc=STORY_DOCUMENTS[file.id];
-      html+='<div class="archive-row"><div><b>'+escapeHtml(file.title)+'</b><div class="archive-meta">'+escapeHtml(archiveOriginLabel(file.origin))+
-        (doc?' · '+escapeHtml(doc.date):'')+'<br>'+escapeHtml(archiveStateLabel(state))+
-        (state==="readable" && narrative.readFiles.indexOf(file.id)<0?' · SIN LEER':'')+'</div></div>'+
-        (state==="readable" && doc?'<button class="btn small" data-action="openArchive" data-id="'+file.id+'">ABRIR</button>':'')+'</div>';
-    });
-    html+='</div>'+(count?'':'<p class="muted">No hay archivos en esta selección.</p>');
-  }
+  html+='<div class="archive-tabs" role="group" aria-label="Procedencia de archivos">'+
+    '<button class="btn small" data-action="archiveTab" data-tab="previous" aria-pressed="'+(_archiveTab==="previous")+'">ANTERIORES</button>'+
+    '<button class="btn small" data-action="archiveTab" data-tab="recovered" aria-pressed="'+(_archiveTab==="recovered")+'">RECUPERADOS</button></div>';
+  html+='<p>RECUPERACIÓN · '+(narrative.recoveryStage==="needs_index"?'El índice necesita un respaldo externo. Los bloques originales se conservan.':narrative.recoveryStage==="complete_known"?'Índice restaurado y copias conocidas accesibles.':'El índice está reconstruido; hay copias que requieren clave.')+'</p>';
+  if(narrative.files.l_casos==="sealed") html+='<div class="panel-actions">'+(narrative.keys.indexOf("k_casos")>=0?'<button class="btn cyan" data-action="applyStoryKey"'+(inImmersion?' disabled':'')+'>APLICAR CLAVE</button>':'<button class="btn" data-action="openStoryConversation" data-id="m_ines_clave">CONSULTAR PERMISO DE INÉS</button>')+'</div>';
+  html+='<div class="panel-toolbar archive-tools"><label for="archive-filter">Estado</label><select id="archive-filter"><option value="all">Todos</option><option value="readable">Legibles</option><option value="pending">Pendientes</option><option value="sealed">Cifrados</option></select></div><div class="archive-grid">';
+  var count=0;
+  STORY_FILES.forEach(function(file){
+    if(file.id==="r_copia_final" && narrative.readConversations.indexOf("m_copia_final")<0) return;
+    var state=narrative.files[file.id], previous=file.origin==="local"||file.origin==="inherited-mail";
+    if(state==="unknown" || previous!==(_archiveTab==="previous") ||
+       (_archiveFilter==="readable" && state!=="readable") ||
+       (_archiveFilter==="pending" && ["damaged","partial"].indexOf(state)<0) ||
+       (_archiveFilter==="sealed" && state!=="sealed")) return;
+    count++;
+    html+=archiveCardHtml(file,state,STORY_DOCUMENTS[file.id],narrative);
+  });
+  html+='</div>'+(count?'':'<p class="muted">No hay archivos en esta selección.</p>');
   scroller(html); updateTopbar();
+  if(_archiveOpen) showArchiveWindow(); else closeOverlay();
   var filter=document.getElementById("archive-filter");
   if(filter){ filter.value=_archiveFilter; filter.addEventListener("change",function(){
     _archiveFilter=filter.value; renderArchivos();
@@ -1999,7 +2061,7 @@ ACTIONS.openArchive=function(btn){
   var heading=document.getElementById("archive-heading"); if(heading) heading.focus();
 };
 ACTIONS.closeArchive=function(){
-  var id=_archiveOpen, origin=_archiveReturnView; _archiveOpen=null; _archiveReturnView="archivos";
+  var id=_archiveOpen, origin=_archiveReturnView; _archiveOpen=null; _archiveReturnView="archivos"; closeOverlay();
   if(origin==="mensajes"){ _mailTab="previous"; showView("mensajes"); } else renderArchivos();
   var trigger=document.querySelector('[data-action="openArchive"][data-id="'+id+'"]');
   if(trigger) trigger.focus();
@@ -3005,7 +3067,7 @@ document.addEventListener("keydown", function(e){
     if(confirmOpen()){ resolveConfirm(false); e.preventDefault(); return; }
     if(ACTIONS.closeSkillTree){ ACTIONS.closeSkillTree(); e.preventDefault(); return; }
     var ov=document.getElementById("overlay");
-    if(ov && ov.classList.contains("show")){ closeOverlay(); e.preventDefault(); return; }
+    if(ov && ov.classList.contains("show")){ if(_archiveOpen) ACTIONS.closeArchive(); else closeOverlay(); e.preventDefault(); return; }
     /* menú PARTIDA abierto → Escape lo cierra y el foco vuelve al botón */
     if(saveToolsOpen() && !saveToolsFrozen()){ closeSaveTools(true); e.preventDefault(); }
   }

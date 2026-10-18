@@ -670,7 +670,7 @@ async function run(options = {}) {
   check('documentos explican las pruebas sin sustituir sus registros ni abrir archivos cerrados', game => {
     activate(game); resolve(game,'c01');
     game.run('ensureStateIntegrity();activateStorySession(false);ACTIONS.openArchive({getAttribute:function(){return "r_factura";}});');
-    const text=game.sb.document.getElementById('panel-scroll').textContent;
+    const text=game.sb.document.getElementById('overlay-inner').textContent;
     assert.match(text,/recibi[oó] el pago/);
     assert.match(text,/23:11/); assert.match(text,/23:13/);
     assert.equal(game.run('storyReadFile("r_custodia")'),false);
