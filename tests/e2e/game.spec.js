@@ -552,6 +552,26 @@ for(const width of [320,1280]){
 }
 
 for(const width of [320,1280]){
+  test(`INFORMES: cabecera y etiquetas separadas a ${width} px`,async({page,game},testInfo)=>{
+    await page.setViewportSize({width,height:width===320?800:900});
+    await game.setup({state:{intel:['anatomia'],_intelVistos:[]}});
+    await nav(page,'informes').click();
+    const card=page.locator('.intel').filter({has:page.locator('.intel-tags')}).first();
+    await expect(card).toHaveCount(1);
+    await expect(card.locator(':scope > .intel-head')).toHaveCount(1);
+    await expect(card.locator(':scope > .intel-head > .intel-title')).toHaveText('ANATOMÍA DEL CABLE');
+    await expect(card.locator(':scope > .intel-head > .intel-tags')).toHaveCount(1);
+    await expect(card.locator(':scope > .intel-head > .intel-tags .tag')).toHaveCount(2);
+    await expect(card.locator(':scope > .intel-head')).toHaveCSS('border-bottom-style','solid');
+    await expect(card.locator(':scope > .intel-k')).toHaveCount(1);
+    await expect(card.locator(':scope > .llore')).toHaveCount(1);
+    expect(await card.evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+    expect(await page.locator('#panel-scroll').evaluate(el=>el.scrollWidth-el.clientWidth)).toBeLessThanOrEqual(1);
+    await page.screenshot({path:testInfo.outputPath(`informes-cabecera-${width}.png`)});
+  });
+}
+
+for(const width of [320,1280]){
   test(`INVESTIGACION: caso y acciones dentro de deck-panel a ${width} px`,async({page,game},testInfo)=>{
     await page.setViewportSize({width,height:width===320?800:900});
     await game.setup();await nav(page,'trabajos').click();

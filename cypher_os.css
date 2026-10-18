@@ -654,15 +654,18 @@ button.btn::before,.navbtn::before{
 /* columnas adaptativas como en LOGROS; 360px mínimo para que las líneas
    del lore (saltos poéticos de ~40-45 caracteres) no se partan */
 .intel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:var(--ui-gap);}
-.intel{border:1px solid var(--borde);border-radius:0;padding:8px 10px;
+.intel{border:1px solid var(--borde);border-radius:0;padding:10px 12px;
   font-size:13px;}
 /* Informe nuevo: señal estática en toda la tarjeta, sin halo ni animación. */
 .intel.intel-nueva{--item-edge:rgba(77,255,166,.55);--item-surface:rgba(77,255,166,.045);}
-.intel .llore{font-size:12px;color:var(--texto);margin-top:5px;white-space:pre-wrap;
+.intel-head{display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;padding-bottom:8px;margin-bottom:8px;border-bottom:1px solid var(--borde);}
+.intel-title{flex:1 1 180px;min-width:0;line-height:1.4;overflow-wrap:anywhere;}
+.intel-tags{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:4px;flex:0 1 auto;}
+.intel .llore{font-size:12px;color:var(--texto);margin:0;white-space:pre-wrap;
   line-height:1.45;}
 /* glosa clara del informe: una frase en llano antes del fragmento poético,
    marcada solo con el triangulito ▸ (sin rótulo) */
-.intel .intel-k{font-size:11px;color:var(--ambar);margin-top:4px;line-height:1.4;}
+.intel .intel-k{font-size:11px;color:var(--ambar);margin:0 0 6px;line-height:1.4;}
 .job,.shopitem,.intel,.logro,.offer{
   --item-edge:var(--borde-claro);--item-accent:var(--borde-claro);--item-surface:var(--fondo-panel);
   position:relative;isolation:isolate;border-color:transparent;border-radius:0;background:none;
