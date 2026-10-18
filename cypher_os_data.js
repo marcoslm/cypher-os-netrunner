@@ -46,6 +46,19 @@ var SIM = {
   substation:"⌁", nucleo:"✦", signal:"◎", empty:"·"
 };
 
+var INTRO_BACKGROUNDS = {
+  menu:[
+    {src:"assets/images/backgrounds/menu/veliga.png",position:"50% 50%"},
+    {src:"assets/images/backgrounds/menu/calle.png",position:"50% 50%"},
+    {src:"assets/images/backgrounds/menu/bajante.png",position:"50% 50%"}
+  ],
+  prologue:[
+    {src:"assets/images/backgrounds/prologue/bolsa.png",position:"65% 50%"},
+    {src:"assets/images/backgrounds/prologue/hostal.png",position:"65% 50%"},
+    {src:"assets/images/backgrounds/prologue/habitacion-seis.png",position:"65% 50%"}
+  ]
+};
+
 var STORY_PROLOGUE = [
   {title:"Lo que cabe en una bolsa", paragraphs:[
     "La empresa perdió la concesión el lunes. El martes te retiraron el deck: equipo financiado, propiedad del proveedor. Sin él no puedes aceptar los trabajos que sabes hacer.",
@@ -846,7 +859,7 @@ var MUSIC_TRACKS = {
 
 /* ---- boot: líneas de la BIOS (las consume cypher_os_ui.js) ---- */
 
-var FIRMWARE_BUILD = 105;
+var FIRMWARE_BUILD = 106;
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],

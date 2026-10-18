@@ -1,6 +1,38 @@
 'use strict';
+const fs = require('node:fs');
+const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 const { test, expect } = require('./fixtures');
 const action = (page, name) => page.locator(`[data-action="${name}"]`);
+async function installBackgroundFixtures(page, testInfo, { broken = false } = {}) {
+    const pictures = await page.evaluate(() => ['#d7b474', '#79bdca', '#d79199'].map(color => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1600; canvas.height = 900;
+        const context = canvas.getContext('2d');
+        context.fillStyle = color; context.fillRect(0, 0, canvas.width, canvas.height);
+        for (let column = 0; column < 8; column++) {
+            context.fillStyle = column % 2 ? '#648267' : '#b6d3dc';
+            context.fillRect(column * 200, 130 + column * 35, 130, 500);
+        }
+        return canvas.toDataURL('image/webp', 0.85);
+    }));
+    fs.mkdirSync(testInfo.outputDir, { recursive: true });
+    const sources = pictures.map((picture, index) => {
+        const filename = testInfo.outputPath(`synthetic-background-${index}.webp`);
+        fs.writeFileSync(filename, Buffer.from(picture.split(',')[1], 'base64'));
+        return pathToFileURL(filename).href;
+    });
+    await page.evaluate(({ sources, broken }) => {
+        INTRO_BACKGROUNDS.menu.forEach((scene, index) => {
+            scene.src = broken && index === 1 ? 'data:image/webp;base64,AA==' : sources[index];
+        });
+        INTRO_BACKGROUNDS.prologue.forEach((scene, index) => { scene.src = sources[index]; });
+        clearIntroBackground(); syncIntroBackground();
+    }, { sources, broken });
+    await expect.poll(() => page.locator('#intro-background img').evaluateAll(images => images.filter(image => image.complete && image.naturalWidth > 0).length)).toBe(broken ? 2 : 3);
+    await expect(page.locator('#intro')).toHaveClass(/has-background/);
+    return sources;
+}
 async function diagnostic(page, game) {
     await game.freeze();
     await page.locator('#intro-start').click();
@@ -225,3 +257,131 @@ test('F2: texto al 200 por ciento conserva entrada, scroll y acciones', async ({
     await expect(page.locator('#deck-entry')).toBeHidden();
     await expect(page.locator('#panel-scroll h1')).toHaveText('ARCHIVOS');
 });
+
+test('Fondos: archivos locales, fundido, carga parcial y movimiento reducido', async ({ page, game }, testInfo) => {
+    await game.freeze();
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await installBackgroundFixtures(page, testInfo, { broken: true });
+    await page.clock.runFor(2000);
+    const image = page.locator('#intro-background .is-visible');
+    const firstSource = await image.getAttribute('src');
+    const startBox = await page.locator('#intro-start').boundingBox();
+    await expect(page.locator('#intro-background')).toHaveAttribute('aria-hidden', 'true');
+    await expect(image).toHaveCSS('opacity', '1');
+    await expect(image).toHaveCSS('object-fit', 'cover');
+    await expect(image).toHaveAttribute('alt', '');
+    await expect(image).toHaveCSS('transition-duration', '1.6s');
+    expect((await game.snapshot()).state).toBeNull();
+    await page.clock.runFor(10000);
+    expect(await image.getAttribute('src')).not.toBe(firstSource);
+    await expect(image).toHaveCSS('opacity', '1');
+    expect(await page.locator('#intro-start').boundingBox()).toEqual(startBox);
+    await expect(page.locator('#intro-start')).toBeFocused();
+    const stillSource = await image.getAttribute('src');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await expect(page.locator('html')).toHaveClass(/motion-off/);
+    expect(await page.evaluate(() => _introBackgroundTimer)).toBeNull();
+    await page.clock.runFor(30000);
+    expect(await image.getAttribute('src')).toBe(stillSource);
+    expect(await page.evaluate(() => _introBackgroundTimer)).toBeNull();
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await expect(page.locator('html')).not.toHaveClass(/motion-off/);
+    await page.locator('#intro [data-action="openControls"]').click();
+    await page.locator('[data-pref="animations"]').click();
+    await expect(page.locator('[data-pref="animations"]')).toHaveAttribute('aria-pressed', 'false');
+    expect(await page.evaluate(() => _introBackgroundTimer)).toBeNull();
+    await page.locator('#controls-overlay .control-close').click();
+    await page.locator('#intro-start').click();
+    await expect(page.locator('#intro-background img')).toHaveCount(1);
+    await expect(page.locator('#intro')).toHaveClass(/has-background/);
+    await action(page, 'storySkip').click();
+    await expect(page.locator('#intro-background img')).toHaveCount(0);
+    expect(await page.evaluate(() => _introBackgroundTimer)).toBeNull();
+});
+
+for (const viewport of [{ width: 320, height: 667 }, { width: 1280, height: 720 }]) {
+    test(`Fondos PNG: ${viewport.width}px recursos generados y lectura del prologo`, async ({ page, game }, testInfo) => {
+        const scenes = await page.evaluate(() => INTRO_BACKGROUNDS);
+        test.skip(![...scenes.menu, ...scenes.prologue].every(scene => fs.existsSync(path.resolve(__dirname, '../..', scene.src))), 'Los fondos artisticos son opcionales en una copia sin recursos');
+        await page.setViewportSize(viewport);
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await game.freeze();
+        const frames = page.locator('#intro-background img');
+        await expect.poll(() => frames.evaluateAll(images => images.filter(image => image.complete && image.naturalWidth > 0).length)).toBe(3);
+        for (let index = 0; index < 3; index++) {
+            await expect(frames.nth(index)).toHaveAttribute('src', scenes.menu[index].src);
+            await expect(frames.nth(index)).toHaveAttribute('src', /\.png$/);
+        }
+        const visible = page.locator('#intro-background .is-visible');
+        await expect(visible).toHaveCSS('opacity', '1');
+        await expect(page.locator('#intro-start')).toBeFocused();
+        await page.screenshot({ path: testInfo.outputPath(`menu-png-${viewport.width}.png`) });
+        await page.locator('#intro-start').click();
+        for (let index = 0; index < 3; index++) {
+            await expect(visible).toHaveAttribute('src', scenes.prologue[index].src);
+            await expect.poll(() => visible.evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
+            await expect(visible).toHaveCSS('opacity', '1');
+            await expect(page.locator('#story-heading')).toBeFocused();
+            expect(await page.locator('#intro').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+            await action(page, 'storyContinue').scrollIntoViewIfNeeded();
+            await expect(action(page, 'storyContinue')).toBeInViewport();
+            await page.screenshot({ path: testInfo.outputPath(`prologue-png-${index}-${viewport.width}.png`) });
+            await action(page, 'storyContinue').click();
+        }
+        await expect(page.locator('#intro')).toBeHidden();
+        await expect(frames).toHaveCount(0);
+        await expect(action(page, 'storyRecover')).toBeVisible();
+    });
+}
+
+for (const viewport of [{ width: 320, height: 667 }, { width: 768, height: 1024 }, { width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
+    test(`Fondos: ${viewport.width}px menu y tres escenas con imagen real cargada`, async ({ page, game }, testInfo) => {
+        await page.setViewportSize(viewport);
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await game.freeze();
+        const sources = await installBackgroundFixtures(page, testInfo);
+        const background = page.locator('#intro-background .is-visible');
+        await expect(background).toHaveCSS('opacity', '1');
+        expect(await background.boundingBox()).toEqual({ x: 0, y: 0, width: viewport.width, height: viewport.height });
+        await page.screenshot({ path: testInfo.outputPath(`synthetic-menu-${viewport.width}.png`) });
+        await page.locator('#intro-start').click();
+        for (let scene = 0; scene < 3; scene++) {
+            await expect(background).toHaveAttribute('src', sources[scene]);
+            await expect(background).toHaveCSS('opacity', '1');
+            expect(await background.evaluate(image => image.naturalWidth)).toBe(1600);
+            expect(await background.boundingBox()).toEqual({ x: 0, y: 0, width: viewport.width, height: viewport.height });
+            expect(await page.locator('#intro').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+            await expect(page.locator('#story-heading')).toBeFocused();
+            if (viewport.width >= 768) {
+                const textBox = await page.locator('#story-entry').boundingBox();
+                expect(textBox.x).toBeLessThan(60);
+                expect(textBox.width).toBeLessThanOrEqual(600);
+            }
+            await action(page, 'storyContinue').scrollIntoViewIfNeeded();
+            await expect(action(page, 'storyContinue')).toBeInViewport();
+            const saved = (await game.snapshot()).saved;
+            await page.clock.runFor(20000);
+            expect((await game.snapshot()).saved).toEqual(saved);
+            await expect(background).toHaveAttribute('src', sources[scene]);
+            await page.screenshot({ path: testInfo.outputPath(`synthetic-prologue-${scene}-${viewport.width}.png`) });
+            await action(page, 'storyContinue').click();
+        }
+        await expect(page.locator('#intro')).toBeHidden();
+        await expect(action(page, 'storyRecover')).toBeVisible();
+        await expect(page.locator('#intro-background img')).toHaveCount(0);
+        await action(page, 'storyRecover').click();
+        await page.locator('.navbtn[data-view="ayuda"]').click();
+        const before = (await game.snapshot()).state;
+        await action(page, 'replayPrologue').click();
+        await expect(background).toHaveAttribute('src', sources[0]);
+        await expect(background).toHaveCSS('opacity', '1');
+        await action(page, 'storyContinue').click();
+        await expect(background).toHaveAttribute('src', sources[1]);
+        await action(page, 'storyPrevious').click();
+        await expect(background).toHaveAttribute('src', sources[0]);
+        await action(page, 'storySkip').click();
+        expect((await game.snapshot()).state).toEqual(before);
+        await expect(action(page, 'replayPrologue')).toBeFocused();
+        await expect(page.locator('#intro-background img')).toHaveCount(0);
+    });
+}

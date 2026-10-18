@@ -70,6 +70,7 @@ function applyDisplayPrefs(){
     if(typeof clearGridDecoration==="function") clearGridDecoration();
   }
   if(typeof startGlitchLoop==="function" && S) startGlitchLoop();
+  if(typeof syncIntroBackgroundMotion==="function") syncIntroBackgroundMotion();
   if(typeof syncControlPanel==="function") syncControlPanel();
 }
 function onDisplayMotionChange(){ applyDisplayPrefs(); }

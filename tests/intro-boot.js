@@ -43,6 +43,64 @@ async function run(options = {}) {
         assert.equal(game.sb.document.getElementById('os').inert, true);
         assert.equal(game.audio.nodes.length, 0);
     });
+    await check('fondos ausentes conservan el menu y no crean un pase vacio', game => {
+        assert.equal(game.sb.document.querySelectorAll('.intro-background-image').length, 3);
+        for (const frame of game.run('_introBackgroundFrames')) game.emitElement(frame.image, 'error');
+        game.advance(30000);
+        assert.equal(game.sb.document.getElementById('intro').classList.contains('has-background'), false);
+        assert.equal(game.run('_introBackgroundTimer'), null);
+        assert.equal(game.run('S'), null);
+        assert.equal(game.sb.document.activeElement.id, 'intro-start');
+    });
+    await check('pase solo entre fondos cargados y sin alterar partida ni foco', game => {
+        const frames = game.run('_introBackgroundFrames');
+        game.emitElement(frames[0].image, 'load');
+        assert.equal(game.run('_introBackgroundTimer'), null);
+        game.emitElement(frames[2].image, 'load');
+        assert.notEqual(game.run('_introBackgroundTimer'), null);
+        game.advance(10000);
+        assert.equal(game.run('_introBackgroundIndex'), 2);
+        assert.equal(frames[1].image.classList.contains('is-visible'), false);
+        game.advance(10000);
+        assert.equal(game.run('_introBackgroundIndex'), 0);
+        assert.equal(game.run('S'), null);
+        assert.equal(game.sb.document.activeElement.id, 'intro-start');
+        assert.equal(game.sb.document.getElementById('intro-background').getAttribute('aria-hidden'), 'true');
+    });
+    await check('movimiento reducido y pestana oculta detienen el pase sin cambiar imagen', game => {
+        for (const frame of game.run('_introBackgroundFrames')) game.emitElement(frame.image, 'load');
+        game.run('setDeckPref("animations",false);');
+        assert.equal(game.run('_introBackgroundTimer'), null);
+        game.advance(20000);
+        assert.equal(game.run('_introBackgroundIndex'), 0);
+        game.run('setDeckPref("animations",true);document.hidden=true;');
+        game.emitDocument('visibilitychange');
+        assert.equal(game.run('_introBackgroundTimer'), null);
+        game.run('document.hidden=false;'); game.emitDocument('visibilitychange');
+        assert.notEqual(game.run('_introBackgroundTimer'), null);
+        game.run('setDeckPref("reducedMotion",true);');
+        assert.equal(game.run('_introBackgroundTimer'), null);
+    });
+    await check('prologo fijo, cargas tardias descartadas y limpieza al entrar al deck', game => {
+        const oldFrames = game.run('_introBackgroundFrames');
+        game.emitElement('intro-start', 'click');
+        game.emitElement(oldFrames[0].image, 'load');
+        assert.equal(game.sb.document.getElementById('intro').classList.contains('has-background'), false);
+        const frame = game.run('_introBackgroundFrames[0]');
+        assert.match(frame.image.src, /prologue\/bolsa\.png$/);
+        game.emitElement(frame.image, 'load');
+        assert.equal(game.run('_introBackgroundTimer'), null);
+        const before = clone(game.run('S'));
+        game.advance(20000);
+        assert.deepEqual(clone(game.run('S')), before);
+        click(game, 'storyContinue');
+        assert.match(game.run('_introBackgroundFrames[0].image.src'), /prologue\/hostal\.png$/);
+        click(game, 'storyPrevious');
+        assert.match(game.run('_introBackgroundFrames[0].image.src'), /prologue\/bolsa\.png$/);
+        click(game, 'storySkip');
+        assert.equal(game.run('_introBackgroundTimer'), null);
+        assert.equal(game.sb.document.querySelectorAll('.intro-background-image').length, 0);
+    });
     await check('paginas, anterior y reanudar conservan el pasaje exacto', game => {
         game.emitElement('intro-start', 'click'); click(game, 'storyContinue');
         assert.equal(game.saved().narrative.prologuePage, 1);

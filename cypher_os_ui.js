@@ -78,6 +78,61 @@ function toggleAmbient(){
 /* Un único timer de presentación. Nunca carga S ni pone en marcha el reloj. */
 var _introBootTimer=null;
 var _introBootIndex=0;
+var _introBackgroundKey="", _introBackgroundFrames=[], _introBackgroundIndex=-1, _introBackgroundTimer=null;
+function clearIntroBackground(){
+  clearTimeout(_introBackgroundTimer); _introBackgroundTimer=null;
+  _introBackgroundKey=""; _introBackgroundFrames=[]; _introBackgroundIndex=-1;
+  var root=document.getElementById("intro-background"), intro=document.getElementById("intro");
+  if(root) root.innerHTML="";
+  if(intro) intro.classList.remove("has-background");
+}
+function showIntroBackground(index){
+  _introBackgroundIndex=index;
+  _introBackgroundFrames.forEach(function(frame,frameIndex){
+    frame.image.classList.toggle("is-visible",frameIndex===index);
+  });
+  var intro=document.getElementById("intro"); if(intro) intro.classList.add("has-background");
+}
+function syncIntroBackgroundMotion(){
+  clearTimeout(_introBackgroundTimer); _introBackgroundTimer=null;
+  if(_introBackgroundKey!=="intro" || document.hidden || !decorativeMotion()) return;
+  if(_introBackgroundFrames.filter(function(frame){return frame.loaded;}).length<2) return;
+  _introBackgroundTimer=setTimeout(function(){
+    _introBackgroundTimer=null;
+    for(var step=1;step<_introBackgroundFrames.length;step++){
+      var next=(_introBackgroundIndex+step)%_introBackgroundFrames.length;
+      if(_introBackgroundFrames[next].loaded){ showIntroBackground(next); break; }
+    }
+    syncIntroBackgroundMotion();
+  },10000);
+}
+function syncIntroBackground(){
+  var root=document.getElementById("intro-background"), mode=entryMode();
+  if(!root) return;
+  var page=_storyReplay ? _storyReplayPage : S && S.narrative.prologuePage;
+  var key=mode==="intro" ? "intro" : mode==="prologue" || mode==="replay" ? mode+":"+page : "";
+  if(key===_introBackgroundKey){ syncIntroBackgroundMotion(); return; }
+  clearIntroBackground();
+  if(!key) return;
+  _introBackgroundKey=key;
+  var scenes=mode==="intro" ? INTRO_BACKGROUNDS.menu : [INTRO_BACKGROUNDS.prologue[page]];
+  var frames=_introBackgroundFrames;
+  scenes.forEach(function(scene){
+    if(!scene) return;
+    var image=document.createElement("img"), frame={image:image,loaded:false};
+    image.className="intro-background-image"; image.alt=""; image.draggable=false; image.decoding="async";
+    image.style.objectPosition=scene.position;
+    image.addEventListener("load",function(){
+      if(_introBackgroundFrames!==frames) return;
+      frame.loaded=true;
+      if(_introBackgroundIndex<0) showIntroBackground(frames.indexOf(frame));
+      syncIntroBackgroundMotion();
+    });
+    frames.push(frame); root.appendChild(image); image.src=scene.src;
+  });
+}
+document.addEventListener("visibilitychange",syncIntroBackgroundMotion);
+
 function appendBootLine(){
   var body=document.getElementById("boot-body");
   if(!body || _introBootIndex>=BOOT_LINES.length) return;
@@ -486,6 +541,7 @@ function syncEntrySurface(){
   if(diagnostic) diagnostic.hidden=mode!=="diagnostic";
   var panel=document.getElementById("panel-scroll"); if(panel) panel.hidden=internal;
   var os=document.getElementById("os"); if(os) os.classList.toggle("deck-entry-active",internal);
+  syncIntroBackground();
 }
 function gameInputLayer(){
   if(confirmOpen()) return document.getElementById("confirm-overlay");

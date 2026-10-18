@@ -82,7 +82,7 @@ async function run(options={}){
   });
   await check('texto literal sin HTML, DOM ausente protegido y reconstrucción de contenido legacy',g=>{
     g.run('msg("<img src=x> & aviso");');g.advance(6000);
-    assert.equal(body(g).textContent,'<img src=x> & aviso');assert.equal(g.sb.document.querySelector('img'),null);
+    assert.equal(body(g).textContent,'<img src=x> & aviso');assert.equal(!!container(g).querySelector('img'),false);
     g.run('msg("retirado");');body(g).remove();g.advance(45);
     assert.equal(g.run('_msgTypeTimer'),null);assert.equal(g.run('_msgTypeJob'),null);
     g.run('msg("reconstruido");');g.advance(6000);assert.equal(body(g).textContent,'reconstruido');

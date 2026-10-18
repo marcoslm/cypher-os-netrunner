@@ -7,12 +7,14 @@ const { storyFixture } = require('../harness');
 
 const GAME_URL = pathToFileURL(path.resolve(__dirname, '../../cypher_os.html')).href;
 const MUSIC_URL = pathToFileURL(path.resolve(__dirname, '../../music') + path.sep).href;
+const BACKGROUND_URL = pathToFileURL(path.resolve(__dirname, '../../assets/images/backgrounds') + path.sep).href;
 const CLOCK_START = Date.parse('2030-01-01T00:00:00Z');
 
-function optionalMusicFailure(url, message) {
-  // Cambiar de escena/cancelar la precarga aborta peticiones MP3 legítimamente.
-  // Solo estos dos estados de recursos musicales locales son tolerables.
-  return url.startsWith(MUSIC_URL) && /\.mp3(?:[?#]|$)/i.test(url) &&
+function optionalLocalResourceFailure(url, message) {
+  // Recursos decorativos locales: ausencia y cancelacion al cambiar de escena.
+  const music = url.startsWith(MUSIC_URL) && /\.mp3(?:[?#]|$)/i.test(url);
+  const background = url.startsWith(BACKGROUND_URL) && /^(?:menu\/(?:veliga|calle|bajante)|prologue\/(?:bolsa|hostal|habitacion-seis))\.png$/.test(url.slice(BACKGROUND_URL.length));
+  return (music || background) &&
     /\b(?:ERR_FILE_NOT_FOUND|ERR_ABORTED)\b/.test(message);
 }
 
@@ -49,17 +51,17 @@ const test = base.extend({
   // The built-in page/context fixtures remain test-scoped: no shared profile or storageState.
   page: async ({ page, context }, use, testInfo) => {
     const failures = [];
-    const optionalMusic = [];
+    const optionalResources = [];
     const onPageError = error => failures.push({ type: 'pageerror', message: error.stack || error.message });
     const onRequestFailed = request => {
       const message = request.failure()?.errorText || 'requestfailed';
       const entry = { type: 'requestfailed', url: request.url(), message };
-      (optionalMusicFailure(entry.url, message) ? optionalMusic : failures).push(entry);
+      (optionalLocalResourceFailure(entry.url, message) ? optionalResources : failures).push(entry);
     };
     const onConsole = message => {
       if (!['warning', 'error'].includes(message.type())) return;
       const entry = { type: `console.${message.type()}`, url: message.location().url || '', message: message.text() };
-      (optionalMusicFailure(entry.url, entry.message) ? optionalMusic : failures).push(entry);
+      (optionalLocalResourceFailure(entry.url, entry.message) ? optionalResources : failures).push(entry);
     };
     const onDialog = dialog => {
       failures.push({ type: 'native-dialog', message: `${dialog.type()}: ${dialog.message()}` });
@@ -77,9 +79,9 @@ const test = base.extend({
     try {
       await use(page);
     } finally {
-      if (failures.length || optionalMusic.length) {
+      if (failures.length || optionalResources.length) {
         await testInfo.attach('browser-diagnostics', {
-          body: Buffer.from(JSON.stringify({ failures, optionalMusic }, null, 2)),
+          body: Buffer.from(JSON.stringify({ failures, optionalResources }, null, 2)),
           contentType: 'application/json'
         });
       }
