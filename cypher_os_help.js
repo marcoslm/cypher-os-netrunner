@@ -16,7 +16,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<li><b>Eres Álex Riba</b>, técnico de mantenimiento. Berto te deja usar el equipo de Tomás, ausente del Hostal La Bajante. CORVO-7 identifica al dispositivo; no has heredado las credenciales de su dueño.</li>'+
 '<li><b>La red —el cable—</b> conecta servicios, dinero y vigilancia. El Grid representa esas conexiones externas; no es el almacenamiento local del deck.</li>'+
 '<li><b>ARCHIVOS</b> conserva documentos anteriores y recuperados con su procedencia. Dañado significa falta de reconstrucción; cifrado significa falta de clave. Abrirlos no cobra ni resuelve un caso.</li>'+
-'<li><b>MENSAJES</b> distingue el correo enviado por Tomás de las cartas actuales. Una copia anterior no te convierte en su remitente. En AYUDA puedes releer el prólogo sin cambiar la partida.</li>'+
+'<li><b>MENSAJES</b> separa ENTRADA (cartas recibidas) y ARCHIVO (correo anterior). Una copia anterior no te convierte en su remitente. En AYUDA puedes releer el prólogo sin cambiar la partida.</li>'+
 '<li><b>LA FACTURA</b> se acepta en TRABAJOS. VEYRA abre un canal nuevo para Álex; no usas la cuenta de Tomás. Tras verificar la entrega se abren los trabajos genéricos de CONTACTOS. El riesgo se mide en calor (tu rastro) y CPU (integridad de conexión).</li>'+
 '</ol>'+
 '<div class="callout cyan">💡 Toda la jerga está explicada en una línea en <b>GLOSARIO</b> (⑰, al final de esta pantalla) o escribe <b>glosario</b> en el terminal.</div>'+
@@ -290,7 +290,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 
 /* ⑱ MENSAJES */
 '<div class="panel-h">⑱ MENSAJES · la bandeja del deck</div><div class="box helpbox">'+
-'<p class="help-p">Los fixers y otros contactos te escriben <b>cartas</b> según lo que hagas (tu primer trabajo, un cobro, un fracaso…). A diferencia de la línea inferior, <b>aquí todo se queda</b>: léelas cuando quieras con un clic.</p>'+
+'<p class="help-p">Los fixers y otros contactos te escriben <b>cartas</b> según lo que hagas (tu primer trabajo, un cobro, un fracaso…). A diferencia de la línea inferior, <b>aquí todo se queda</b>. <b>ENTRADA</b> reúne lo recibido y <b>ARCHIVO</b> el correo anterior: elige una fila y la carta se abre en el panel de lectura; <b>VOLVER A LA LISTA</b> te devuelve a la bandeja.</p>'+
 '<div class="helprow">'+
 '<div class="helprow-item"><span class="kbd">● punto magenta</span><span class="muted">carta sin leer en el menú MENSAJES</span></div>'+
 '<div class="helprow-item"><span class="kbd">EMISOR</span><span class="muted">al pie de cada carta. Si dice <b>«sin respuesta»</b>, tu respuesta no llegará: quien escribió quemó su ruta para no exponerse. Es lo normal por aquí. En muy pocas cartas aparece el botón de <b>contestar de todas formas</b>: el envío vuelve… pero contestar a lo que no firma tiene su recompensa</span></div>'+

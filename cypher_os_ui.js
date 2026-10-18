@@ -1876,40 +1876,17 @@ function emisorLine(d){
   return '▸ EMISOR: ███ enmascarado · SIN RUTA DE VUELTA';
 }
 var _mailTab="current";
-function renderMensajes(){
-  var openId=S._msgOpen||null, m=null, def=null, i, j;
-  if(openId){
-    for(i=0;i<S.mensajes.length;i++) if(S.mensajes[i].id===openId){ m=S.mensajes[i]; }
-    def=m?msgDef(m.id):null;
-    if(!m || !def){ openId=null; S._msgOpen=null; }
-  }
-  var html='<h1 class="title">MENSAJES</h1>'+
-    '<div class="sub">bandeja del deck · '+S.mensajes.length+' cartas · '+unreadMsgCount()+' sin leer</div>';
-  if(!openId) html+='<div class="archive-tabs" role="group" aria-label="Correspondencia">'+
-    '<button class="btn small" data-action="mailTab" data-tab="current" aria-pressed="'+(_mailTab==="current")+'">ACTUALES</button>'+
-    '<button class="btn small" data-action="mailTab" data-tab="previous" aria-pressed="'+(_mailTab==="previous")+'">ARCHIVO ANTERIOR</button></div>';
-  if(_mailTab==="previous"){
-    if(S.narrative.files.l_contacto==="readable") html+='<section class="inherited-mail"><h2>Correo enviado por Tomás</h2>'+
-      '<p>08-10-2093 · Para: oficina de Inés Aro · Las versiones</p>'+
-      '<div class="panel-actions"><button class="btn small" data-action="openArchive" data-id="l_contacto">ABRIR COPIA ENVIADA</button></div></section>';
-    else html+='<p class="muted">No hay correspondencia anterior legible.</p>';
-  } else if(openId){
-    html+='<div class="panel-back"><button class="btn small" data-action="closeMsg">VOLVER A LA BANDEJA</button></div><article class="msgcard archive-document">'+
-      '<div class="msg-head"><b class="cyan">'+escapeHtml(def.from)+'</b> <span class="muted text-xs">'+timeStr(m.hora)+'</span></div>'+
-      '<h2 class="msg-subj" id="message-heading" tabindex="-1">'+escapeHtml(def.t)+'</h2>'+
-      '<div class="msg-body'+(def.doc?" msgdoc":"")+'">'+escapeHtml(def.l).replace(/\n/g,"<br>")+'</div>'+
-      '<div class="msg-foot muted">'+emisorLine(def)+'</div>'+
-      msgReplyHtml(m, def)+
-      (m.respuesta?'<div class="msg-answer">▸ '+escapeHtml(m.respuesta).replace(/\n/g,"<br>")+'</div>':'')+
-      '</article>';
-  } else if(!S.mensajes.length){
-    html+='<div class="box muted">bandeja vacía. cuando alguien te escriba, aquí quedará: la línea inferior se olvida, las cartas no.</div>';
+function mailIndexHtml(openId){
+  var html='<section class="deck-panel mail-index"><h2 class="panel-h">ENTRADA <span class="muted text-xs">'+S.mensajes.length+' carta'+(S.mensajes.length===1?'':'s')+' · '+unreadMsgCount()+' sin leer</span></h2>';
+  if(!S.mensajes.length){
+    html+='<p class="muted">bandeja vacía. cuando alguien te escriba, aquí quedará: la línea inferior se olvida, las cartas no.</p>';
   } else {
     html+='<div class="msglist">';
-    for(j=S.mensajes.length-1;j>=0;j--){ /* lo más reciente, arriba */
+    for(var j=S.mensajes.length-1;j>=0;j--){ /* lo más reciente, arriba */
       var mm=S.mensajes[j], dd=msgDef(mm.id);
       if(!dd) continue;
-      html+='<button class="msgrow'+(mm.leido?"":" unread")+'" data-action="openMsg" data-id="'+mm.id+'">'+
+      var selected=openId===mm.id;
+      html+='<button class="msgrow'+(mm.leido?"":" unread")+(selected?" selected":"")+'" data-action="openMsg" data-id="'+mm.id+'" aria-pressed="'+(selected?'true':'false')+'">'+
         '<span class="msg-from">'+escapeHtml(dd.from)+'</span>'+
         '<span class="msg-t">'+escapeHtml(dd.t)+'</span>'+
         '<span class="muted text-xs">'+timeStr(mm.hora)+'</span>'+
@@ -1917,6 +1894,51 @@ function renderMensajes(){
         '</button>';
     }
     html+='</div>';
+  }
+  return html+'</section>';
+}
+function mailReaderHtml(m,def){
+  return '<section class="deck-panel mail-reader"><h2 class="panel-h" id="message-heading" tabindex="-1">'+escapeHtml(def.t)+'</h2>'+
+    '<div class="panel-back"><button class="btn small" data-action="closeMsg">VOLVER A LA LISTA</button></div>'+
+    '<article class="msgcard archive-document">'+
+      '<div class="msg-head"><b class="cyan">'+escapeHtml(def.from)+'</b> <span class="muted text-xs">'+timeStr(m.hora)+'</span></div>'+
+      '<div class="msg-body'+(def.doc?" msgdoc":"")+'">'+escapeHtml(def.l).replace(/\n/g,"<br>")+'</div>'+
+      '<div class="msg-foot muted">'+emisorLine(def)+'</div>'+
+      msgReplyHtml(m, def)+
+      (m.respuesta?'<div class="msg-answer">▸ '+escapeHtml(m.respuesta).replace(/\n/g,"<br>")+'</div>':'')+
+    '</article></section>';
+}
+function mailReaderEmptyHtml(title,text){
+  return '<section class="deck-panel mail-reader mail-reader-empty"><h2 class="panel-h">'+title+'</h2><p class="muted">'+text+'</p></section>';
+}
+function mailArchiveHtml(){
+  var readable=S.narrative.files.l_contacto==="readable";
+  var index='<section class="deck-panel mail-index"><h2 class="panel-h">ARCHIVO <span class="muted text-xs">'+(readable?'1 carta':'0 cartas')+'</span></h2>';
+  if(readable){
+    index+='<div class="msglist"><div class="msgrow selected" aria-current="true"><span class="msg-from">Tomás Egea</span><span class="msg-t">Las versiones</span><span class="muted text-xs">08-10-2093</span></div></div>';
+  } else index+='<p class="muted">No hay correspondencia anterior legible.</p>';
+  index+='</section>';
+  var reader=readable?'<section class="deck-panel mail-reader"><h2 class="panel-h">CORREO ENVIADO POR TOMÁS</h2><p class="sub">08-10-2093 · Para: oficina de Inés Aro · Las versiones</p><p>La copia enviada se conserva en ARCHIVOS. Su lectura completa sigue el flujo del archivo original.</p><div class="panel-actions"><button class="btn small" data-action="openArchive" data-id="l_contacto">ABRIR COPIA ENVIADA</button></div></section>':mailReaderEmptyHtml("ARCHIVO","No hay correspondencia anterior legible.");
+  return '<div class="mail-layout">'+index+reader+'</div>';
+}
+function renderMensajes(){
+  var openId=S._msgOpen||null, m=null, def=null, i;
+  if(openId){
+    for(i=0;i<S.mensajes.length;i++) if(S.mensajes[i].id===openId){ m=S.mensajes[i]; }
+    def=m?msgDef(m.id):null;
+    if(!m || !def){ openId=null; S._msgOpen=null; }
+  }
+  var total=S.mensajes.length;
+  var html='<h1 class="title">MENSAJES</h1>'+
+    '<div class="sub">bandeja del deck · '+total+' carta'+(total===1?'':'s')+' · '+unreadMsgCount()+' sin leer</div>'+
+    '<div class="archive-tabs" role="group" aria-label="Correspondencia">'+
+      '<button class="btn small" data-action="mailTab" data-tab="current" aria-pressed="'+(_mailTab==="current")+'">ENTRADA</button>'+
+      '<button class="btn small" data-action="mailTab" data-tab="previous" aria-pressed="'+(_mailTab==="previous")+'">ARCHIVO</button></div>';
+  if(_mailTab==="previous"){
+    S._msgOpen=null;
+    html+=mailArchiveHtml();
+  } else {
+    html+='<div class="mail-layout">'+mailIndexHtml(openId)+(openId?mailReaderHtml(m,def):mailReaderEmptyHtml("LECTURA","Selecciona una carta de la entrada para leerla aquí."))+'</div>';
   }
   scroller(html); updateTopbar(); updateNotifications();
   msg(pickFresh("view-mensajes", FRASES_VIEWS.mensajes),"cyan");
