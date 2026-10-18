@@ -575,7 +575,11 @@ for(const width of [320,1280]){
     for(const card of await cards.all()){
       await expect(card.locator('.archive-card-title')).toHaveCount(1);
       await expect(card.locator('.archive-card-meta')).toHaveCount(1);
-      await expect(card.locator('.archive-status')).toHaveCount(1);
+      const state=await card.getAttribute('data-state');
+      if(state==="readable"){
+        const unread=await card.locator('.archive-status--unread').count();
+        await expect(card.locator('.archive-status')).toHaveCount(unread?1:0);
+      } else await expect(card.locator('.archive-status')).toHaveCount(1);
     }
     const open=page.locator('.archive-card[data-action="openArchive"]').first();
     await expect(open).toHaveCount(1);

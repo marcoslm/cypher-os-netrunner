@@ -1975,7 +1975,7 @@ function archiveOriginLabel(origin){
   return ({local:"Archivo local anterior", "inherited-mail":"Correo anterior · enviado", network:"Recuperado de la red", "current-mail":"Correspondencia actual"})[origin]||"Origen desconocido";
 }
 function archiveStatusText(state,unread){
-  if(state==="readable") return unread?"SIN LEER":"LEÍDO";
+  if(state==="readable") return unread?"SIN LEER":"";
   return archiveStateLabel(state);
 }
 function archiveIconKind(origin){
@@ -1996,12 +1996,13 @@ function archiveCardHtml(file,state,doc,narrative){
   var interactive=state==="readable" && !!doc;
   var status=archiveStatusText(state,unread);
   var tag=interactive?"button":"div";
-  var attrs=interactive?' type="button" data-action="openArchive" data-id="'+file.id+'" aria-label="Abrir '+escapeHtml(file.title)+' · '+escapeHtml(status)+'"':'';
+  var label="Abrir "+escapeHtml(file.title)+(status?' · '+escapeHtml(status):'');
+  var attrs=interactive?' type="button" data-action="openArchive" data-id="'+file.id+'" aria-label="'+label+'"':'';
   return '<'+tag+' class="archive-card'+(interactive?'':' is-locked')+'" data-state="'+state+'"'+attrs+'>'+
     archiveIconHtml(file,state,unread)+'<span class="archive-card-main">'+
       '<span class="archive-card-title">'+escapeHtml(file.title)+'</span>'+
       '<span class="archive-card-meta">'+escapeHtml(archiveOriginLabel(file.origin))+(doc?' · '+escapeHtml(doc.date):'')+'</span>'+
-      '<span class="archive-status archive-status--'+state+(unread?' archive-status--unread':'')+'">'+escapeHtml(status)+'</span>'+
+      (status?'<span class="archive-status archive-status--'+state+(unread?' archive-status--unread':'')+'">'+escapeHtml(status)+'</span>':'')+
     '</span></'+tag+'>';
 }
 function archiveDocumentHtml(){
