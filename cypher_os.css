@@ -422,6 +422,11 @@ h1.title{
 .deck-columns-full{grid-column:1/-1;min-width:0;display:flex;flex-direction:column;gap:var(--ui-space);}
 .deck-columns-full>.diriz,.deck-columns-full>.panel-actions{margin:0;}
 @media(min-width:1200px){.deck-columns{grid-template-columns:repeat(2,minmax(0,1fr));}}
+.row.street-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;}
+.street-info{min-width:0;line-height:1.45;}
+.street-desc{overflow-wrap:anywhere;}
+.street-controls{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:2px;min-width:0;white-space:nowrap;}
+.street-controls .btn{flex:0 0 auto;min-width:76px;}
 
 /* ============================================================
     AYUDA / HELP

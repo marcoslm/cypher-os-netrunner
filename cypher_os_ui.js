@@ -1490,10 +1490,12 @@ function renderInicio(){
       var onCooldown=activityOnCooldown(act);
       var canAct=!onCooldown;
       if(act.id==="informantes" && S.player.credits<50) canAct=false;
-      html+='<div class="row"><span class="key">'+act.icon+' '+act.name+'</span>'+
-        '<span class="val"><span class="muted text-xs">'+act.desc+'</span> '+
+      html+='<div class="row street-row"><div class="street-info">'+
+        '<span class="key">'+act.icon+' '+act.name+'</span> '+
+        '<span class="street-desc muted text-xs">'+act.desc+'</span></div>'+
+        '<span class="street-controls">'+
         '<button class="btn small" data-action="streetActivity" data-act="'+ai+'"'+(canAct?"":" disabled")+'>ACTUAR</button>'+
-        (onCooldown?'<span class="muted text-xs"> (cooldown)</span>':'')+
+        (onCooldown?'<span class="muted text-xs">(cooldown)</span>':'')+
         '</span></div>';
     }
     html+='</section>';

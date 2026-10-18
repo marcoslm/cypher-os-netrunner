@@ -32,10 +32,31 @@ async function expectDashboardColumns(page,width,count,name,testInfo) {
     expect(Math.abs(fullBox.width-bounds.width)).toBeLessThanOrEqual(1);
     expect(fullBox.y).toBeGreaterThanOrEqual(boxes[1].y);
     expect(boxes[2].y).toBeGreaterThanOrEqual(fullBox.y+fullBox.height-1);
+    const activities=page.locator('#panel-scroll .street-row');
+    await expect(activities).toHaveCount(3);
+    const rows=await activities.evaluateAll(elements=>elements.map(row=>{
+      const button=row.querySelector('[data-action="streetActivity"]');
+      const info=row.querySelector('.street-info');
+      const desc=row.querySelector('.street-desc');
+      const range=document.createRange();range.selectNodeContents(desc);
+      const rowBox=row.getBoundingClientRect(),buttonBox=button.getBoundingClientRect(),infoBox=info.getBoundingClientRect();
+      return {rightGap:rowBox.right-buttonBox.right,infoGap:buttonBox.left-infoBox.right,
+        lines:range.getClientRects().length};
+    }));
+    for(const row of rows){
+      expect(Math.abs(row.rightGap)).toBeLessThanOrEqual(1);
+      expect(row.infoGap).toBeGreaterThanOrEqual(8);
+    }
+    if(width===320)expect(Math.max(...rows.map(row=>row.lines))).toBeGreaterThan(1);
   } else {
     await expect(page.locator('#panel-scroll .deck-columns-full')).toHaveCount(0);
   }
   await page.screenshot({path:testInfo.outputPath(`${name}-columnas-${width}.png`)});
+  if(name==='inicio'){
+    await page.locator('#panel-scroll .deck-panel').filter({hasText:'ACTIVIDADES DE LA CALLE'})
+      .screenshot({path:testInfo.outputPath(`actividades-${width}.png`)});
+    await page.locator('#panel-scroll').evaluate(element=>{element.scrollTop=0;});
+  }
 }
 async function invoiceMove(page, id) {
   await openGridControls(page);
