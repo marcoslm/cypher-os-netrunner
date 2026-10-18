@@ -249,9 +249,9 @@ html.glow-off .deck-stat{animation:none;}
     linear-gradient(var(--verde),var(--verde)) bottom right 16px/42px 3px no-repeat,
     repeating-linear-gradient(135deg,var(--borde-claro) 0 2px,transparent 2px 5px) top 0 right 24px/22px 4px no-repeat,
     repeating-linear-gradient(135deg,var(--borde-claro) 0 2px,transparent 2px 5px) bottom 0 left 24px/22px 4px no-repeat;}
-.sidebar-items{display:flex;flex:1 1 auto;min-height:0;min-width:0;flex-direction:column;gap:6px;overflow-y:auto;}
-.sidebar-group{display:flex;flex:0 0 auto;flex-direction:column;gap:2px;min-width:0;padding:3px;
-  background:rgba(77,216,255,.035);
+.sidebar-items{display:flex;flex:1 1 auto;min-height:0;min-width:0;flex-direction:column;gap:8px;overflow-y:auto;}
+.sidebar-group{display:flex;flex:0 0 auto;flex-direction:column;gap:2px;min-width:0;padding:4px;
+  background:#040c09;
   clip-path:polygon(0 4px,4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%);}
 .sidebar-group--system{margin-top:auto;}
 html.sidebar-collapsed #sidebar{display:none;}

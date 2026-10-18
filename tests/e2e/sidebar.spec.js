@@ -76,7 +76,7 @@ for(const viewport of [{width:320,height:600},{width:1280,height:900}]){
         buttons:Array.from(element.querySelectorAll('.navbtn')).length};
     }));
     expect(groupStyle.map(group=>group.buttons)).toEqual([2,5,3,2]);
-    expect(new Set(groupStyle.map(group=>group.background)).size).toBe(1);
+    expect(groupStyle.map(group=>group.background)).toEqual(['rgb(4, 12, 9)','rgb(4, 12, 9)','rgb(4, 12, 9)','rgb(4, 12, 9)']);
     for(const group of groupStyle){
       expect(group.clip).toContain('polygon');expect(group.border).toBe('0px');
     }
