@@ -846,9 +846,11 @@ var MUSIC_TRACKS = {
 
 /* ---- boot: líneas de la BIOS (las consume cypher_os_ui.js) ---- */
 
+var FIRMWARE_BUILD = 103;
+
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],
-  ["FIRMWARE v1.0 alpha · BUILD 102", "dim"],
+  ["FIRMWARE v1.0 alpha · BUILD " + FIRMWARE_BUILD, "dim"],
   ["memoria ................. 64K OK", "ok"],
   ["bus neural .............. OK", "ok"],
   ["interfaz del deck ....... OK", "ok"],

@@ -22,9 +22,9 @@ function update(count) {
   if (!/^[1-9]\d*$/.test(String(count))) throw new Error('Build inválida');
   var file = path.join(root, 'cypher_os_data.js');
   var text = fs.readFileSync(file, 'utf8');
-  var pattern = /\["FIRMWARE v1\.0 alpha · BUILD \d+", "dim"\]/g;
-  if ((text.match(pattern) || []).length !== 1) throw new Error('Línea de firmware ausente o duplicada');
-  var next = text.replace(pattern, '["FIRMWARE v1.0 alpha · BUILD ' + count + '", "dim"]');
+  var pattern = /var FIRMWARE_BUILD = \d+;/g;
+  if ((text.match(pattern) || []).length !== 1) throw new Error('Build de firmware ausente o duplicada');
+  var next = text.replace(pattern, 'var FIRMWARE_BUILD = ' + count + ';');
   if (next !== text) fs.writeFileSync(file, next);
 }
 if (require.main === module) {

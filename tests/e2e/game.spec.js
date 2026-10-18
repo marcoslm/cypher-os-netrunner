@@ -26,6 +26,10 @@ async function expectDashboardColumns(page,width,count,name,testInfo) {
     expect(boxes[1].y).toBeGreaterThanOrEqual(boxes[0].y+boxes[0].height-1);
   }
   if(name==='inicio'){
+    const build=await page.evaluate(()=>({number:FIRMWARE_BUILD,bios:BOOT_LINES[1][0]}));
+    expect(build.number).toBeGreaterThan(0);
+    expect(build.bios).toBe('FIRMWARE v1.0 alpha · BUILD '+build.number);
+    await expect(page.locator('.logo small')).toHaveText(':OS v9.2.7 · BUILD '+build.number);
     const full=page.locator('#panel-scroll .deck-columns-full');
     await expect(full).toHaveCount(1);
     await expect(full.locator(':scope > .deck-panel > .panel-h')).toHaveText(['SITUACIÓN','ACCESOS']);

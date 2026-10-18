@@ -1521,7 +1521,7 @@ function renderInicio(){
       if(dirObj) dir=dirObj.t;
     }
   }
-  var html='<div class="logo glow">CYPHER<br><small>:OS v9.2.7</small></div>'+
+  var html='<div class="logo glow">CYPHER<br><small>:OS v9.2.7 · BUILD '+FIRMWARE_BUILD+'</small></div>'+
     '<p>ÁLEX RIBA · equipo CORVO-7'+(S.narrative.aliasAcquired?' · alias registrado':' · sesión local')+'</p>'+
     '<div class="deck-columns">'+
     '<section class="deck-panel"><h2 class="panel-h">ARCHIVO LOCAL</h2><p>Los originales se conservan. '+(S.narrative.recoveryStage==="needs_index"?'El índice personal necesita un respaldo externo.':S.narrative.recoveryStage==="complete_known"?'Índice restaurado y copias conocidas accesibles.':'Índice reconstruido; las copias de casos requieren la clave autorizada de Inés.')+'</p>'+

@@ -50,6 +50,7 @@ async function run(options = {}) {
         const lines = game.sb.document.querySelectorAll('#boot-body .line');
         assert.equal(lines.length, 11);
         assert.match(lines[1].textContent, /^FIRMWARE v1\.0 alpha · BUILD [1-9]\d*$/);
+        assert.equal(lines[1].textContent, 'FIRMWARE v1.0 alpha · BUILD ' + game.run('FIRMWARE_BUILD'));
         assert.equal(lines[10].textContent, 'interfaz local .......... DISPONIBLE');
         assert.equal(game.run('loopId'), null);
     });
