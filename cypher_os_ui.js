@@ -1352,6 +1352,7 @@ function renderTrabajos(){
       var d=(b.j.ts||0)-(a.j.ts||0);
       return d!==0?d:b.i-a.i;
     });
+    html+='<div class="deck-columns job-list">';
     list.forEach(function(e){
       var j=e.j;
       var riskCls=RISK_TXT[j.risk]?j.risk:"ext";
@@ -1365,6 +1366,7 @@ function renderTrabajos(){
         '<div class="'+statusCls+' job-meta-sub">'+statusTxt+'</div></div></div>'+
         '<div class="prog muted">'+progText(j)+'</div></div>';
     });
+      html+='</div>';
   }
   html+='<div class="sep"></div>'+
     '<div class="muted job-help-text">Todo contrato se evalúa cuando superficializas. Si lo cumples, se paga y sube tu reputación. Si no, sube el calor.</div>';

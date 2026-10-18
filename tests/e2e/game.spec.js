@@ -58,6 +58,54 @@ async function expectDashboardColumns(page,width,count,name,testInfo) {
     await page.locator('#panel-scroll').evaluate(element=>{element.scrollTop=0;});
   }
 }
+for(const width of [320,768,1280,1920]){
+  test(`CONTRATOS: tarjetas en columnas sin alterar el orden a ${width} px`,async({page,game},testInfo)=>{
+    await page.setViewportSize({width,height:900});await game.setup();
+    await page.evaluate(()=>{
+      S.narrative.chapters.c01='resolved';
+      S.jobs=[10,30,20].map((stamp,index)=>({
+        id:`layout-${stamp}`,title:`Contrato ${stamp}`,contact:'Doctor Sudario',
+        desc:'Recupera los datos del proyecto y vuelve al puerto de acceso para completar el contrato.',
+        why:'La copia debe conservarse sin alterar sus registros originales.',
+        type:'recoleta',risk:'high',n:3,prog:{gathered:index},ts:stamp,
+        done:index>0,failed:index===2
+      }));
+    });
+    const before=await game.snapshot();
+    await nav(page,'trabajos').click();
+    const contracts=page.locator('[data-action="workSection"][data-tab="contracts"]');
+    await contracts.click();await expect(contracts).toBeFocused();
+    const grid=page.locator('.job-list.deck-columns'),cards=grid.locator(':scope > .job');
+    await expect(cards).toHaveCount(3);
+    await expect(cards.locator('b')).toHaveText(['Contrato 30','Contrato 20','Contrato 10']);
+    await expect(cards.nth(0)).toContainText('COMPLETADO');
+    await expect(cards.nth(1)).toContainText('FRACASADO');
+    await expect(cards.nth(2)).toContainText('EN CURSO');
+    const columns=await grid.evaluate(element=>getComputedStyle(element).gridTemplateColumns.split(/\s+/).length);
+    expect(columns).toBe(width>=1200?2:1);
+    const boxes=await cards.evaluateAll(elements=>elements.map(element=>{
+      const rect=element.getBoundingClientRect();
+      return {x:rect.x,y:rect.y,right:rect.right,bottom:rect.bottom};
+    }));
+    if(width>=1200){
+      expect(Math.abs(boxes[0].y-boxes[1].y)).toBeLessThanOrEqual(1);
+      expect(boxes[1].x-boxes[0].right).toBeGreaterThanOrEqual(15);
+      expect(Math.abs(boxes[2].x-boxes[0].x)).toBeLessThanOrEqual(1);
+      expect(boxes[2].y-boxes[0].bottom).toBeGreaterThanOrEqual(15);
+    } else {
+      expect(Math.abs(boxes[1].x-boxes[0].x)).toBeLessThanOrEqual(1);
+      expect(boxes[1].y-boxes[0].bottom).toBeGreaterThanOrEqual(15);
+    }
+    for(const card of await cards.all()){
+      expect(await card.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    }
+    expect(await page.locator('#panel-scroll').evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)).toBeLessThanOrEqual(1);
+    const after=await game.snapshot();
+    expect(after.state.jobs).toEqual(before.state.jobs);expect(after.state.player).toEqual(before.state.player);
+    await page.screenshot({path:testInfo.outputPath(`contratos-columnas-${width}.png`)});
+  });
+}
 async function invoiceMove(page, id) {
   await openGridControls(page);
   const index = await page.evaluate(id => currentNeighbors().findIndex(node => node.id === id), id);

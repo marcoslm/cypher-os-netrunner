@@ -641,6 +641,7 @@ button.btn::before,.navbtn::before{
 /* ---- jobs activos ---- */
 .job{border:1px solid var(--borde);border-radius:0;padding:8px 10px;
   margin-bottom:6px;font-size:13px;}
+.job-list>.job{margin:0;min-width:0;overflow-wrap:anywhere;}
 .job .prog{font-size:11px;color:var(--gris);}
 
 /* ---- inventario tienda ---- */
