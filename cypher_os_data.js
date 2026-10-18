@@ -827,39 +827,39 @@ var STREET_ACTIVITIES = [
 /* ---- 4c. MÚSICA — pistas por escena (las consume cypher_os_audio.js) ---- */
 
 /* Catálogo definitivo: las pistas aún no añadidas se saltan durante la sesión.
-   Basta poner los MP3 con estos nombres en music/ y recargar el juego. */
+   Basta poner los MP3 con estos nombres en assets/music/ y recargar el juego. */
 var MUSIC_TRACKS = {
   /* calle / menús */
-  ui:[ {f:"music/cyos-ui-cable-no-duerme.mp3", v:.25},
-       {f:"music/cyos-ui-lluvia-larga.mp3", v:.24},
-       {f:"music/cyos-ui-octava.mp3", v:.25},
-       {f:"music/cyos-ui-mercado-de-calle.mp3", v:.24} ],
+  ui:[ {f:"assets/music/cyos-ui-cable-no-duerme.mp3", v:.25},
+       {f:"assets/music/cyos-ui-lluvia-larga.mp3", v:.24},
+       {f:"assets/music/cyos-ui-octava.mp3", v:.25},
+       {f:"assets/music/cyos-ui-mercado-de-calle.mp3", v:.24} ],
   /* inmersión en el grid */
-  grid:[ {f:"music/cyos-grid-inmersion.mp3", v:.26},
-         {f:"music/cyos-grid-el-tejido.mp3", v:.25},
-         {f:"music/cyos-grid-los-recuerdos.mp3", v:.26},
-         {f:"music/cyos-grid-ruido-blanco.mp3", v:.25} ],
+  grid:[ {f:"assets/music/cyos-grid-inmersion.mp3", v:.26},
+         {f:"assets/music/cyos-grid-el-tejido.mp3", v:.25},
+         {f:"assets/music/cyos-grid-los-recuerdos.mp3", v:.26},
+         {f:"assets/music/cyos-grid-ruido-blanco.mp3", v:.25} ],
   /* grid con calor alto: la caza empieza */
-  gridHot:[ {f:"music/cyos-hot-el-muro.mp3", v:.28},
-            {f:"music/cyos-hot-caza-abierta.mp3", v:.28},
-            {f:"music/cyos-hot-paranoia.mp3", v:.26} ],
+  gridHot:[ {f:"assets/music/cyos-hot-el-muro.mp3", v:.28},
+            {f:"assets/music/cyos-hot-caza-abierta.mp3", v:.28},
+            {f:"assets/music/cyos-hot-paranoia.mp3", v:.26} ],
   /* combate contra ICE / daemons */
-  combat:[ {f:"music/cyos-combat-icebreakers.mp3", v:.26},
-           {f:"music/cyos-combat-claves-hex.mp3", v:.26},
-           {f:"music/cyos-combat-memoria-daemon.mp3", v:.27},
-           {f:"music/cyos-combat-escaner.mp3", v:.27},
-           {f:"music/cyos-combat-santo-cero.mp3", v:.28} ],
+  combat:[ {f:"assets/music/cyos-combat-icebreakers.mp3", v:.26},
+           {f:"assets/music/cyos-combat-claves-hex.mp3", v:.26},
+           {f:"assets/music/cyos-combat-memoria-daemon.mp3", v:.27},
+           {f:"assets/music/cyos-combat-escaner.mp3", v:.27},
+           {f:"assets/music/cyos-combat-santo-cero.mp3", v:.28} ],
   /* EL NÚCLEO */
-  boss:[ {f:"music/cyos-nucleo-liturgia.mp3", v:.32},
-         {f:"music/cyos-nucleo-despertar.mp3", v:.30} ],
+  boss:[ {f:"assets/music/cyos-nucleo-liturgia.mp3", v:.32},
+         {f:"assets/music/cyos-nucleo-despertar.mp3", v:.30} ],
   /* puzzle del vault */
-  vault:[ {f:"music/cyos-vault-la-herida.mp3", v:.28},
-          {f:"music/cyos-vault-ultima-llave.mp3", v:.28} ]
+  vault:[ {f:"assets/music/cyos-vault-la-herida.mp3", v:.28},
+          {f:"assets/music/cyos-vault-ultima-llave.mp3", v:.28} ]
 };
 
 /* ---- boot: líneas de la BIOS (las consume cypher_os_ui.js) ---- */
 
-var FIRMWARE_BUILD = 107;
+var FIRMWARE_BUILD = 108;
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],

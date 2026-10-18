@@ -14,9 +14,9 @@ async function catalog(page) {
     }
     return out;
   });
-  const local = f => f.replace(/^music\//, '');
-  const present = files.filter(f => fs.existsSync(path.resolve(__dirname, '../../music', local(f))));
-  const missing = f => !fs.existsSync(path.resolve(__dirname, '../../music', local(f)));
+  const local = f => f.replace(/^assets\/music\//, '');
+  const present = files.filter(f => fs.existsSync(path.resolve(__dirname, '../../assets/music', local(f))));
+  const missing = f => !fs.existsSync(path.resolve(__dirname, '../../assets/music', local(f)));
   return { files, present, missing, local };
 }
 
@@ -44,7 +44,7 @@ test('música local: los MP3 del catálogo disponibles se decodifican en Edge po
 
 test('música: calor alto salta pendientes, reproduce El muro y persiste MUS', async ({ page, game }) => {
   const { present, missing } = await catalog(page);
-  test.skip(!present.includes('music/cyos-hot-el-muro.mp3') || !missing('music/cyos-hot-caza-abierta.mp3') || !missing('music/cyos-hot-paranoia.mp3'), 'Caso de entrega parcial: El muro presente y dos variantes pendientes.');
+  test.skip(!present.includes('assets/music/cyos-hot-el-muro.mp3') || !missing('assets/music/cyos-hot-caza-abierta.mp3') || !missing('assets/music/cyos-hot-paranoia.mp3'), 'Caso de entrega parcial: El muro presente y dos variantes pendientes.');
   await game.setup({ immersion: makeImmersion(), player: { heat: 80 } });
   await page.evaluate(() => {
     MUSIC.bags.gridHot = [MUSIC_TRACKS.gridHot[1], MUSIC_TRACKS.gridHot[2], MUSIC_TRACKS.gridHot[0]];
@@ -53,7 +53,7 @@ test('música: calor alto salta pendientes, reproduce El muro y persiste MUS', a
   await expect.poll(() => page.evaluate(() => ({
     scene: MUSIC.scene, track: MUSIC.playing.gridHot?.t?.f, paused: MUSIC.el?.paused,
     skipped: Object.keys(MUSIC.unavailable).length, ready: (MUSIC.el?.readyState || 0) >= 2
-  }))).toEqual({ scene: 'gridHot', track: 'music/cyos-hot-el-muro.mp3', paused: false, skipped: 2, ready: true });
+  }))).toEqual({ scene: 'gridHot', track: 'assets/music/cyos-hot-el-muro.mp3', paused: false, skipped: 2, ready: true });
   await page.locator('#h-mus').click();
   expect(await page.evaluate(() => ({ mus: S.mus, paused: MUSIC.el.paused, scene: MUSIC.scene }))).toEqual({ mus: false, paused: true, scene: null });
   await game.reload();
@@ -63,7 +63,7 @@ test('música: calor alto salta pendientes, reproduce El muro y persiste MUS', a
 
 test('música: combate sin pistas silencia menús y la victoria reanuda la calle', async ({ page, game }) => {
   const { present, missing } = await catalog(page);
-  test.skip(present.filter(f => f.startsWith('music/cyos-ui-')).length !== 4 || ['icebreakers', 'claves-hex', 'memoria-daemon', 'escaner', 'santo-cero'].some(f => !missing('music/cyos-combat-' + f + '.mp3')), 'Caso de entrega parcial: menús presentes y combate pendiente.');
+  test.skip(present.filter(f => f.startsWith('assets/music/cyos-ui-')).length !== 4 || ['icebreakers', 'claves-hex', 'memoria-daemon', 'escaner', 'santo-cero'].some(f => !missing('assets/music/cyos-combat-' + f + '.mp3')), 'Caso de entrega parcial: menús presentes y combate pendiente.');
   await game.setup();
   await page.locator('#h-mus').click();
   await expect.poll(() => page.evaluate(() => !MUSIC.el.paused && MUSIC.el.readyState >= 2)).toBe(true);
@@ -86,19 +86,19 @@ test('música: con catálogo disponible las escenas de calor y combate reproduce
     scene: MUSIC.scene, track: MUSIC.playing.gridHot?.t?.f, paused: MUSIC.el?.paused
   }))).toEqual(expect.objectContaining({ scene: 'gridHot', paused: false }));
   const hotTrack = await page.evaluate(() => MUSIC.playing.gridHot.t.f);
-  expect(hotTrack).toMatch(/^music\/cyos-hot-/);
+  expect(hotTrack).toMatch(/^assets\/music\/cyos-hot-/);
   await game.startCombat();
   await expect.poll(() => page.evaluate(() => ({
     scene: MUSIC.scene, track: MUSIC.playing.combat?.t?.f, paused: MUSIC.el?.paused
   }))).toEqual(expect.objectContaining({ scene: 'combat', paused: false }));
   const combatTrack = await page.evaluate(() => MUSIC.playing.combat.t.f);
-  expect(combatTrack).toMatch(/^music\/cyos-combat-/);
+  expect(combatTrack).toMatch(/^assets\/music\/cyos-combat-/);
   await solveCodeCombat(page);
 });
 
 test('música: volver a intro silencia MP3 y ambiente sin cambiar ajustes; COMENZAR reanuda', async ({ page, game }) => {
   const { present } = await catalog(page);
-  test.skip(!present.some(f => f.startsWith('music/cyos-ui-')), 'Requiere música local opcional de calle.');
+  test.skip(!present.some(f => f.startsWith('assets/music/cyos-ui-')), 'Requiere música local opcional de calle.');
   await game.setup({state:{offers:[]}});
   await page.locator('#h-mus').click();
   await page.locator('#h-amb').click();

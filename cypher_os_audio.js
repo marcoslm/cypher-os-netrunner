@@ -1,7 +1,7 @@
 /* ============================================================
    CYPHER://OS  ·  cypher_os_audio.js — AUDIO Y PREFERENCIAS DE DISPLAY
    Audio WebAudio sin archivos (FX + ambiente) y música opcional por
-   escenas (music/*.mp3). Preferencias locales, volumen por canal,
+   escenas (assets/music/*.mp3). Preferencias locales, volumen por canal,
    efectos visuales, brillo (LUM) y pantalla completa (FULL).
    Orden de carga de los .js (scripts clásicos sin módulos, ámbito global
    compartido; ver AGENTS.md §4):
@@ -413,7 +413,7 @@ function updateAmbientStress(){
 
 
 /* ============================================================
-   4c. MÚSICA — pistas locales opcionales (music/*.mp3)
+   4c. MÚSICA — pistas locales opcionales (assets/music/*.mp3)
    Si faltan los archivos, el juego sigue en silencio: la música
    nunca es un recurso obligatorio. Cada escena tiene sus pistas y
    van ROTANDO (bolsa barajada + cambio al terminar cada pista).

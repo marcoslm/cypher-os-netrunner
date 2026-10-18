@@ -29,7 +29,7 @@ async function run(options = {}) {
       vault: [['vault-la-herida', .28], ['vault-ultima-llave', .28]]
     };
     for (const scene of Object.keys(expected)) {
-      assert.deepEqual(catalog[scene], expected[scene].map(([name, v]) => ({ f: 'music/cyos-' + name + '.mp3', v })));
+      assert.deepEqual(catalog[scene], expected[scene].map(([name, v]) => ({ f: 'assets/music/cyos-' + name + '.mp3', v })));
     }
     assert.equal(new Set(Object.values(catalog).flat().map(t => t.f)).size, 20);
   });
@@ -46,7 +46,7 @@ async function run(options = {}) {
 
   await check('calor alto salta las dos pistas pendientes y conserva El muro', g => {
     g.run('playMusicScene("gridHot",false);');
-    const m = music(g), available = 'music/cyos-hot-el-muro.mp3';
+    const m = music(g), available = 'assets/music/cyos-hot-el-muro.mp3';
     for (let i = 0; i < 9; i++) {
       if (m.el.src !== available) emit(g, 'error');
       else emit(g, 'ended');
@@ -91,7 +91,7 @@ async function run(options = {}) {
     emit(g, 'loadedmetadata');
     assert.equal(m.playing.ui.t, uiTrack); assert.equal(m.el.currentTime, 37);
     assert.equal(m.playing.grid.pos, 19);
-    g.run('MUSIC.unavailable["music/cyos-hot-caza-abierta.mp3"]=true;MUSIC.unavailable["music/cyos-hot-paranoia.mp3"]=true;playMusicScene("gridHot",false);');
+    g.run('MUSIC.unavailable["assets/music/cyos-hot-caza-abierta.mp3"]=true;MUSIC.unavailable["assets/music/cyos-hot-paranoia.mp3"]=true;playMusicScene("gridHot",false);');
     emit(g, 'loadedmetadata'); m.el.currentTime = 399;
     emit(g, 'ended'); assert.equal(m.el.currentTime, 0);
   });

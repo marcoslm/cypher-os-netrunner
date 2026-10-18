@@ -6,7 +6,7 @@ const { test: base, expect } = require('@playwright/test');
 const { storyFixture } = require('../harness');
 
 const GAME_URL = pathToFileURL(path.resolve(__dirname, '../../cypher_os.html')).href;
-const MUSIC_URL = pathToFileURL(path.resolve(__dirname, '../../music') + path.sep).href;
+const MUSIC_URL = pathToFileURL(path.resolve(__dirname, '../../assets/music') + path.sep).href;
 const BACKGROUND_URL = pathToFileURL(path.resolve(__dirname, '../../assets/images/backgrounds') + path.sep).href;
 const CLOCK_START = Date.parse('2030-01-01T00:00:00Z');
 
