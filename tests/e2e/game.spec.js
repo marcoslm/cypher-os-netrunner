@@ -5,6 +5,38 @@ const { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat,
 const nav = (page, view) => page.locator(`.navbtn[data-view="${view}"]`);
 const action = (page, name) => page.locator(`[data-action="${name}"]`);
 const clone = value => JSON.parse(JSON.stringify(value));
+async function expectDashboardColumns(page,width,count,name,testInfo) {
+  const grid=page.locator('#panel-scroll .deck-columns');
+  await expect(grid).toHaveCount(1);
+  const panels=grid.locator(':scope > .deck-panel');
+  await expect(panels).toHaveCount(count);
+  const columns=await grid.evaluate(element=>getComputedStyle(element).gridTemplateColumns.split(/\s+/).filter(Boolean).length);
+  expect(columns).toBe(width>=1200?2:1);
+  const bounds=await grid.boundingBox();
+  const boxes=await panels.evaluateAll(elements=>elements.map(element=>{
+    const rect=element.getBoundingClientRect();
+    return {x:rect.x,y:rect.y,width:rect.width,height:rect.height};
+  }));
+  if(width>=1200){
+    expect(Math.abs(boxes[0].y-boxes[1].y)).toBeLessThanOrEqual(1);
+    expect(boxes[1].x).toBeGreaterThan(boxes[0].x+boxes[0].width-1);
+    expect(boxes[0].width).toBeLessThanOrEqual(bounds.width/2+1);
+  } else {
+    expect(Math.abs(boxes[1].x-boxes[0].x)).toBeLessThanOrEqual(1);
+    expect(boxes[1].y).toBeGreaterThanOrEqual(boxes[0].y+boxes[0].height-1);
+  }
+  if(name==='inicio'){
+    const full=page.locator('#panel-scroll .deck-columns-full');
+    await expect(full).toHaveCount(1);
+    const fullBox=await full.boundingBox();
+    expect(Math.abs(fullBox.width-bounds.width)).toBeLessThanOrEqual(1);
+    expect(fullBox.y).toBeGreaterThanOrEqual(boxes[1].y);
+    expect(boxes[2].y).toBeGreaterThanOrEqual(fullBox.y+fullBox.height-1);
+  } else {
+    await expect(page.locator('#panel-scroll .deck-columns-full')).toHaveCount(0);
+  }
+  await page.screenshot({path:testInfo.outputPath(`${name}-columnas-${width}.png`)});
+}
 async function invoiceMove(page, id) {
   await openGridControls(page);
   const index = await page.evaluate(id => currentNeighbors().findIndex(node => node.id === id), id);
@@ -515,6 +547,7 @@ for(const width of [320,768,1280]){
       expect(await panel.evaluate(element=>getComputedStyle(element,'::before').clipPath)).toContain('evenodd');
       expect(await panel.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
     }
+    await expectDashboardColumns(page,width,4,'inicio',testInfo);
     const row=page.locator('.panel-actions').filter({has:action(page,'goArchivos')});
     await expect(row).toHaveCSS('gap','10px');await expect(row).toHaveCSS('justify-content','flex-start');
     const first=await action(page,'goArchivos').boundingBox(),second=await action(page,'goStoryWork').boundingBox();
@@ -576,9 +609,20 @@ for(const width of [320,768,1280,1920]){
     const before=await game.snapshot();
     expect(await page.evaluate(()=>['verde','cyan','magenta','ambar','rojo'].map(name=>getComputedStyle(document.documentElement).getPropertyValue('--'+name).trim())))
       .toEqual(['#4dffa6','#4dd8ff','#ff4dc4','#ffc44d','#ff5d6a']);
+    await expectDashboardColumns(page,width,4,'inicio',testInfo);
     await page.screenshot({path:testInfo.outputPath(`deck-efectos-${width}.png`)});
     await page.locator('#h-controls').click();
     const window=page.locator('#controls-overlay .modal');
+    for(const preference of ['crt','animations']){
+      const toggle=window.locator(`[data-pref="${preference}"]`);
+      if(await toggle.getAttribute('aria-pressed')==='true')await toggle.click();
+    }
+    const glow=window.locator('[data-pref="glow"]');
+    if(await glow.getAttribute('aria-pressed')!=='true')await glow.click();
+    expect(await window.evaluate(element=>getComputedStyle(element).filter)).toContain('drop-shadow');
+    await expect(window).toHaveCSS('box-shadow','none');
+    const bounds=await window.boundingBox();
+    const illuminated=await page.screenshot({path:testInfo.outputPath(`deck-glow-${width}.png`),scale:'device'});
     await expect(window).toHaveCSS('clip-path','none');
     expect(await window.evaluate(element=>getComputedStyle(element,'::before').clipPath)).toContain('evenodd');
     await expect(page.locator('#os')).toHaveJSProperty('inert',true);
@@ -586,6 +630,25 @@ for(const width of [320,768,1280,1920]){
       const toggle=window.locator(`[data-pref="${preference}"]`);
       if(await toggle.getAttribute('aria-pressed')==='true')await toggle.click();
     }
+    await expect(window).toHaveCSS('filter','none');
+    expect(await window.boundingBox()).toEqual(bounds);
+    const unlit=await page.screenshot({path:testInfo.outputPath(`deck-glow-off-${width}.png`),scale:'device'});
+    const halo=await page.evaluate(async({on,off,bounds})=>{
+      async function pixels(encoded){
+        const image=new Image();image.src='data:image/png;base64,'+encoded;await image.decode();
+        const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
+        const context=canvas.getContext('2d');context.drawImage(image,0,0);
+        return {data:context.getImageData(0,0,image.width,image.height).data,width:image.width};
+      }
+      const lit=await pixels(on),dark=await pixels(off),scale=lit.width/innerWidth;
+      let difference=0,samples=0;
+      for(let row=bounds.y+20;row<bounds.y+bounds.height-20;row+=4){
+        const offset=(Math.floor(row*scale)*lit.width+Math.floor((bounds.x-3)*scale))*4;
+        difference+=lit.data[offset+1]+lit.data[offset+2]-dark.data[offset+1]-dark.data[offset+2];samples++;
+      }
+      return difference/samples;
+    },{on:illuminated.toString('base64'),off:unlit.toString('base64'),bounds});
+    expect(halo,'el halo cyan ilumina realmente fuera del contorno').toBeGreaterThan(4);
     expect(await window.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
     const reset=window.locator('[data-action="resetControls"]');await reset.scrollIntoViewIfNeeded();await reset.click();
     expect(await window.evaluate(element=>getComputedStyle(element).backgroundImage)).toContain('linear-gradient');
@@ -600,6 +663,7 @@ for(const width of [320,768,1280,1920]){
     await page.screenshot({path:testInfo.outputPath(`deck-ajustes-${width}.png`)});
     await page.keyboard.press('Escape');await expect(page.locator('#h-controls')).toBeFocused();
     for(const panel of await page.locator('.deck-panel').all()){
+      await expect(panel).toHaveCSS('filter','none');
       await expect(panel).toHaveCSS('clip-path','none');
       expect(await panel.evaluate(element=>getComputedStyle(element,'::before').clipPath)).toContain('evenodd');
       expect(await panel.evaluate(element=>getComputedStyle(element,'::after').backgroundImage)).toContain('linear-gradient');
@@ -609,6 +673,7 @@ for(const width of [320,768,1280,1920]){
     await nav(page,'estado').click();
     await expect(page.locator('.deck-panel')).toHaveCount(9);
     await expect(page.locator('.deck-panel .box')).toHaveCount(0);
+    await expectDashboardColumns(page,width,9,'estado',testInfo);
     await expect(page.locator('#panel-scroll')).toHaveJSProperty('scrollLeft',0);
     if(width>=768){
       await page.addStyleTag({content:'#panel-scroll{font-size:200%} #panel-scroll h2,#panel-scroll p,#panel-scroll .row{font-size:inherit}'});
@@ -621,6 +686,51 @@ for(const width of [320,768,1280,1920]){
     expect(after.state.player.credits).toBe(before.state.player.credits);
     expect(after.state.player.xp).toBe(before.state.player.xp);
     expect(after.state.narrative).toEqual(before.state.narrative);
+  });
+}
+
+for(const width of [320,1280]){
+  test(`GUI ciberdeck: halo y prioridad de capas a ${width} px`,async({page,game},testInfo)=>{
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.setViewportSize({width,height:width===320?600:900});
+    await game.setup({immersion:makeImmersion(),state:{offers:[]}});
+    await page.locator('#h-controls').click();
+    for(const preference of ['crt','animations']){
+      const toggle=page.locator(`#controls-overlay [data-pref="${preference}"]`);
+      if(await toggle.getAttribute('aria-pressed')==='true')await toggle.click();
+    }
+    const glow=page.locator('#controls-overlay [data-pref="glow"]');
+    if(await glow.getAttribute('aria-pressed')!=='true')await glow.click();
+    await page.keyboard.press('Escape');
+    const before=await game.snapshot();
+    async function raised(selector,color,name){
+      const layer=page.locator(selector);await expect(layer).toBeVisible();
+      expect(await layer.evaluate(element=>getComputedStyle(element).filter)).toContain('drop-shadow');
+      expect(await layer.evaluate(element=>getComputedStyle(element).getPropertyValue('--frame-accent').trim())).toBe(color);
+      await expect(layer).toHaveCSS('clip-path','none');await expect(layer).toHaveCSS('box-shadow','none');
+      expect(await layer.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+      await page.screenshot({path:testInfo.outputPath(`glow-${name}-${width}.png`)});
+    }
+    await game.openSaveTools();await raised('#save-tools','#4dffa6','partida');
+    await page.keyboard.press('Escape');await expect(page.locator('#save-tools-toggle')).toBeFocused();
+    await game.openSaveTools();
+    await page.locator('#btn-reset').click();
+    await raised('#confirm-overlay .modal','#ff5d6a','peligro');
+    await page.keyboard.press('Escape');await expect(page.locator('#confirm-overlay')).toBeHidden();
+    await expect(page.locator('#os')).toHaveJSProperty('inert',false);
+    await nav(page,'estado').click();await action(page,'openSkillTree').click();
+    await raised('.skilltree-card','#4dd8ff','arbol');
+    await page.keyboard.press('Escape');await expect(page.locator('#skilltree-overlay')).toBeHidden();
+    await expect(action(page,'openSkillTree')).toBeVisible();
+    await nav(page,'red').click();await openGridControls(page);
+    await raised('#grid-overlay','#4dffa6','hud');
+    await page.keyboard.press('Escape');await expect(page.locator('#grid-controls-toggle')).toBeFocused();
+    const after=await game.snapshot();expect(after.immersion).toEqual(before.immersion);
+    expect(after.state.player).toEqual(before.state.player);expect(after.state.narrative).toEqual(before.state.narrative);
+    await game.startCombat({encounter:true});await raised('.combat-card','#ff5d6a','combate');
+    await expect(page.locator('#os')).toHaveJSProperty('inert',true);
+    await page.locator('#combat-enter').click();await expect(page.locator('#codeInput')).toBeFocused();
+    await raised('.combat-card','#ff5d6a','reto');
   });
 }
 

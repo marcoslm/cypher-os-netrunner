@@ -160,6 +160,8 @@ body::after{   /* viñeta CRT + barrido vertical leve (ver nota de z-index arrib
 html.crt-off body::before,html.crt-off body::after{display:none;}
 html.glow-off body *{text-shadow:none!important;box-shadow:none!important;}
 html.glow-off .quick-btn svg{filter:none;}
+html.glow-off .modal,html.glow-off .skilltree-card,html.glow-off .combat-card,
+html.glow-off #save-tools,html.glow-off #grid-overlay{filter:none;}
 html.glow-off input[type=range]::-webkit-slider-thumb{box-shadow:none;}
 html.glow-off input[type=range]::-moz-range-thumb{box-shadow:none;}
 html.motion-off body,html.motion-off body::before,html.motion-off body::after,html.motion-off body *,html.motion-off body *::before,html.motion-off body *::after{animation:none!important;transition:none!important;}
@@ -266,11 +268,17 @@ html.sidebar-collapsed #sidebar{display:none;}
   text-shadow:none;
 }
 .navbtn .ic{color:var(--cyan);width:18px;display:inline-block;}
-.navbtn .immersion-mark{display:none;}
-.navbtn.has-immersion{box-shadow:inset -3px 0 var(--cyan);}
-.navbtn.has-immersion .ic{color:var(--cyan);text-shadow:0 0 8px rgba(77,216,255,.7);}
-.navbtn.has-immersion .immersion-mark{display:inline;margin-left:8px;font-size:9px;letter-spacing:0;color:var(--cyan);white-space:nowrap;}
+.navbtn.has-immersion:not(.active){
+  --control-edge:rgba(77,216,255,.45);color:rgba(77,216,255,.7);
+  background:linear-gradient(90deg,rgba(77,216,255,.07),rgba(77,255,166,.025));
+}
+.navbtn.has-immersion:not(.active) .ic{color:inherit;}
+.navbtn.has-immersion:not(.active):hover{
+  --control-edge:rgba(77,216,255,.65);color:rgba(77,216,255,.85);
+  background:linear-gradient(90deg,rgba(77,216,255,.1),rgba(77,255,166,.035));
+}
 .navbtn:focus-visible{--control-edge:var(--cyan);--control-stroke:2px;outline:0;}
+.navbtn.has-immersion:not(.active):focus-visible{--control-edge:var(--cyan);color:var(--cyan);}
 /* Operaciones de partida (F05A v2): popover-diálogo anclado al botón PARTIDA.
    Vive fuera del flujo del lateral para no comer scroll en pantallas bajas y se
    une al botón con una traza verde, como un cable de datos entre ambos. */
@@ -282,7 +290,6 @@ html.sidebar-collapsed #sidebar{display:none;}
   width:min(260px,calc(100vw - 76px));
   padding:10px 12px 12px;border:1px solid transparent;border-radius:0;
   background:var(--frame-fill);
-  box-shadow:0 12px 32px rgba(0,0,0,.55);
 }
 .save-tools-frame{position:absolute;inset:-1px;pointer-events:none;z-index:-1;
   clip-path:var(--frame-outline);background:var(--verde);}
@@ -380,6 +387,11 @@ h1.title{
 .modal,.skilltree-card,.combat-card,#save-tools{
   --frame-fill:linear-gradient(135deg,transparent 7.071067812px,var(--frame-surface) 0) top/100% 10px no-repeat,linear-gradient(var(--frame-surface),var(--frame-surface)) center/100% calc(100% - 20px) no-repeat,linear-gradient(315deg,transparent 7.071067812px,var(--frame-surface) 0) bottom/100% 10px no-repeat;
 }
+.modal,.skilltree-card,.combat-card,#save-tools,#grid-overlay{
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--frame-accent) 30%,transparent))
+    drop-shadow(0 0 10px color-mix(in srgb,var(--frame-accent) 14%,transparent))
+    drop-shadow(0 8px 12px rgba(0,0,0,.65));
+}
 .deck-panel{
   position:relative;isolation:isolate;min-width:0;padding:0 16px 14px;margin:16px 0;
   background:transparent;
@@ -405,6 +417,11 @@ h1.title{
 .deck-panel>p{font-size:13px;line-height:1.6;color:var(--texto);}
 .deck-panel>.panel-actions:last-child{margin-bottom:0;}
 .deck-panel>.panel-actions>.btn{flex-shrink:0;}
+.deck-columns{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--ui-space);align-items:start;min-width:0;}
+.deck-columns>.deck-panel{margin:0;}
+.deck-columns-full{grid-column:1/-1;min-width:0;display:flex;flex-direction:column;gap:var(--ui-space);}
+.deck-columns-full>.diriz,.deck-columns-full>.panel-actions{margin:0;}
+@media(min-width:1200px){.deck-columns{grid-template-columns:repeat(2,minmax(0,1fr));}}
 
 /* ============================================================
     AYUDA / HELP
@@ -708,7 +725,7 @@ button.btn::before,.navbtn::before{
   position:relative;isolation:isolate;--frame-accent:var(--cyan);--frame-end:#040c09;
   max-width:560px;width:min(560px,94%);max-height:90vh;overflow-y:auto;
   border:1px solid transparent;border-radius:0;padding:22px 24px;
-  background:var(--frame-fill);box-shadow:0 16px 48px rgba(0,0,0,.6);
+  background:var(--frame-fill);
   animation:popIn .18s ease-out;
 }
 @keyframes popIn{from{transform:scale(.94);opacity:0;}to{transform:scale(1);opacity:1;}}
@@ -743,7 +760,7 @@ button.btn::before,.navbtn::before{
 .combat-card{position:relative;isolation:isolate;--frame-edge:var(--rojo);--frame-accent:var(--rojo);--frame-surface:#150709;--frame-end:#0a0305;
   width:min(560px,92vw);border:1px solid transparent;border-radius:0;
   background:var(--frame-fill);padding:18px 20px;
-  box-shadow:0 12px 40px rgba(0,0,0,.6);animation:popIn .15s;}
+  animation:popIn .15s;}
 .combat-card{max-height:96vh;max-height:96dvh;overflow-y:auto;overflow-wrap:anywhere;}
 .combat-identity{display:flex;align-items:center;gap:12px;margin:8px 0;color:var(--cyan);}
 .combat-avatar{display:block;width:60px;height:54px;flex:none;}
@@ -1103,7 +1120,7 @@ html.motion-off #boot .line:last-child::after{animation:none;}
 .skilltree-card{position:relative;isolation:isolate;--frame-edge:var(--cyan);--frame-accent:var(--cyan);
   max-width:720px;width:92vw;max-height:88vh;overflow-y:auto;
   border:1px solid transparent;border-radius:0;padding:20px 24px;
-  background:var(--frame-fill);box-shadow:0 12px 40px rgba(0,0,0,.6);}
+  background:var(--frame-fill);}
 .skilltree-title{font-size:18px;font-weight:normal;color:var(--cyan);letter-spacing:0;margin:0 0 12px;
   padding-bottom:12px;border-bottom:1px solid var(--borde-claro);}
 .skilltree-sub{font-size:12px;color:var(--gris);margin-bottom:14px;}
@@ -1285,7 +1302,6 @@ body.glitch-random{animation:glitchRandom .2s ease-out;}
   #sidebar .navbtn span.lbl{display:none;}
   #sidebar .navbtn{text-align:center;padding:8px 4px;}
   #sidebar .navbtn .ic{display:block;}
-  #sidebar .navbtn.has-immersion .immersion-mark{position:absolute;right:5px;top:5px;width:6px;height:6px;margin:0;font-size:0;background:var(--cyan);border-radius:50%;}
   .logo{font-size:34px;}
   #topbar .stat-mini{display:flex;gap:3px;letter-spacing:0;}
   #topbar .stat-secondary{display:none;}

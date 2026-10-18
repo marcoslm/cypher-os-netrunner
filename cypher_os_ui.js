@@ -1459,6 +1459,7 @@ function renderInicio(){
   }
   var html='<div class="logo glow">CYPHER<br><small>:OS v9.2.7</small></div>'+
     '<p>ÁLEX RIBA · equipo CORVO-7'+(S.narrative.aliasAcquired?' · alias registrado':' · sesión local')+'</p>'+
+    '<div class="deck-columns">'+
     '<section class="deck-panel"><h2 class="panel-h">ARCHIVO LOCAL</h2><p>Los originales se conservan. '+(S.narrative.recoveryStage==="needs_index"?'El índice personal necesita un respaldo externo.':S.narrative.recoveryStage==="complete_known"?'Índice restaurado y copias conocidas accesibles.':'Índice reconstruido; las copias de casos requieren la clave autorizada de Inés.')+'</p>'+
     '<div class="panel-actions"><button class="btn small" data-action="goArchivos">ABRIR ARCHIVOS</button>'+
     '<button class="btn small" data-action="goStoryWork">CASOS</button></div></section>'+
@@ -1467,6 +1468,7 @@ function renderInicio(){
     row2("CRÉDITOS","₡"+Math.floor(p.credits),"verde")+row2("RAM",dataUsedNow()+"/"+ramCap())+
     row2("NIVEL",p.level+" · XP "+p.xp+"/"+xpParaNivel())+
     '</section>'+
+    '<div class="deck-columns-full">'+
     '<div class="diriz">'+dir+'</div>'+
     '<div class="panel-actions">'+
     '<button class="btn cyan" data-action="dipGrid">◈ DIP AL GRID</button>'+
@@ -1478,7 +1480,8 @@ function renderInicio(){
     html+='<div class="panel-actions"><button class="btn magenta" data-action="acceptNucleo">✦ INTERVENCIÓN (profundidad 5)</button></div>';
   if(S.history.finalDone)
     html+='<div class="panel-actions"><button class="btn magenta" data-action="startEndless">◈ SEALED NETWORK</button> <span class="muted text-xs">modo supervivencia</span></div>';
-  html+='<section class="deck-panel"><h2 class="panel-h">REPUTACIÓN</h2>'+repRows()+'</section>';
+  html+='</div>'+
+    '<section class="deck-panel"><h2 class="panel-h">REPUTACIÓN</h2>'+repRows()+'</section>';
   /* actividades de la calle (solo cuando no hay inmersión) */
   if(!inImmersion){
     html+='<section class="deck-panel"><h2 class="panel-h">ACTIVIDADES DE LA CALLE</h2>';
@@ -1495,6 +1498,7 @@ function renderInicio(){
     }
     html+='</section>';
   }
+  html+='</div>';
   scroller(html); addTicker(); updateTopbar();
   msg(pickFresh("inicio-msg", FRASES_INICIO),"magenta");
 }
@@ -1573,6 +1577,7 @@ function renderEstado(){
   var p=S.player;
   var html='<h1 class="title">ESTADO</h1>'+
     '<div class="sub">Álex Riba · '+(S.narrative.aliasAcquired?'CORVO-7 · alias del equipo':'CORVO-7 · dispositivo prestado')+'</div>'+
+    '<div class="deck-columns">'+
     '<section class="deck-panel"><h2 class="panel-h">CUERPO</h2>'+
     row2("CPU",Math.round(p.cpu)+"/"+p.maxCpu)+row2("CALOR",Math.round(p.heat)+"/100")+
     row2("FIREWALL",fwVal())+row2("RAM (slots)",dataUsedNow()+"/"+ramCap())+
@@ -1611,7 +1616,8 @@ function renderEstado(){
     row2("NIVEL MÁX.",S.best.level||"-")+row2("INMERSIONES",S.best.immerse||"-")+
     row2("ICE",S.best.ice||"-")+row2("DAEMONS",S.best.daemons||"-")+
     row2("CRÉDITOS","₡"+(S.best.credits||0))+row2("PROFUNDIDAD","capa "+(S.best.depth||"-"))+
-    '</section>';
+    '</section>'+
+    '</div>';
   scroller(html); updateTopbar();
   msg(pickFresh("view-estado", FRASES_VIEWS.estado),"cyan");
 }
