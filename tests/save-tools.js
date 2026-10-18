@@ -14,7 +14,7 @@ async function run(options={}) {
     finally {g.dispose();}
   }
   console.log('\nPARTIDA / MENÚ · popover-diálogo anclado y operaciones…');
-  await check('diálogo oculto y botón nombrado agrupan los cinco ids sin cambiar navegación',g=>{
+  await check('diálogo oculto y botón nombrado agrupan las operaciones y CONSULTAS sin cambiar navegación',g=>{
     const d=g.sb.document,dialog=d.getElementById('save-tools'),toggle=d.getElementById('save-tools-toggle');
     assert.equal(dialog.getAttribute('role'),'dialog');
     assert.equal(dialog.getAttribute('aria-label'),'Opciones de partida');
@@ -23,8 +23,9 @@ async function run(options={}) {
     assert.equal(toggle.getAttribute('aria-haspopup'),'dialog');
     assert.equal(toggle.getAttribute('aria-controls'),'save-tools');
     assert.equal(toggle.getAttribute('aria-expanded'),'false');
-    for(const id of ['btn-save','btn-export','btn-import','btn-reset','btn-intro'])
+    for(const id of ['btn-save','btn-export','btn-import','btn-reset','btn-intro','btn-log'])
       assert.equal(d.getElementById(id).parentNode.id,'save-tools-buttons');
+    assert.equal(d.getElementById('btn-log').getAttribute('aria-label'),'Abrir registro');
     const close=d.getElementById('save-tools-close');
     assert.equal(close.getAttribute('data-action'),'closeSaveTools');
     assert.equal(close.getAttribute('aria-label'),'Cerrar opciones de partida');
@@ -33,7 +34,8 @@ async function run(options={}) {
     assert.equal(close.className,panelClose.className);
     assert.equal(close.textContent,panelClose.textContent);
     assert.equal(d.getElementById('save-tools-buttons').contains(close),false);
-    assert.equal(d.querySelectorAll('.navbtn[data-view]').length,12);
+    assert.equal(d.querySelectorAll('.navbtn[data-view]').length,11);
+    assert.equal(d.querySelectorAll('.navbtn[data-view="registro"]').length,0);
     assert.equal(g.run('VIEW_ORDER[11]'),'archivos');
   });
   await check('PARTIDA abre y cierra el diálogo; el segundo pulso y el ✕ devuelven el foco al botón',g=>{
@@ -59,11 +61,28 @@ async function run(options={}) {
   await check('un clic fuera cierra el diálogo sin consumirlo: la acción pulsada se ejecuta',g=>{
     const d=g.sb.document,dialog=d.getElementById('save-tools');
     g.emitElement('save-tools-toggle','click');
-    const nav=d.querySelector('.navbtn[data-view="registro"]');
+    const nav=d.querySelector('.navbtn[data-view="tienda"]');
     const evt=g.emitElement(nav,'click');
+    assert.equal(evt.defaultPrevented,false);
+    assert.equal(g.run('currentView'),'tienda');
+    assert.equal(dialog.hidden,true);
+  });
+  await check('CONSULTAS abre REGISTRO con foco en el título y marca PARTIDA como sección actual',g=>{
+    const d=g.sb.document,dialog=d.getElementById('save-tools'),toggle=d.getElementById('save-tools-toggle');
+    g.emitElement('save-tools-toggle','click');
+    const log=d.getElementById('btn-log');
+    assert.equal(log.getAttribute('data-action'),'openLog');
+    const evt=g.emitElement(log,'click');
     assert.equal(evt.defaultPrevented,false);
     assert.equal(g.run('currentView'),'registro');
     assert.equal(dialog.hidden,true);
+    assert.equal(toggle.classList.contains('active'),true);
+    const title=d.querySelector('#panel-scroll h1.title');
+    assert.equal(title.textContent,'REGISTRO');
+    assert.equal(title.getAttribute('tabindex'),'-1');
+    assert.equal(d.activeElement,title);
+    g.run('showView("inicio");');
+    assert.equal(toggle.classList.contains('active'),false);
   });
   await check('Ctrl+S guarda con el diálogo cerrado y no lo abre',g=>{
     g.run('S.player.credits=1234;');

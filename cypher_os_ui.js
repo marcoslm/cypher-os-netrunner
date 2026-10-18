@@ -338,6 +338,14 @@ function toggleSaveTools(){
 }
 /* El ✕ del diálogo cierra y devuelve el foco al botón PARTIDA. */
 ACTIONS.closeSaveTools=function(){ closeSaveTools(true); };
+/* CONSULTAS: REGISTRO deja de ocupar una fila del lateral, pero conserva
+   Ctrl+9 y los comandos de terminal. Al abrirlo desde PARTIDA, el foco pasa
+   al título de la vista para no dejarlo en el menú que se acaba de cerrar. */
+ACTIONS.openLog=function(){
+  showView("registro");
+  var title=document.querySelector("#panel-scroll h1.title");
+  if(title){ title.setAttribute("tabindex","-1"); title.focus(); }
+};
 if(_saveToolsToggle) _saveToolsToggle.addEventListener("click",toggleSaveTools);
 /* Captura: se decide antes de que el clic resuelva su acción, para que una
    confirmación que se destruye al responder no descarte el menú por sorpresa. */
@@ -686,6 +694,8 @@ function showView(v, skipLog){
   document.querySelectorAll(".navbtn[data-view]").forEach(function(b){
     b.classList.toggle("active", b.getAttribute("data-view")===v);
   });
+  var logToggle=document.getElementById("save-tools-toggle");
+  if(logToggle) logToggle.classList.toggle("active", v==="registro");
   if(!skipLog) sound.navigate();
   /* transición de fade en el panel */
   var ps = document.getElementById("panel-scroll");

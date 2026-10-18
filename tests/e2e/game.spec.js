@@ -616,8 +616,10 @@ for(const width of [320,768,1280]){
     await expect(page.locator('#grid-connect [data-action="dipGrid"]')).toBeVisible();
     await expect(page.locator('#grid-overlay')).toHaveCount(0);await expect(page.locator('#gridcanvas')).toBeVisible();
     await fits();await page.screenshot({path:testInfo.outputPath(`red-${width}.png`)});
-    for(const view of ['tienda','estado','informes','registro','logros','ayuda']){await nav(page,view).click();await fits();}
-    await nav(page,'registro').click();await page.locator('[data-action="logFilter"][data-cat="lore"]').click();
+    for(const view of ['tienda','estado','informes','logros','ayuda']){await nav(page,view).click();await fits();}
+    await page.keyboard.press('Control+9');
+    await expect(page.locator('#panel-scroll h1.title')).toHaveText('REGISTRO');
+    await page.locator('[data-action="logFilter"][data-cat="lore"]').click();
     await expect(page.locator('[data-action="logFilter"][data-cat="lore"]')).toBeFocused();
     await expect(page.locator('[data-action="logFilter"][aria-pressed="true"]')).toHaveCount(1);
   });
@@ -995,13 +997,17 @@ test('smoke: todos los paneles, terminal y compras con autosave', async ({ page,
   const panels = [
     ['contactos', 'CONTACTOS'], ['mensajes', 'MENSAJES'], ['trabajos', 'TRABAJOS'],
     ['tienda', 'MERCADO NEGRO'], ['estado', 'ESTADO'], ['informes', 'INFORMES'],
-    ['registro', 'REGISTRO'], ['logros', 'LOGROS'], ['ayuda', 'AYUDA']
+    ['logros', 'LOGROS'], ['ayuda', 'AYUDA']
   ];
   for (const [view, title] of panels) {
     await nav(page, view).click();
     await expect(nav(page, view)).toHaveClass(/active/);
     await expect(page.locator('#panel-scroll h1.title')).toHaveText(title);
   }
+  await page.keyboard.press('Control+9');
+  await expect(page.locator('#panel-scroll h1.title')).toHaveText('REGISTRO');
+  await expect(page.locator('#save-tools-toggle')).toHaveClass(/active/);
+  await expect(page.locator('#sidebar [data-view="registro"]')).toHaveCount(0);
   await nav(page, 'red').click();
   await expect(page.locator('#gridcanvas')).toBeVisible();
   await expect(action(page, 'dipGrid')).toBeVisible();

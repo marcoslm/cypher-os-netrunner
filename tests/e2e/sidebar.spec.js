@@ -64,9 +64,10 @@ for(const viewport of [{width:320,height:600},{width:1280,height:900}]){
   });
   test(`lateral: orden por uso, Tab y atajos conservados a ${viewport.width}px`,async({page,game},testInfo)=>{
     await page.setViewportSize(viewport);await game.setup({state:{offers:[]}});
-    const order=['inicio','red','trabajos','contactos','mensajes','archivos','informes','tienda','estado','logros','registro','ayuda'];
+    const order=['inicio','red','trabajos','contactos','mensajes','archivos','informes','tienda','estado','logros','ayuda'];
     const navigation=page.locator('#sidebar .navbtn[data-view]');
     expect(await navigation.evaluateAll(elements=>elements.map(element=>element.getAttribute('data-view')))).toEqual(order);
+    await expect(page.locator('#sidebar [data-view="registro"]')).toHaveCount(0);
     await navigation.first().focus();
     for(const view of order){
       await expect(page.locator(`#sidebar [data-view="${view}"]`)).toBeFocused();
@@ -76,10 +77,18 @@ for(const viewport of [{width:320,height:600},{width:1280,height:900}]){
     await page.locator('#sidebar [data-view="archivos"]').click();
     await expect(page.locator('#panel-scroll h1')).toHaveText('ARCHIVOS');
     await expect(page.locator('#sidebar [data-view="archivos"]')).toHaveClass(/active/);
-    const shortcuts=['inicio','red','contactos','mensajes','trabajos','tienda','estado','informes','registro'];
-    for(const [index,view] of shortcuts.entries()){
+    const shortcuts=[
+      ['inicio','#sidebar [data-view="inicio"]'],['red','#sidebar [data-view="red"]'],
+      ['contactos','#sidebar [data-view="contactos"]'],['mensajes','#sidebar [data-view="mensajes"]'],
+      ['trabajos','#sidebar [data-view="trabajos"]'],['tienda','#sidebar [data-view="tienda"]'],
+      ['estado','#sidebar [data-view="estado"]'],['informes','#sidebar [data-view="informes"]'],
+      ['registro','#save-tools-toggle']
+    ];
+    for(const [index,target] of shortcuts.entries()){
+      const [view,selector]=target;
       await page.keyboard.press(`Control+${index+1}`);
-      await expect(page.locator(`#sidebar [data-view="${view}"]`)).toHaveClass(/active/);
+      await expect(page.locator(selector)).toHaveClass(/active/);
+      if(view==='registro')await expect(page.locator('#panel-scroll h1.title')).toHaveText('REGISTRO');
     }
     await page.locator('#sidebar [data-view="archivos"]').click();
     await navigation.first().focus();

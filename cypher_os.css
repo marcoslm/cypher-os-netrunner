@@ -301,6 +301,8 @@ html.sidebar-collapsed #sidebar{display:none;}
 #save-tools-buttons{display:flex;flex-direction:column;gap:2px;
   max-height:calc(100vh - 96px);max-height:calc(100dvh - 96px);overflow-y:auto;}
 #save-tools-buttons .navbtn{width:100%;}
+.save-tools-separator{margin:7px 0 2px;border-top:1px solid var(--borde);}
+.save-tools-subtitle{color:var(--gris);font-size:9px;letter-spacing:2px;padding:3px 8px 2px;}
 /* Traza de unión con PARTIDA: nodo sobre el borde del lateral y cable al panel. */
 #save-tools::before{content:"";position:absolute;left:-14px;top:var(--link-y,24px);
   width:14px;height:2px;background:var(--verde);transform-origin:left center;

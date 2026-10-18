@@ -48,11 +48,43 @@ test('partida F05A: el ✕ y un clic fuera cierran; Escape vuelve al botón',asy
   await expect(dialog(page)).toBeHidden();await expect(toggle(page)).toBeFocused();
   /* Clic fuera: navega (acción propia) y además cierra el diálogo. */
   await game.openSaveTools();
-  await page.locator('.navbtn[data-view="registro"]').click();
+  await expect(page.locator('.navbtn[data-view="registro"]')).toHaveCount(0);
+  await page.locator('.navbtn[data-view="inicio"]').click();
   await expect(dialog(page)).toBeHidden();
-  await expect(page.locator('#panel-scroll h1')).toHaveText('REGISTRO');
+  await expect(page.locator('#panel-scroll .logo')).toBeVisible();
   await game.openSaveTools();await page.keyboard.press('Escape');
   await expect(dialog(page)).toBeHidden();await expect(toggle(page)).toBeFocused();
+});
+
+test('partida F05A: CONSULTAS abre REGISTRO con foco y conserva Ctrl+9',async({page,game},testInfo)=>{
+  await page.setViewportSize({width:1280,height:900});
+  await game.setup({state:{offers:[]}});
+  const before=await game.snapshot();
+  await game.openSaveTools();
+  await expect(page.locator('.save-tools-subtitle')).toHaveText('CONSULTAS');
+  const log=page.locator('#btn-log');
+  await expect(log).toHaveAccessibleName('Abrir registro');
+  await expect(page.locator('.save-tools-separator')).toHaveCount(1);
+  await page.screenshot({path:testInfo.outputPath('partida-consultas.png')});
+  await log.click();
+  await expect(dialog(page)).toBeHidden();
+  const title=page.locator('#panel-scroll h1.title');
+  await expect(title).toHaveText('REGISTRO');await expect(title).toBeFocused();
+  await expect(toggle(page)).toHaveClass(/active/);
+  await expect(page.locator('#sidebar [data-view="registro"]')).toHaveCount(0);
+  await page.locator('#sidebar [data-view="inicio"]').click();
+  await expect(toggle(page)).not.toHaveClass(/active/);
+  await page.keyboard.press('Control+9');
+  await expect(title).toHaveText('REGISTRO');await expect(toggle(page)).toHaveClass(/active/);
+  await page.locator('[data-action="logFilter"][data-cat="lore"]').click();
+  await expect(page.locator('[data-action="logFilter"][data-cat="lore"]')).toBeFocused();
+  await game.openSaveTools();
+  await page.locator('#btn-intro').focus();await page.keyboard.press('Tab');
+  await expect(log).toBeFocused();await page.keyboard.press('Enter');
+  await expect(dialog(page)).toBeHidden();await expect(title).toBeFocused();
+  const after=await game.snapshot();
+  expect(after.state.player).toEqual(before.state.player);
+  expect(after.state.jobs).toEqual(before.state.jobs);
 });
 
 test('partida F05A: Ctrl+S, guardar/exportar/importar y RESET conservan sus flujos reales',async({page,game})=>{
