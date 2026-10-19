@@ -77,6 +77,32 @@ test('scanner: clic no principal se ignora, fallo y timeout dañan una vez y Ctr
   expect(restored.immersion.grid.nodes.find(n => n.id === restored.immersion.current)).toMatchObject({ type: 'ice', tier: 3, done: false });
 });
 
+test('consumibles: recargar conserva reservas antes de confirmar y gasto inmediato después', async ({ page, game }) => {
+  await game.setup({ player: { decoys: 3, virus: 2 }, immersion: makeImmersion() });
+  await game.startCombat({ tier: 3, encounter: true });
+  await page.locator('#combat-decoy').check();await page.locator('#combat-virus').check();
+  await game.reload();
+  expect((await game.snapshot()).state.player).toMatchObject({ decoys: 3, virus: 2 });
+  await expect(page.locator('#combat')).toBeHidden();
+  await game.startCombat({ tier: 3, encounter: true });
+  await expect(page.locator('#combat-decoy')).not.toBeChecked();
+  await expect(page.locator('#combat-virus')).not.toBeChecked();
+  await page.locator('#combat-decoy').check();await page.locator('#combat-virus').check();
+  await page.locator('#combat-enter').click();
+  expect((await game.snapshot()).saved.player).toMatchObject({ decoys: 2, virus: 1 });
+  expect((await scannerState(page)).phases).toBe(2);
+  await game.reload();
+  await expect(page.locator('#combat')).toBeHidden();
+  expect((await game.snapshot()).state.player).toMatchObject({ decoys: 2, virus: 1 });
+  await game.startCombat({ tier: 3, encounter: true });
+  await expect(page.locator('#combat-decoy')).not.toBeChecked();
+  await expect(page.locator('#combat-virus')).not.toBeChecked();
+  await page.locator('#combat-enter').click();
+  expect((await scannerState(page)).phases).toBe(3);
+  await page.locator('#scanZone').click();
+  expect((await game.snapshot()).state.player).toMatchObject({ cpu: 86, decoys: 2, virus: 1 });
+});
+
 test('scanner HARDCORE: daño fatal limpia rAF/timer y sigue muerto tras tiempo y recarga', async ({ page, game }) => {
   test.setTimeout(60000);
   await game.setup({ state: { difficulty: 'hardcore' }, player: { cpu: 10 }, immersion: makeImmersion() });

@@ -830,18 +830,30 @@ button.btn::before,.navbtn::before{
 .route-status{font-size:12px;line-height:1.5;color:var(--ambar);text-align:center;min-height:36px;}
 #routeSend{display:block;margin:8px auto;min-height:44px;}
 .encounter-card{width:min(480px,92vw);max-height:90vh;max-height:90dvh;overflow-y:auto;overflow-wrap:anywhere;}
-.encounter-card h2{font-weight:normal;margin:0 0 16px;}
+.encounter-card h2{font-weight:normal;margin:0 0 10px;}
 .encounter-event{line-height:1.5;}
-.encounter-facts{margin:0;display:grid;gap:12px;font-size:13px;line-height:1.5;}
+.encounter-facts{margin:0;display:grid;gap:6px;font-size:13px;line-height:1.5;}
 .encounter-facts>div{display:grid;grid-template-columns:6em minmax(0,1fr);gap:12px;}
 .encounter-facts dt,.encounter-label{color:var(--texto);font-size:11px;letter-spacing:1px;}
 .encounter-facts dd{margin:0;color:var(--verde);}
 .encounter-gear{border-top:1px solid var(--borde);padding-top:12px;margin-top:16px;}
 .encounter-gear ul{display:flex;flex-wrap:wrap;gap:6px 16px;list-style:none;padding:0;margin:8px 0 0;color:var(--cyan);font-size:12px;line-height:1.5;}
+.encounter-consumables{min-width:0;border:0;border-top:1px solid var(--borde);padding:4px 0 0;margin:12px 0 0;}
+.encounter-consumables legend{padding:0 8px 0 0;color:var(--texto);font-size:11px;letter-spacing:0;}
+.encounter-choice{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;font-size:12px;line-height:1.5;}
+.encounter-choice input{flex:none;width:18px;height:18px;margin:0;accent-color:var(--cyan);}
+.encounter-choice input:focus-visible{outline:2px solid var(--ambar);outline-offset:3px;}
+.encounter-choice b{color:var(--cyan);font-weight:normal;}
+.encounter-effect{display:block;color:var(--gris);}
+.encounter-cost{font-size:11px;color:var(--ambar);line-height:1.5;margin:4px 0 0;}
 .encounter-note{font-size:12px;margin-top:16px;}
 .encounter-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;}
 .encounter-actions .btn{flex:1;min-height:44px;}
 .encounter-card:focus{outline:none;}
+.inventory-label{color:var(--gris);font-size:11px;letter-spacing:0;margin:12px 0 4px;}
+.inventory-panel .row{flex-wrap:wrap;}
+.inventory-panel .row>*{min-width:0;overflow-wrap:anywhere;}
+.inventory-panel .val{flex:1;text-align:right;}
 .combat-title{color:var(--rojo);font-size:16px;letter-spacing:0;
   text-shadow:none;margin-bottom:4px;}
 .combat-title.ambar{color:var(--ambar);text-shadow:0 0 8px rgba(255,196,77,.7);}

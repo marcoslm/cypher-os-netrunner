@@ -1720,6 +1720,20 @@ ACTIONS.streetActivity = function(btn){
 };
 
 /* ---- ESTADO ---- */
+function inventoryHtml(){
+  var consumables="", installed="";
+  TIENDA_DEF.forEach(function(item){
+    var count=stockCount(item);
+    if(item.kind==="consumable") consumables+=row2(item.name,count+"/"+item.stock);
+    if(item.kind==="upgrade" && count>0){
+      var quantity=count>item.stock ? count+" instalados · límite de tienda "+item.stock : count+"/"+item.stock+" instalado"+(count===1?"":"s");
+      installed+=row2(item.name,quantity+(count>=item.stock?" · COMPLETO":""));
+    }
+  });
+  return '<div class="inventory-label">CONSUMIBLES ALMACENADOS</div>'+consumables+
+    '<div class="inventory-label">PERMANENTES INSTALADOS</div>'+
+    (installed || '<p class="muted">Sin mejoras instaladas.</p>');
+}
 function renderEstado(){
   var p=S.player;
   var html='<h1 class="title">ESTADO</h1>'+
@@ -1737,11 +1751,10 @@ function renderEstado(){
     skillRow("NERVIOS","reduce el daño recibido",p.nervios)+
     '<div class="panel-actions"><button class="btn cyan" data-action="openSkillTree">★ VER ÁRBOL DE HABILIDADES</button></div></section>'+
     '<section class="deck-panel"><h2 class="panel-h">UPGRADES</h2>'+
-    row2("RAM","+4 ×"+p.ramUp)+row2("FIREWALL","+10 ×"+p.fwUp)+
-    row2("LINK NEURAL","+20 CPU ×"+p.linkUp)+row2("ROMPEHIELOS",-1+" longitud ×"+p.breakerUp)+
+    row2("RAM","+"+(4*p.ramUp)+" slots")+row2("FIREWALL","+"+(10*p.fwUp))+
+    row2("LINK NEURAL","+"+(20*p.linkUp)+" CPU")+row2("ROMPEHIELOS","−"+p.breakerUp+" longitud · mín. 3")+
     '</section>'+
-    '<section class="deck-panel"><h2 class="panel-h">INVENTARIO</h2>'+
-    row2("DISCOS DECOY",p.decoys)+row2("PAQUETES VIRUS",p.virus)+
+    '<section class="deck-panel inventory-panel"><h2 class="panel-h">INVENTARIO</h2>'+inventoryHtml()+
     '</section>'+
     '<section class="deck-panel"><h2 class="panel-h">REPUTACIÓN</h2>'+repRows()+'</section>'+
     '<section class="deck-panel"><h2 class="panel-h">HISTORIAL</h2>'+

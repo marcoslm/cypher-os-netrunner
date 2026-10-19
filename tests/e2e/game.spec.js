@@ -5,6 +5,25 @@ const { test, expect, GAME_URL, makeImmersion, jsonFile, tabTo, solveCodeCombat,
 const nav = (page, view) => page.locator(`.navbtn[data-view="${view}"]`);
 const action = (page, name) => page.locator(`[data-action="${name}"]`);
 const clone = value => JSON.parse(JSON.stringify(value));
+for(const width of [320,768,1280,1920]){
+  test(`inventario: permanentes y reservas legibles a ${width} px`,async({page,game},testInfo)=>{
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.setViewportSize({width,height:900});
+    await game.setup({player:{decoys:4,virus:2,ramUp:2,fwUp:3,linkUp:1,breakerUp:5}});
+    await game.openSidebar();await nav(page,'estado').click();
+    await expect(page.locator('#panel-scroll .deck-panel')).toHaveCount(8);
+    const panel=page.locator('.inventory-panel');
+    await expect(panel).toContainText('DISCO DECOY4/5');
+    await expect(panel).toContainText('PAQUETE VIRUS2/3');
+    await expect(panel).toContainText('BARRA RAM +42/3 instalados');
+    await expect(panel).toContainText('FIREWALL +103/3 instalados · COMPLETO');
+    await expect(panel).toContainText('ROMPEHIELOS MK-II5 instalados · límite de tienda 3 · COMPLETO');
+    await expect(panel.locator('button,input')).toHaveCount(0);
+    expect(await panel.evaluate(element=>element.scrollWidth-element.clientWidth)).toBeLessThanOrEqual(1);
+    await panel.scrollIntoViewIfNeeded();await page.screenshot({path:testInfo.outputPath('inventario.png')});
+    expect((await game.snapshot()).state.player).toMatchObject({decoys:4,virus:2,ramUp:2,fwUp:3,linkUp:1,breakerUp:5});
+  });
+}
 async function expectDashboardColumns(page,width,count,name,testInfo) {
   const grid=page.locator('#panel-scroll .deck-columns');
   await expect(grid).toHaveCount(1);

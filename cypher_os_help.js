@@ -102,7 +102,8 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 
 /* ⑥ COMBATE */
 '<div class="panel-h">⑥ COMBATE · defensas y enlaces</div><div class="box helpbox">'+
-'<p class="help-p">Cada encuentro con ICE, rastreador, daemon o Núcleo muestra primero una <b>ficha en pausa</b>: qué ha ocurrido, qué protege o amenaza, silueta de su familia, modo de combate y equipo útil disponible. Puedes leer sin límite; el reloj y el calor se detienen. Pulsa <b>ENTRAR AL COMBATE</b> para iniciar el reto o <b>HUIR</b>: éxito = calor +5; fallo = un golpe y comienza el combate. SIGILO mejora la huida y DECOY absorbe el golpe. Del Núcleo no se huye. Esta ficha aparece siempre, no solo al aprender. Hay <b>cinco modos</b> y un puzzle especial para los vaults:</p>'+
+'<p class="help-p">Cada encuentro con ICE, rastreador, daemon o Núcleo muestra primero una <b>ficha en pausa</b>: qué ha ocurrido, qué protege o amenaza, silueta de su familia, modo de combate y equipo útil disponible. Puedes leer sin límite; el reloj y el calor se detienen. Pulsa <b>ENTRAR AL COMBATE</b> para iniciar el reto o <b>HUIR</b>: éxito = calor +5; fallo = un golpe y comienza el combate. Huir desde la ficha no activa ni gasta los consumibles seleccionados: si falla, recibes el golpe y entras sin ellos. SIGILO mejora la huida. Del Núcleo no se huye. Esta ficha aparece siempre, no solo al aprender. Hay <b>cinco modos</b> y un puzzle especial para los vaults:</p>'+
+'<p class="help-p"><b>DECOY y VIRUS son voluntarios.</b> En cada ficha empiezan desmarcados; puedes seleccionar uno de cada si tienes existencias y su efecto es aplicable. Leer o cambiar una selección no gasta nada. Al confirmar ENTRAR se consume una unidad de cada objeto elegido: DECOY absorbe un único golpe de ese combate, incluso el de una huida posterior fallida; VIRUS elimina una fase. DECOY se gasta aunque ganes sin recibir daño. Las demás unidades permanecen guardadas y no puedes activar más durante el reto. Recargar antes de entrar conserva las reservas; después conserva el gasto, pero no reanuda el reto ni el escudo.</p>'+
 '<div class="legend">'+
 '<div class="legend-row"><span class="sym ambar">▣</span><span class="lg-key">CLAVES · archivador T1 / Núcleo</span><span class="lg-desc">el deck obtiene una clave de consulta, pero el canal separado requiere confirmación manual. Escribe la clave hexadecimal; se ignoran espacios y mayúsculas.</span></div>'+
 '<div class="legend-row"><span class="sym verde">◉</span><span class="lg-key">RASTREO · perseguidor</span><span class="lg-desc">el contexto se lee en la ficha, sin reloj. Al entrar solo aparece la dirección 0x que debes recordar; el teclado permanece oculto. CERRAR LECTURA Y RESPONDER retira la dirección y muestra el teclado hex. Envía la dirección sin 0x. Memorizar y responder comparten el tiempo de fase; un fallo o timeout abre otra lectura.</span></div>'+
@@ -117,7 +118,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="helprow-item"><span class="kbd">ESC</span><span class="muted">huir · abandonas el combate (el nodo sigue en pie)</span></div>'+
 '<div class="helprow-item"><span class="kbd">Teclado hex</span><span class="muted">botones en pantalla para teclados táctiles</span></div>'+
 '</div>'+
-'<div class="callout cyan">💡 Sube <b>HACK</b> (ESTADO) para claves más cortas y más tiempo, y <b>Nervios</b> para menos daño. El <b>Firewall</b>, los <b>Discos Decoy</b> (cancelan un golpe) y los <b>Paquetes Virus</b> (eliminan una fase al empezar) también te protegen.</div>'+
+'<div class="callout cyan">💡 Sube <b>HACK</b> (ESTADO) para claves más cortas y más tiempo, y <b>Nervios</b> para menos daño. El <b>Firewall</b> mitiga cada golpe. Los <b>Discos Decoy</b> y <b>Paquetes Virus</b> solo actúan si los seleccionas antes de ENTRAR.</div>'+
 '<div class="callout ambar">✦ <b>EL NÚCLEO</b> (solo en la misión final, capa 5) combate en modo CLAVES con 4 fases y <b>no se puede huir</b> de él.</div>'+
 '</div>'+
 
@@ -157,7 +158,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="helprow-item"><span class="kbd">NERVIOS</span><span class="muted">recibes menos daño en combate</span></div>'+
 '</div>'+
 '<div class="callout cyan">★ El <b>ÁRBOL DE HABILIDADES</b> (botón en ESTADO) tiene 14 skills en tres ramas: <b>ROMPEMUROS</b> (claves más cortas), <b>ANALISTA</b> (hack), <b>FANTASMA y EVASIVO</b> (sigilo), <b>TANQUE</b> (nervios) y <b>REGENERACIÓN</b> (recuperas CPU al moverte sin combate). Cuestan 1-3 puntos y exigen el skill anterior. Los skills que suben atributo respetan el máximo de 5.</div>'+
-'<p class="help-p">En el <b>Mercado Negro</b> compras mejoras permanentes (RAM, Firewall, Link Neural, Rompehielos) y consumibles (Discos Decoy, Paquetes Virus, Pulso Reparador, NÉBULA FRESCA).</p>'+
+'<p class="help-p">En el <b>Mercado Negro</b> compras mejoras permanentes (RAM, Firewall, Link Neural, Rompehielos) y consumibles almacenados (hasta 5 Discos Decoy y 3 Paquetes Virus). <b>Pulso Reparador</b> y <b>NÉBULA FRESCA</b> se aplican inmediatamente al comprarlos; no quedan en reserva. En <b>ESTADO ▸ INVENTARIO</b> aparecen las existencias y las mejoras instaladas con su límite comercial y estado COMPLETO; <b>UPGRADES</b> resume sus efectos. ROMPEMUROS puede añadir Rompehielos por encima del límite de tienda, sin perder esas instalaciones.</p>'+
 '</div>'+
 
 /* ⑩ CALLE */

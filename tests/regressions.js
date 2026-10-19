@@ -11,6 +11,10 @@ async function run(options = {}){
     const g=loadGame({timers:"virtual",strictDOM:true,canvas:"stub",seed:2077,...opts});
     games.push(g); return g;
   }
+  function selectGear(g,id,checked=true){
+    const input=g.sb.document.getElementById('combat-'+id);
+    assert.ok(input,id);input.checked=checked;g.emitElement(input,'change');
+  }
   async function check(label, fn){
     let error;
     try { await fn(); } catch(err){ error=err; }
@@ -24,8 +28,20 @@ async function run(options = {}){
   }
   console.log("\nREGRESIONES · estado, grid, combate e interfaz…");
 
-  await check("ficha permanente pausa reloj/calor y no inicia ninguno de los tres minijuegos",()=>{
-    for(const enemy of [{type:"ice",tier:1},{type:"ice",tier:3},{type:"daemon",tier:3}]){
+  await check("entrar sin seleccionar conserva las reservas y ambos golpes causan daño",()=>{
+    const g=game();
+    g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.decoys=3;S.player.virus=2;startCombat({node:{type:"ice",tier:2}});');
+    g.sb.document.getElementById('combat-enter').click();
+    assert.equal(g.run('S.player.virus'),2);
+    assert.equal(g.run('COM.phases'),g.run('COMBAT_TYPES[2].phases'));
+    const damage=g.run('combatDamage()');
+    g.run('applyDamageToPlayer(combatDamage());applyDamageToPlayer(combatDamage());');
+    assert.equal(g.run('S.player.cpu'),100-2*damage);
+    assert.equal(g.run('S.player.decoys'),3);
+  });
+
+  await check("ficha permanente pausa reloj/calor antes de los cinco modos y el Núcleo",()=>{
+    for(const enemy of [{type:"ice",tier:1},{type:"ice",tier:2},{type:"ice",tier:3},{type:"daemon",tier:3},{type:"ice",tier:2,scavenger:true},{type:"nucleo",tier:4}]){
       const g=game();g.sb.__enemy=enemy;
       g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.heat=60;S.player.virus=1;startCombat({node:window.__enemy});');
       const before=g.run('JSON.stringify(S.player)');const clock=g.run('S.clock');
@@ -53,24 +69,27 @@ async function run(options = {}){
   await check("equipo de la ficha muestra solo recursos existentes y aplicables sin consumirlos",()=>{
     const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.decoys=2;S.player.virus=1;S.player.breakerUp=1;S.player.fwUp=1;startCombat({node:{type:"ice",tier:2}});');
     const items=()=>Array.from(g.sb.document.querySelectorAll('.encounter-gear li'),el=>el.textContent);
-    assert.deepEqual(items(),['DECOY ×2','VIRUS ×1','FIREWALL +10']);
+    assert.deepEqual(items(),['FIREWALL +10']);
+    assert.equal(g.sb.document.getElementById('combat-decoy').checked,false);
+    assert.equal(g.sb.document.getElementById('combat-virus').checked,false);
     assert.equal(g.run('S.player.decoys'),2);assert.equal(g.run('S.player.virus'),1);
     g.run('cancelActiveCombat();startCombat({node:{type:"daemon",tier:3}});');
-    assert.deepEqual(items(),['DECOY ×2','VIRUS ×1','FIREWALL +10']);
+    assert.deepEqual(items(),['FIREWALL +10']);
     g.run('cancelActiveCombat();S.player.decoys=0;S.player.fwUp=0;S.player.hack=5;startCombat({node:{type:"ice",tier:1}});');
-    assert.equal(g.sb.document.querySelector('.encounter-gear'),null);
+    assert.equal(!!g.sb.document.querySelector('.encounter-gear'),false);
+    assert.equal(!!g.sb.document.getElementById('combat-virus'),false);
   });
   await check("huida inicial exitosa aplica calor una vez sin consumir VIRUS ni premiar",()=>{
     const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.virus=1;Math.random=function(){return 0;};startCombat({node:{type:"daemon",tier:3,name:"TEST"},onWin:function(){S.player.credits+=1000;}});doEscape();doEscape();');
     assert.equal(g.run('S.player.heat'),5);assert.equal(g.run('S.player.virus'),1);
     assert.equal(g.run('S.player.credits'),500);assert.equal(g.run('combatActive'),false);
   });
-  await check("huida inicial fallida aplica un golpe e inicia combate; DECOY conserva su efecto",()=>{
+  await check("huida inicial fallida daña sin activar ni gastar el DECOY almacenado",()=>{
     for(const decoys of [0,1]){
       const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();Math.random=function(){return .99;};');
       g.sb.__decoys=decoys;g.run('S.player.decoys=window.__decoys;startCombat({node:{type:"ice",tier:1,name:"TEST"}});window.__dmg=combatDamage();doEscape();');
-      assert.equal(g.run('COM.stage'),'combat');assert.equal(g.run('S.player.cpu'),100-(decoys?0:g.run('window.__dmg')));
-      assert.equal(g.run('S.player.decoys'),0);assert.equal(g.run('S.player.heat'),0);
+      assert.equal(g.run('COM.stage'),'combat');assert.equal(g.run('S.player.cpu'),100-g.run('window.__dmg'));
+      assert.equal(g.run('S.player.decoys'),decoys);assert.equal(g.run('S.player.heat'),0);
     }
   });
   await check("Núcleo bloquea huida inicial y cancelar ficha no deja timers ni recompensas",()=>{
@@ -78,6 +97,144 @@ async function run(options = {}){
     assert.equal(g.run('COM.stage'),'encounter');assert.equal(g.sb.document.getElementById('escapeBtn'),null);
     g.run('cancelActiveCombat();');assert.equal(g.run('COM'),null);assert.equal(g.run('combatTimer'),null);
     assert.equal(g.run('S.player.credits'),500);
+  });
+
+  await check("equipo voluntario cobra una sola unidad al entrar en cada modo y solo absorbe un golpe",()=>{
+    for(const enemy of [{type:"ice",tier:1},{type:"ice",tier:2},{type:"ice",tier:3},{type:"daemon",tier:3},{type:"ice",tier:2,scavenger:true},{type:"nucleo",tier:4}]){
+      const g=game();g.sb.__enemy=enemy;
+      g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.decoys=3;S.player.virus=2;startCombat({node:window.__enemy});');
+      const base=g.run('COM.phases'), before=g.run('JSON.stringify(S.player)');
+      selectGear(g,'decoy');
+      if(base>1)selectGear(g,'virus');
+      assert.equal(g.run('JSON.stringify(S.player)'),before);
+      assert.equal(g.run('COM.phases'),base);assert.equal(g.run('combatTimer'),null);
+      const enter=g.sb.document.getElementById('combat-enter');enter.click();enter.click();g.run('beginCombat();');
+      assert.equal(g.run('S.player.decoys'),2);assert.equal(g.run('S.player.virus'),base>1?1:2);
+      assert.equal(g.run('COM.phases'),base>1?base-1:base);
+      assert.equal(g.saved().player.decoys,2);assert.equal(g.saved().player.virus,base>1?1:2);
+      const damage=g.run('combatDamage()');g.run('applyDamageToPlayer(combatDamage());');
+      assert.equal(g.run('S.player.cpu'),100);assert.equal(g.run('COM.decoyReady'),false);
+      g.run('applyDamageToPlayer(combatDamage());');
+      assert.equal(g.run('S.player.cpu'),100-damage);assert.equal(g.run('S.player.decoys'),2);
+    }
+  });
+  await check("cada objeto es independiente y desmarcar conserva el inventario",()=>{
+    for(const selection of ['decoy','virus','none']){
+      const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.decoys=2;S.player.virus=2;startCombat({node:{type:"ice",tier:2}});');
+      selectGear(g,'decoy');selectGear(g,'virus');
+      if(selection!=='decoy')selectGear(g,'decoy',false);
+      if(selection!=='virus')selectGear(g,'virus',false);
+      g.sb.document.getElementById('combat-enter').click();
+      assert.equal(g.run('S.player.decoys'),selection==='decoy'?1:2);
+      assert.equal(g.run('S.player.virus'),selection==='virus'?1:2);
+      assert.equal(g.run('COM.decoyReady'),selection==='decoy');
+      assert.equal(g.run('COM.phases'),selection==='virus'?1:2);
+    }
+  });
+  await check("huir desde la ficha descarta ambas selecciones tanto en éxito como en fallo fatal o no",()=>{
+    for(const outcome of ['success','failure','fatal']){
+      const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.decoys=2;S.player.virus=2;startCombat({node:{type:"ice",tier:2}});');
+      selectGear(g,'decoy');selectGear(g,'virus');
+      const damage=g.run('combatDamage()');
+      g.run(outcome==='success'?'Math.random=function(){return 0;};':'Math.random=function(){return .99;};');
+      if(outcome==='fatal')g.run('S.player.cpu=1;');
+      g.sb.document.getElementById('escapeBtn').click();
+      assert.equal(g.run('S.player.decoys'),2);assert.equal(g.run('S.player.virus'),2);
+      if(outcome==='failure'){
+        assert.equal(g.run('COM.phases'),2);assert.equal(g.run('COM.decoyReady'),false);
+        assert.equal(g.run('S.player.cpu'),100-damage);
+      }else{
+        assert.equal(g.run('COM'),null);assert.equal(g.run('combatTimer'),null);
+        const cpu=g.run('S.player.cpu');g.advance(60000);assert.equal(g.run('S.player.cpu'),cpu);
+      }
+    }
+  });
+  await check("selección agotada, nodo consumido y controles obsoletos no cobran ni entran",()=>{
+    const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.decoys=2;S.player.virus=2;startCombat({node:{type:"ice",tier:2}});');
+    selectGear(g,'decoy');selectGear(g,'virus');g.run('S.player.virus=0;');
+    const oldEnter=g.sb.document.getElementById('combat-enter'),oldFlee=g.sb.document.getElementById('escapeBtn'),oldInput=g.sb.document.getElementById('combat-decoy');
+    oldEnter.click();assert.equal(g.run('COM.stage'),'encounter');assert.equal(g.run('S.player.decoys'),2);
+    assert.equal(g.run('COM.selectedVirus'),false);
+    g.run('COM.node.done=true;');g.sb.document.getElementById('combat-enter').click();assert.equal(g.run('COM.stage'),'encounter');
+    g.run('cancelActiveCombat();startCombat({node:{type:"ice",tier:2}});');
+    oldEnter.click();oldFlee.click();oldInput.checked=true;g.emitElement(oldInput,'change');
+    assert.equal(g.run('COM.stage'),'encounter');assert.equal(g.run('COM.selectedDecoy'),false);
+    assert.equal(g.run('S.player.decoys'),2);assert.equal(g.run('S.player.cpu'),100);
+  });
+  await check("victoria perfecta conserva el gasto y el encuentro encadenado empieza sin equipo",()=>{
+    const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.decoys=3;S.player.virus=2;startCombat({node:{type:"ice",tier:2,scavenger:true},onWin:function(){startCombat({node:{type:"ice",tier:2}});}});');
+    selectGear(g,'decoy');selectGear(g,'virus');g.sb.document.getElementById('combat-enter').click();g.run('winCombat();');
+    assert.equal(g.run('COM.stage'),'encounter');assert.equal(g.run('COM.decoyReady'),false);
+    assert.equal(g.run('COM.selectedDecoy || COM.selectedVirus'),false);
+    assert.equal(g.run('S.player.decoys'),2);assert.equal(g.saved().player.decoys,2);
+  });
+  await check("huida fallida durante combate usa solo el DECOY comprometido",()=>{
+    const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.decoys=3;startCombat({node:{type:"ice",tier:2}});');
+    selectGear(g,'decoy');g.sb.document.getElementById('combat-enter').click();
+    const damage=g.run('combatDamage()');g.run('Math.random=function(){return .99;};doEscape();');
+    assert.equal(g.run('S.player.cpu'),100);g.run('doEscape();');
+    assert.equal(g.run('S.player.cpu'),100-damage);assert.equal(g.run('S.player.decoys'),2);
+  });
+  await check("inventario deriva existencias y permanentes sin alterar partida ni topes",()=>{
+    const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();renderEstado();');
+    let panel=g.sb.document.querySelector('.inventory-panel');
+    assert.match(panel.textContent,/Sin mejoras instaladas/);
+    assert.match(panel.textContent,/DISCO DECOY0\/5/);assert.match(panel.textContent,/PAQUETE VIRUS0\/3/);
+    g.run('S.player.ramUp=2;S.player.fwUp=3;S.player.linkUp=1;S.player.breakerUp=5;S.player.decoys=4;S.player.virus=2;');
+    const before=g.run('JSON.stringify(S)');g.run('renderEstado();');
+    panel=g.sb.document.querySelector('.inventory-panel');
+    assert.match(panel.textContent,/BARRA RAM \+42\/3 instalados/);
+    assert.match(panel.textContent,/FIREWALL \+103\/3 instalados · COMPLETO/);
+    assert.match(panel.textContent,/LINK NEURAL \+201\/1 instalado · COMPLETO/);
+    assert.match(panel.textContent,/ROMPEHIELOS MK-II5 instalados · límite de tienda 3 · COMPLETO/);
+    assert.doesNotMatch(panel.textContent,/PULSO REPARADOR|NÉBULA FRESCA/);
+    assert.equal(g.run('JSON.stringify(S)'),before);
+    assert.equal(g.sb.document.querySelectorAll('#panel-scroll .deck-panel').length,8);
+  });
+  await check("compras acumulan hasta el tope y reparación/enfriamiento siguen siendo inmediatos",()=>{
+    const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.credits=10000;S.player.cpu=10;S.player.heat=60;renderTienda();');
+    function buy(id){
+      const button=g.sb.document.querySelector('[data-action="buyItem"][data-id="'+id+'"]');
+      assert.ok(button,id);g.sb.ACTIONS.buyItem(button);
+    }
+    for(let count=0;count<6;count++)buy('decoy');
+    for(let count=0;count<4;count++)buy('virus');
+    assert.equal(g.run('S.player.decoys'),5);assert.equal(g.run('S.player.virus'),3);
+    assert.equal(g.sb.document.querySelector('[data-id="decoy"]').disabled,true);
+    buy('repair');buy('cool');
+    assert.equal(g.run('S.player.cpu'),100);assert.equal(g.run('S.player.heat'),30);
+    assert.equal(g.saved().player.decoys,5);assert.equal(g.saved().player.virus,3);
+    g.run('renderEstado();');assert.doesNotMatch(g.sb.document.querySelector('.inventory-panel').textContent,/PULSO REPARADOR|NÉBULA FRESCA/);
+  });
+  await check("fallo de almacenamiento no duplica el cobro ni impide empezar el reto",()=>{
+    const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.decoys=3;S.player.virus=2;save();startCombat({node:{type:"ice",tier:2}});');
+    selectGear(g,'decoy');selectGear(g,'virus');
+    g.sb.localStorage.fail={setItem:true};
+    const enter=g.sb.document.getElementById('combat-enter');enter.click();enter.click();
+    assert.equal(g.run('COM.stage'),'combat');assert.equal(g.run('S.player.decoys'),2);assert.equal(g.run('S.player.virus'),1);
+    assert.equal(g.saved().player.decoys,3);
+    g.sb.localStorage.fail={};g.run('save();');
+    assert.equal(g.saved().player.decoys,2);assert.equal(g.saved().player.virus,1);
+  });
+  await check("muerte, reconexión e importación conservan el gasto sin arrastrar un escudo",()=>{
+    for(const difficulty of ['normal','hardcore']){
+      const g=game();g.run('S=nuevoEstado();__invoiceResolvedFixture();ensureStateIntegrity();S.player.decoys=3;S.player.virus=2;S.player.ramUp=2;S.player.fwUp=1;');
+      g.sb.__difficulty=difficulty;g.run('S.difficulty=window.__difficulty;startCombat({node:{type:"ice",tier:2}});');
+      selectGear(g,'decoy');selectGear(g,'virus');g.sb.document.getElementById('combat-enter').click();
+      g.run('S.player.cpu=1;applyDamageToPlayer(1000);applyDamageToPlayer(1000);');
+      assert.equal(g.run('COM'),null);assert.equal(g.run('combatTimer'),null);
+      assert.equal(g.saved().player.decoys,2);assert.equal(g.saved().player.virus,1);
+      g.run('ACTIONS.reconnect();');
+      assert.equal(g.run('S.player.decoys'),2);assert.equal(g.run('S.player.virus'),1);
+      assert.equal(g.run('S.player.cpu>0'),difficulty==='normal');
+      if(difficulty==='normal'){
+        assert.equal(g.sb.importGameState(JSON.parse(JSON.stringify(g.saved()))),true);
+        assert.equal(g.run('S.player.decoys'),2);assert.equal(g.run('S.player.virus'),1);
+        assert.equal(g.run('S.player.ramUp'),2);assert.equal(g.run('S.player.fwUp'),1);
+        g.run('startCombat({node:{type:"ice",tier:2}});');
+        assert.equal(g.run('COM.decoyReady || COM.selectedDecoy || COM.selectedVirus'),false);
+      }
+    }
   });
 
   await check("el logro de fixers exige los cuatro indicadores llenos, incluido NAEV", () => {
@@ -659,7 +816,8 @@ async function run(options = {}){
     assert.equal(g.run('JSON.stringify(Object.keys(S))'),keys);
   });
   await check("F7: ruta errónea y timeout dañan una vez, DECOY y cierre limpian reloj",()=>{
-    const g=game();g.run('S=nuevoEstado();S.player.maxCpu=500;S.player.cpu=500;S.player.decoys=1;startCombat({node:{type:"ice",tier:2}});beginCombat();');
+    const g=game();g.run('S=nuevoEstado();S.player.maxCpu=500;S.player.cpu=500;S.player.decoys=1;startCombat({node:{type:"ice",tier:2}});');
+    selectGear(g,'decoy');g.sb.document.getElementById('combat-enter').click();
     const first=g.sb.document.querySelector('[data-route="0"]');
     const oldSend=g.sb.document.getElementById('routeSend');
     const damage=g.run('combatDamage()');

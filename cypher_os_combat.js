@@ -66,8 +66,6 @@ function startCombat(ctx){
   if(inImmersion) inImmersion.combatOccurred=true;
   var n=ctx.node, tier=n.tier||1, def=COMBAT_TYPES[tier]||COMBAT_TYPES[1];
   var phases=def.phases;
-  var useVirus=S.player.virus>0 && phases>1;
-  if(useVirus) phases--;
   /* modo de combate: memoria para daemons, scanner para ICE T3, claves para el resto */
   var mode = n.boss || n.type==="nucleo" ? "claves" : n.scavenger ? "rastreo" : n.type==="daemon" ? "memoria" : (n.type==="ice" && n.tier===3) ? "scanner" : (n.type==="ice" && n.tier===2) ? "ruta" : "claves";
   var phaseTime=2600+tier*700+S.player.hack*500+(S.difficulty==="hardcore"?0:2000);
@@ -77,7 +75,8 @@ function startCombat(ctx){
   COM = { ctx:ctx, node:n, tier:tier, phases:phases, phase:1,
     length:codeLen(tier), time:phaseTime, remaining:0, code:"", alive:true,
     player:S.player, mode:mode,
-    memSequence:"", memPhase:"", stage:"encounter", useVirus:useVirus };
+    memSequence:"", memPhase:"", stage:"encounter",
+    selectedDecoy:false, selectedVirus:false, decoyReady:false };
   document.addEventListener("keydown", onCombatKey, true);
   renderCombatEncounter();
   updateAmbient();
@@ -94,9 +93,9 @@ function renderCombatEncounter(){
   var mode=COM.mode;
   var label=mode==="memoria" ? "MEMORIA HEX" : mode==="scanner" ? "ESCÁNER" : mode==="rastreo" ? "RASTREO" : mode==="ruta" ? "DESVÍO" : "CLAVES HEX";
   /* Solo recursos disponibles y aplicables; las habilidades no son inventario. */
-  var p=S.player, gear=[];
-  if(p.decoys>0) gear.push("DECOY ×"+p.decoys);
-  if(COM.useVirus) gear.push("VIRUS ×"+p.virus);
+  var battle=COM, p=S.player, gear=[], consumables=[];
+  if(p.decoys>0) consumables.push({id:"decoy",field:"selectedDecoy",name:"DECOY",count:p.decoys,effect:"Absorbe un golpe"});
+  if(p.virus>0 && COM.phases>1) consumables.push({id:"virus",field:"selectedVirus",name:"VIRUS",count:p.virus,effect:"Elimina una fase"});
   if((mode==="claves" || mode==="rastreo") && p.breakerUp>0 && COM.length<Math.max(3,codeLenBase(COM.tier)-p.hack)) gear.push("ROMPEHIELOS +"+p.breakerUp);
   if(p.fwUp>0) gear.push("FIREWALL +"+(p.fwUp*10));
   el.classList.add("show");
@@ -107,21 +106,56 @@ function renderCombatEncounter(){
     '<dl class="encounter-facts"><div><dt>TIPO</dt><dd>'+kind+' · T'+COM.tier+'</dd></div>'+
     '<div><dt>COMBATE</dt><dd>'+label+'</dd></div></dl>'+
     '<p class="encounter-note">'+combatContext()+'</p>'+
+    (consumables.length ? '<fieldset class="encounter-consumables"><legend>CONSUMIBLES</legend>'+consumables.map(function(item){
+      return '<label class="encounter-choice" for="combat-'+item.id+'"><input type="checkbox" id="combat-'+item.id+'"'+(battle[item.field]?' checked':'')+'><span><b>'+item.name+' ×'+item.count+'</b><span class="encounter-effect">'+item.effect+'</span></span></label>';
+    }).join('')+'<p class="encounter-cost">1 unidad por selección al ENTRAR, aunque no se use. Huir no las activa.</p></fieldset>' : '')+
     (gear.length ? '<div class="encounter-gear"><div class="encounter-label">EQUIPO DISPONIBLE</div><ul>'+gear.map(function(item){return '<li>'+item+'</li>';}).join('')+'</ul></div>' : '')+
     (boss ? '<div class="encounter-note ambar">SIN HUIDA</div>' : '')+
     '<div class="encounter-actions"><button class="btn" id="combat-enter">ENTRAR AL COMBATE</button>'+
-    (boss ? '' : '<button class="btn ambar" id="escapeBtn" title="Si escapas: calor +5. Si falla: golpe y combate.">HUIR [ESC]</button>')+'</div></div>';
-  document.getElementById("combat-enter").addEventListener("click", beginCombat);
+    (boss ? '' : '<button class="btn ambar" id="escapeBtn" title="Huir no activa consumibles. Si escapas: calor +5. Si falla: golpe y combate sin ellos.">HUIR [ESC]</button>')+'</div></div>';
+  consumables.forEach(function(item){
+    var input=document.getElementById("combat-"+item.id);
+    input.addEventListener("change",function(){
+      if(combatEncounterReady(battle)) battle[item.field]=input.checked;
+    });
+  });
+  document.getElementById("combat-enter").addEventListener("click",function(){ confirmCombatEntry(battle); });
   var flee=document.getElementById("escapeBtn");
-  if(flee) flee.addEventListener("click",doEscape);
+  if(flee) flee.addEventListener("click",function(){ if(combatEncounterReady(battle)) doEscape(); });
   /* Foco en la ficha, no en un botón: Enter repetido no acepta el encuentro. */
   var card=el.querySelector(".encounter-card");
   if(card){ card.setAttribute("tabindex","-1"); card.focus(); }
 }
-function beginCombat(){
-  if(!COM || !COM.alive || COM.stage!=="encounter") return;
+function combatEncounterReady(battle){
+  return !!(battle && COM===battle && combatActive && battle.alive && battle.stage==="encounter" &&
+    S && battle.player===S.player && S.player.cpu>0 && !battle.node.done && !battle.node._done);
+}
+function confirmCombatEntry(battle){
+  if(!combatEncounterReady(battle)) return;
+  var invalid=false;
+  if(battle.selectedDecoy && S.player.decoys<1){ battle.selectedDecoy=false; invalid=true; }
+  if(battle.selectedVirus && (S.player.virus<1 || battle.phases<=1)){ battle.selectedVirus=false; invalid=true; }
+  if(invalid){ renderCombatEncounter(); return; }
+  battle.stage="committed";
+  var spent=battle.selectedDecoy || battle.selectedVirus;
+  if(battle.selectedDecoy){
+    S.player.decoys--; battle.decoyReady=true;
+    addLog("DISCO DECOY ▸ preparado para un golpe en este combate.");
+  }
+  if(battle.selectedVirus){
+    S.player.virus--; battle.phases--;
+    addLog("PAQUETE VIRUS ▸ una fase eliminada.");
+  }
+  if(spent) save(true);
+  beginCombat(battle);
+}
+function beginCombat(battle){
+  battle=battle || COM;
+  if(!battle || COM!==battle || !battle.alive || !combatActive || !S || battle.player!==S.player ||
+    S.player.cpu<=0 || battle.node.done || battle.node._done ||
+    (battle.stage!=="encounter" && battle.stage!=="committed")) return;
+  battle.selectedDecoy=false; battle.selectedVirus=false;
   COM.stage="combat";
-  if(COM.useVirus){ S.player.virus--; COM.useVirus=false; addLog("PAQUETE VIRUS ▸ una fase eliminada."); }
   var mode=COM.mode;
   /* sonido de alarma de combate */
   sound.startCombat();
@@ -350,8 +384,8 @@ function combatDamage(){
 }
 function applyDamageToPlayer(dmg){
   if(!COM||!COM.alive) return;
-  if(S.player.decoys>0){
-    S.player.decoys--; sound.buy();
+  if(COM.decoyReady){
+    COM.decoyReady=false; sound.buy();
     setCombatLog("DISCO DECOY ▸ el golpe se disolvió.","cyan");
     updateCombatBars(); return;
   }
@@ -386,7 +420,7 @@ function doEscape(){
     save(); updateAmbient();
   } else {
     sound.error();
-    var dmg=combatDamage(), absorbed=S.player.decoys>0;
+    var dmg=combatDamage(), absorbed=COM.decoyReady;
     setCombatLog("huida fallida · "+dmg+" de daño.","rojo");
     applyDamageToPlayer(dmg);
     if(COM&&COM.alive){

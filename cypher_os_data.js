@@ -292,9 +292,9 @@ var CONTACTOS_DEF = [
 
 // Catálogo de la tienda.
 var TIENDA_DEF = [
-  {id:"decoy", name:"DISCO DECOY", desc:"Cancela un golpe de ICE por completo.",
+  {id:"decoy", name:"DISCO DECOY", desc:"Se almacena. Elige uno antes de entrar al combate: absorbe un golpe. Se gasta al entrar, aunque no recibas daño.",
    price:140, stock:5, kind:"consumable"},
-  {id:"virus", name:"PAQUETE VIRUS", desc:"Elimina una fase al empezar un combate.",
+  {id:"virus", name:"PAQUETE VIRUS", desc:"Se almacena. Elige uno antes de entrar al combate: elimina una fase si hay más de una. Se gasta al entrar.",
    price:300, stock:3, kind:"consumable"},
   {id:"breaker", name:"ROMPEHIELOS MK-II", desc:"Permanente. -1 a la longitud de las claves (mín. 3).",
    price:260, stock:3, kind:"upgrade"},
@@ -861,7 +861,7 @@ var MUSIC_TRACKS = {
 
 /* ---- boot: líneas de la BIOS (las consume cypher_os_ui.js) ---- */
 
-var FIRMWARE_BUILD = 115;
+var FIRMWARE_BUILD = 116;
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],

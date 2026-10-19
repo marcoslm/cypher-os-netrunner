@@ -225,10 +225,12 @@ test('memoria: Enter vacío y timeout dañan lo mismo y revelan una nueva secuen
 
 test('memoria: VIRUS consume una fase y DECOY absorbe solo el primer fallo antes del daño real', async ({ page, game }) => {
   await setupChallenge(game, 'daemon', { player: { virus: 1, decoys: 1 } });
-  await game.startCombat({ type: 'daemon', tier: 3 });
+  await game.startCombat({ type: 'daemon', tier: 3, encounter: true });
+  await page.locator('#combat-decoy').check();await page.locator('#combat-virus').check();
+  await page.locator('#combat-enter').click();
   const battle = (await minigames(page)).combat;
   expect(battle.phases).toBe(battle.configuredPhases - 1);
-  expect((await game.snapshot()).state.player).toMatchObject({ virus: 0, decoys: 1 });
+  expect((await game.snapshot()).state.player).toMatchObject({ virus: 0, decoys: 0 });
   await memoryInput(page);
   await page.keyboard.press('Enter');
   await expect(page.locator('#combatLog')).toContainText('DISCO DECOY');
