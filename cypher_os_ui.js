@@ -2046,12 +2046,12 @@ function archiveIconKind(origin){
   if(origin==="local") return "local";
   return "mail";
 }
-function archiveIconHtml(file,state,unread){
+function archiveIconHtml(file,state){
   var kind=archiveIconKind(file.origin);
   var glyph=kind==="local"?"▤":(kind==="network"?"⌁":"✉");
   var alert=state==="sealed"?"⌑":((state==="damaged"||state==="partial")?"!":"");
-  return '<span class="archive-icon archive-icon--'+kind+' archive-icon--'+state+(unread?' is-unread':'')+'" aria-hidden="true">'+
-    '<span class="archive-glyph">'+glyph+'</span>'+(unread?'<span class="archive-unread"></span>':'')+
+  return '<span class="archive-icon archive-icon--'+kind+' archive-icon--'+state+'" aria-hidden="true">'+
+    '<span class="archive-glyph">'+glyph+'</span>'+
     (alert?'<span class="archive-alert">'+alert+'</span>':'')+'</span>';
 }
 function archiveCardHtml(file,state,doc,narrative){
@@ -2062,7 +2062,7 @@ function archiveCardHtml(file,state,doc,narrative){
   var label="Abrir "+escapeHtml(file.title)+(status?' · '+escapeHtml(status):'');
   var attrs=interactive?' type="button" data-action="openArchive" data-id="'+file.id+'" aria-label="'+label+'"':'';
   return '<'+tag+' class="archive-card'+(interactive?'':' is-locked')+'" data-state="'+state+'"'+attrs+'>'+
-    archiveIconHtml(file,state,unread)+'<span class="archive-card-main">'+
+    archiveIconHtml(file,state)+'<span class="archive-card-main">'+
       '<span class="archive-card-title">'+escapeHtml(file.title)+'</span>'+
       '<span class="archive-card-meta">'+escapeHtml(archiveOriginLabel(file.origin))+(doc?' · '+escapeHtml(doc.date):'')+'</span>'+
       (status?'<span class="archive-status archive-status--'+state+(unread?' archive-status--unread':'')+'">'+escapeHtml(status)+'</span>':'')+

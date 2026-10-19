@@ -1033,7 +1033,6 @@ button.btn::before,.navbtn::before{
 .archive-icon--damaged{--archive-accent:var(--rojo);}
 .archive-icon--partial{--archive-accent:var(--ambar);}
 .archive-icon--sealed .archive-glyph{opacity:.7;}
-.archive-unread{position:absolute;z-index:3;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--magenta);box-shadow:0 0 5px rgba(255,77,196,.8);}
 .archive-alert{position:absolute;z-index:3;right:2px;bottom:2px;min-width:16px;height:16px;border:1px solid currentColor;background:#06120e;color:var(--archive-accent);font-size:10px;line-height:14px;text-align:center;}
 .archive-window{width:min(760px,94%);max-width:min(760px,94%);max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);}
 .archive-window .panel-back{margin-bottom:16px;}

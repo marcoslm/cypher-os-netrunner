@@ -642,11 +642,14 @@ for(const width of [320,1280]){
     await expect(panel.locator('.archive-grid .archive-card')).toHaveCount(cardCount);
     await expect(page.locator('.archive-icon')).toHaveCount(cardCount);
     await expect(page.locator('.archive-status--unread')).not.toHaveCount(0);
+    await expect(page.locator('.archive-status--unread').first()).toHaveText('SIN LEER');
+    await expect(page.locator('.archive-unread')).toHaveCount(0);
     await expect(page.locator('.archive-icon--mail')).not.toHaveCount(0);
     await expect(page.locator('.archive-card.is-locked')).not.toHaveCount(0);
     await page.locator('[data-action="archiveTab"][data-tab="recovered"]').click();
     await expect(panel.locator(':scope > .panel-h')).toContainText('RECUPERADOS');
     await expect(page.locator('.archive-icon--network')).not.toHaveCount(0);
+    await expect(page.locator('.archive-unread')).toHaveCount(0);
     await page.locator('[data-action="archiveTab"][data-tab="previous"]').click();
     for(const card of await cards.all()){
       await expect(card.locator('.archive-card-title')).toHaveCount(1);
@@ -668,6 +671,8 @@ for(const width of [320,1280]){
     await page.keyboard.press('Escape');
     await expect(page.locator('#overlay')).not.toHaveClass(/show/);
     await expect(page.locator(`[data-action="openArchive"][data-id="${id}"]`)).toBeFocused();
+    await expect(open.locator('.archive-status--unread')).toHaveCount(0);
+    await expect(page.locator('.archive-unread')).toHaveCount(0);
     const box=await open.boundingBox();
     await page.mouse.dblclick(box.x+box.width/2,box.y+box.height/2);
     await expect(page.locator('#overlay')).toHaveClass(/show/);
