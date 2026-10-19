@@ -101,14 +101,30 @@ async function run(options = {}) {
         assert.equal(game.run('_introBackgroundTimer'), null);
         assert.equal(game.sb.document.querySelectorAll('.intro-background-image').length, 0);
     });
-    await check('paginas, anterior y reanudar conservan el pasaje exacto', game => {
+    await check('anterior conserva la pagina y volver al menu reinicia solo el prologo', game => {
         game.emitElement('intro-start', 'click'); click(game, 'storyContinue');
         assert.equal(game.saved().narrative.prologuePage, 1);
-        click(game, 'storyMenu'); game.emitElement('intro-start', 'click');
-        assert.equal(game.run('entryMode()'), 'prologue');
-        assert.equal(game.run('S.narrative.prologuePage'), 1);
         click(game, 'storyPrevious');
         assert.equal(game.saved().narrative.prologuePage, 0);
+        click(game, 'storyContinue'); click(game, 'storyContinue');
+        const before = clone(game.run('S'));
+        click(game, 'storyMenu');
+        before.narrative.prologuePage = 0;
+        assert.deepEqual(clone(game.run('S')), before);
+        assert.equal(game.saved().narrative.prologuePage, 0);
+        game.emitElement('intro-start', 'click');
+        assert.equal(game.run('entryMode()'), 'prologue');
+        assert.equal(game.run('S.narrative.prologuePage'), 0);
+        assert.equal(game.run('loopId'), null);
+    });
+    await check('volver al menu reinicia el prologo aun si falla el guardado', game => {
+        game.emitElement('intro-start', 'click'); click(game, 'storyContinue'); click(game, 'storyContinue');
+        game.run('localStorage.setItem=function(){throw new Error("storage no disponible");};');
+        click(game, 'storyMenu');
+        assert.equal(game.run('_resumeAfterIntro===S'), true);
+        game.emitElement('intro-start', 'click');
+        assert.equal(game.run('S.narrative.prologuePage'), 0);
+        assert.equal(game.run('entryMode()'), 'prologue');
         assert.equal(game.run('loopId'), null);
     });
     await check('hallazgo inicia un POST local y omitirlo no recupera', game => {

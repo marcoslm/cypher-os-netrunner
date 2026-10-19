@@ -220,7 +220,7 @@ var HELP_HTML = '<h1 class="title">AYUDA</h1>'+
 '<div class="helprow-item"><span class="kbd">CONSULTAS</span><span class="muted">REGISTRO abre el diario de sesión con filtros y exportación (también Ctrl+9 o log); no es una operación de guardado</span></div>'+
 '</div>'+
 '<div class="callout ambar">⚠ <b>FLATLINE</b> (CPU a 0): <b>RECONEXIÓN</b> conserva saldo, equipo y archivo consolidados, pero pierde la carga de la inmersión; CPU al ~50% y calor menor. <b>NUEVO REGISTRO</b> empieza otro prólogo desde cero, conservando el mejor registro. En <b>HARDCORE</b> no hay reconexión.</div>'+
-'<p class="help-p">El menú no inicia el diagnóstico por sí solo. COMENZAR reanuda la página guardada o la sesión activa; INICIAR RECUPERACIÓN es una acción separada. Los formatos anteriores de prueba no se convierten ni se borran.</p>'+
+'<p class="help-p">El menú no inicia el diagnóstico por sí solo. Tras recargar, COMENZAR reanuda la página guardada o la sesión activa. VOLVER AL MENÚ durante el prólogo lo deja preparado desde el primer pasaje; no reinicia el diagnóstico ni una partida activa. INICIAR RECUPERACIÓN es una acción separada. Los formatos anteriores de prueba no se convierten ni se borran.</p>'+
 '</div>'+
 
 /* ⑮ COMANDOS */

@@ -211,8 +211,9 @@ function renderStoryEntry(){
   if(!S || (S.narrative.entry==="active" && !_storyReplay)) return;
   clearTimeout(_introBootTimer); _introBootTimer=null;
   clearInterval(loopId); loopId=null;
-  stopGlitchLoop(); stopMusic(); stopAmbient();
   _entryMode=_storyReplay ? "replay" : S.narrative.entry;
+  stopGlitchLoop(); stopAmbient();
+  if((_entryMode!=="prologue" && _entryMode!=="replay") || MUSIC.scene!=="prologue") stopMusic();
   var intro=document.getElementById("intro"), menu=document.getElementById("intro-menu");
   intro.classList.remove("intro-menu-mode","intro-booting","intro-ready"); intro.classList.add("intro-story-mode");
   menu.classList.add("hidden"); menu.inert=true; menu.setAttribute("inert","");
@@ -237,9 +238,7 @@ function renderStoryEntry(){
   story.innerHTML=html+(_storyReplay?'':'<button class="btn small" data-action="storyMenu">VOLVER AL MENÚ</button>');
   if(!exterior) updateTopbar();
   syncGameInputLock();
-  /* El prólogo narrativo y su relectura tienen escena propia; el diagnóstico
-     sigue en silencio. stopMusic() previo conserva la posición al pasar página. */
-  if(exterior && (_entryMode==="prologue" || _entryMode==="replay")) playMusicScene("prologue", false);
+    if(exterior && (_entryMode==="prologue" || _entryMode==="replay")) updateMusic();
   var heading=document.getElementById(exterior?"story-heading":"deck-entry-heading"); if(heading) heading.focus();
 }
 ACTIONS.storyPrevious=function(){
@@ -269,6 +268,7 @@ ACTIONS.storyRecover=function(){
 };
 ACTIONS.storyMenu=function(){
   if(!S || ["prologue","diagnostic"].indexOf(entryMode())<0) return;
+  if(entryMode()==="prologue") S.narrative.prologuePage=0;
   _resumeAfterIntro=save() ? null : S;
   showIntroMenu();
 };

@@ -115,6 +115,22 @@ test('F2: reduccion de movimiento completa POST pero no recupera', async ({ page
     expect(await page.evaluate(() => loopId)).toBeNull();
     expect((await game.snapshot()).state.narrative.entry).toBe('diagnostic');
 });
+test('F2: volver al menu desde el tercer pasaje reinicia el prologo', async ({ page, game }) => {
+    await game.freeze(); await page.locator('#intro-start').click();
+    await action(page, 'storyContinue').click(); await action(page, 'storyContinue').click();
+    expect((await game.snapshot()).saved.narrative.prologuePage).toBe(2);
+    const before = (await game.snapshot()).state;
+    await action(page, 'storyMenu').click();
+    await expect(page.locator('#intro-start')).toBeFocused();
+    expect((await game.snapshot()).saved.narrative.prologuePage).toBe(0);
+    await page.locator('#intro-start').click();
+    await expect(page.locator('#story-entry')).toContainText('Dejaste la llave');
+    await expect(action(page, 'storyPrevious')).toBeDisabled();
+    const after = (await game.snapshot()).state;
+    expect(after.narrative).toEqual({ ...before.narrative, prologuePage: 0 });
+    expect(after.player).toEqual(before.player);
+    expect(await page.evaluate(() => loopId)).toBeNull();
+});
 test('F2: archivos y correo anterior tienen una sola lectura, fuente y fecha', async ({ page, game }) => {
     await diagnostic(page, game); await action(page, 'storyRecover').click();
     const before = (await game.snapshot()).state.player;
@@ -300,6 +316,36 @@ test('Fondos: archivos locales, fundido, carga parcial y movimiento reducido', a
 });
 
 for (const viewport of [{ width: 320, height: 667 }, { width: 1280, height: 720 }]) {
+    test(`Fondos: ${viewport.width}px posicion estable antes y despues de cargar cada pasaje`, async ({ page, game }, testInfo) => {
+        await page.setViewportSize(viewport);
+        await page.emulateMedia({ reducedMotion: 'no-preference' });
+        await game.freeze();
+        await installBackgroundFixtures(page, testInfo);
+        await page.evaluate(() => {
+            window.presentIntroBackground = showIntroBackground;
+            window.pendingIntroBackground = null;
+            showIntroBackground = function(index) { window.pendingIntroBackground = index; };
+        });
+        await page.locator('#intro-start').click();
+        for (let scene = 0; scene < 3; scene++) {
+            await expect(page.locator('#intro')).not.toHaveClass(/has-background/);
+            const selectors = ['#intro-body', '#story-entry', '.story-actions', '[data-action="storyMenu"]'];
+            const before = await Promise.all(selectors.map(selector => page.locator(selector).boundingBox()));
+            const padding = await page.locator('#intro').evaluate(el => parseFloat(getComputedStyle(el).paddingLeft));
+            expect(before[1].x).toBe(padding);
+            await expect.poll(() => page.evaluate(() => window.pendingIntroBackground)).toBe(0);
+            await page.screenshot({ path: testInfo.outputPath(`pending-${scene}-${viewport.width}.png`) });
+            await page.evaluate(() => { window.presentIntroBackground(window.pendingIntroBackground); window.pendingIntroBackground = null; });
+            await page.clock.runFor(1800);
+            await expect(page.locator('#intro')).toHaveClass(/has-background/);
+            const after = await Promise.all(selectors.map(selector => page.locator(selector).boundingBox()));
+            expect(after).toEqual(before);
+            expect(await page.locator('#intro').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+            await page.screenshot({ path: testInfo.outputPath(`loaded-${scene}-${viewport.width}.png`) });
+            await action(page, 'storyContinue').click();
+        }
+        await expect(page.locator('#intro')).toBeHidden();
+    });
     test(`Fondos PNG: ${viewport.width}px recursos generados y lectura del prologo`, async ({ page, game }, testInfo) => {
         const scenes = await page.evaluate(() => INTRO_BACKGROUNDS);
         test.skip(![...scenes.menu, ...scenes.prologue].every(scene => fs.existsSync(path.resolve(__dirname, '../..', scene.src))), 'Los fondos artisticos son opcionales en una copia sin recursos');

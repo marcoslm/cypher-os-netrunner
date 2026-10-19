@@ -44,9 +44,11 @@ async function run(options = {}) {
     assert.equal(music(g).el.paused,false);
     assert.equal(g.run('backgroundAudioAllowed()'),false);
     assert.equal(g.run('backgroundAudioAllowed(true)'),true);
+    const serial = music(g).serial;
     g.run('MUSIC.el.duration=400;MUSIC.el.currentTime=42;S.narrative.prologuePage=1;renderStoryEntry();');
     assert.equal(music(g).scene,'prologue');
     assert.equal(music(g).el.currentTime,42);
+    assert.equal(music(g).serial,serial,'pasar pagina no pausa, busca ni vuelve a reproducir la pista');
     g.run('_storyReplay=true;_storyReplayPage=0;renderStoryEntry();');
     assert.equal(g.run('musicScene()'),'prologue');
     assert.equal(music(g).scene,'prologue');

@@ -105,6 +105,28 @@ test('música: el prólogo reproduce su pista propia y la detiene al entrar al d
     scene: MUSIC.scene, track: MUSIC.playing.prologue?.t?.f, paused: MUSIC.el?.paused,
     ready: (MUSIC.el?.readyState || 0) >= 2
   }))).toEqual({ scene: 'prologue', track: 'assets/music/cyos-prologo-antes-del-cable.mp3', paused: false, ready: true });
+  await expect.poll(() => page.evaluate(() => MUSIC.el.currentTime)).toBeGreaterThan(0.15);
+  const before = await page.evaluate(() => {
+    window.prologueMediaCommands = [];
+    const audio = MUSIC.el;
+    for (const method of ['pause', 'play']) {
+      const original = audio[method];
+      audio[method] = function(...args) { window.prologueMediaCommands.push(method); return original.apply(this, args); };
+    }
+    const time = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'currentTime');
+    Object.defineProperty(audio, 'currentTime', {
+      configurable: true,
+      get() { return time.get.call(this); },
+      set(value) { window.prologueMediaCommands.push('seek'); time.set.call(this, value); }
+    });
+    return { serial: MUSIC.serial, time: audio.currentTime };
+  });
+  await page.locator('[data-action="storyContinue"]').click();
+  await page.locator('[data-action="storyContinue"]').click();
+  await page.locator('[data-action="storyPrevious"]').click();
+  expect(await page.evaluate(() => window.prologueMediaCommands)).toEqual([]);
+  expect(await page.evaluate(() => MUSIC.serial)).toBe(before.serial);
+  await expect.poll(() => page.evaluate(() => MUSIC.el.currentTime)).toBeGreaterThan(before.time);
   await page.locator('[data-action="storySkip"]').click();
   await expect.poll(() => page.evaluate(() => ({ scene: MUSIC.scene, paused: MUSIC.el?.paused }))).toEqual({ scene: null, paused: true });
   await expect(page.locator('#deck-entry')).toBeVisible();

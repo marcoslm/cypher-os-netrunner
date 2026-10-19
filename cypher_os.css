@@ -981,8 +981,8 @@ button.btn::before,.navbtn::before{
 #intro::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;}
 #intro.has-background.intro-menu-mode::before{background:linear-gradient(90deg,rgba(0,0,0,.12),rgba(0,0,0,.86) 35%,rgba(0,0,0,.86) 65%,rgba(0,0,0,.12)),linear-gradient(0deg,rgba(0,0,0,.45),transparent 45%,rgba(0,0,0,.25));}
 #intro.has-background.intro-story-mode::before{background:linear-gradient(90deg,rgba(0,0,0,.92),rgba(0,0,0,.82) 40%,rgba(0,0,0,.2) 75%,rgba(0,0,0,.08)),linear-gradient(0deg,rgba(0,0,0,.7),transparent 85%);}
-#intro.has-background.intro-story-mode #intro-body{max-width:none;margin:auto 0 0;}
-#intro.has-background.intro-story-mode #story-entry{margin:0;}
+#intro.intro-story-mode #intro-body{max-width:none;margin:auto 0 0;}
+#intro.intro-story-mode #story-entry{margin:0;}
 #intro.has-background #story-entry p{text-shadow:0 1px 4px #000;}
 #intro.has-background .intro-sub,#intro.has-background .intro-hint,#intro.has-background .intro-diff-title{color:#d8e4df;}
 #intro-body{display:flex;flex:0 0 auto;flex-direction:column;width:100%;max-width:720px;min-width:0;margin:auto 0;}
