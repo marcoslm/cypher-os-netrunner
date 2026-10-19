@@ -98,6 +98,8 @@ const ids = T.INTEL.map(e => e.id);
 ok(T.INTEL.length === 43, "INTEL tiene 43 entradas (35 narrativas + 8 expedientes; actual: " + T.INTEL.length + ")");
 ok(new Set(ids).size === ids.length, "ids de INTEL únicos");
 ok(T.INTEL.every(e => e.id && e.t && e.r && e.u && e.k && e.l), "todas las entradas tienen id/t/r/u/k/l");
+ok(T.INTEL.every(entry => !/Mama\s*Wire|M\.\s*W\.|Sudario|\bel Doctor\b|Night[- ]?0X|Kairos|Kairós/i.test([entry.t, entry.k, entry.l].join("\n"))),
+   "los textos visibles de INFORMES no conservan alias antiguos ni el tratamiento Doctor");
 ok(T.INTEL.every(e => T.RISK_TXT[e.r]), "etiquetas de riesgo válidas");
 ok(T.INTEL.every(e => T.intelHint(e.id) !== "desconocido"), "todas las entradas tienen pista (invariante AU18)");
 const unlockCalls = Array.from(src.js.matchAll(/unlock\("([a-z0-9_]+)"\)/g)).map(m => m[1]);
@@ -213,6 +215,13 @@ ok(T.MENSAJES_DEF.every(m => m.id && m.from && m.t && m.l && typeof m.when === "
    "cartas con id/from/t/l/when/emisor");
 ok(T.MENSAJES_DEF.every(m => ["valido","no-valido","enmascarado"].indexOf(m.emisor) >= 0),
    "estados de emisor válidos (la no-respuesta es ficción: quemó su ruta)");
+const namedMail = T.MENSAJES_DEF.filter(message => ["VEYRA", "ORVIK", "Inés Aro", "NAEV"].includes(message.from));
+ok(namedMail.length === 13 && namedMail.every(message => {
+  const signature = message.l.match(/\n\n— ([^\n]+)$/);
+  return signature && (signature[1] === message.from || signature[1].startsWith(message.from + ":"));
+}), "las 13 cartas de contactos firman con su nombre o alias vigente, incluidos adjuntos");
+ok(T.MENSAJES_DEF.every(message => !/M\.\s*W\.|Mama\s*Wire|Sudario|Night[- ]?0X|Kairos|— K\.:/i.test(message.l)),
+   "los cuerpos de correo no conservan nombres ni firmas de alias anteriores");
 /* llegada determinista, idempotente y anti-spam */
 const S3 = T.nuevoEstado(); T.setS(S3); T.ensureStateIntegrity();
 ok(Array.isArray(S3.mensajes) && S3.mensajes.length === 0,

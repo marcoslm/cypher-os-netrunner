@@ -627,6 +627,23 @@ for(const width of [320,1280]){
   });
 }
 
+test('MENSAJES: firmas vigentes en cartas recibidas y adjunto tras recargar',async({page,game})=>{
+  const letters=[
+    ['m_mw_encargo','VEYRA'],['m_mw_cobro','VEYRA'],['m_mw_ofertas','VEYRA'],['m_mw_libro','VEYRA'],
+    ['m_sd_fracaso','ORVIK'],['m_sd_profundo','ORVIK'],['m_sd_ruido','ORVIK'],['m_doc_vesper','NAEV']
+  ];
+  await game.setup({state:{mensajes:letters.map(([id])=>({id,hora:720,leido:true}))}});
+  await game.reload();
+  await nav(page,'mensajes').click();
+  for(const [id,sender] of letters){
+    await page.locator(`[data-action="openMsg"][data-id="${id}"]`).click();
+    await expect(page.locator('.msg-head b')).toHaveText(sender);
+    await expect(page.locator('.msg-body')).toContainText('\u2014 '+sender);
+    await expect(page.locator('.msg-body')).not.toContainText(/M\.\s*W\.|Sudario|\u2014 K\.:/);
+  }
+  await expect(page.locator('.msg-body.msgdoc')).toContainText('NAEV: me lo dejaron en la mesa. ahora es tuyo.');
+});
+
 for(const width of [320,1280]){
   test(`ARCHIVOS: rejilla de iconos y ventana a ${width} px`,async({page,game},testInfo)=>{
     await page.setViewportSize({width,height:width===320?800:900});

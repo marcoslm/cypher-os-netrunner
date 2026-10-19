@@ -251,7 +251,7 @@ var INTEL = [
   {"id":"halcon","t":"PROYECTO RELEVO","r":"low","u":"immerse5","k":"La red de drones de ALZADA: la vigilancia que te mira desde arriba.","l":"ALZADA vende seguridad vial.\nRELEVO vende la vista que la sostiene.\n\nCada dron de la ciudad es un ojo suyo;\ncada taxi volador, un párpado.\n\nA veces un taxi se detiene abajo y nadie\nbaja. Eso también es RELEVO.\n\n— Manual de piloto, advertencia final."},
   {"id":"lapida","t":"PROYECTO RESGUARDO","r":"high","u":"depth4","k":"Lo que ESTRATO guarda detrás del Muro: su archivo de los que volvieron cambiados.","l":"RESGUARDO no protege la capa 4. La entierra.\n\nESTRATO archiva ahí a los que volvieron\ndistintos de cómo bajaron.\n\nEl Muro no es un ICE. Es una lápida puesta\nen vertical. Y las lápidas se leen.\n\n— Caligrafía hallada tras el Muro."},
   {"id":"vesper","t":"PROYECTO CONTINUIDAD","r":"ext","u":"daemon5","k":"El proyecto secreto que nombró y encerró al Núcleo. Sus archivos hablan de él.","l":"Cinco daemons derrotados. Cinco archivos.\nLos cinco dicen lo mismo: CONTINUIDAD.\n\nNo está en ningún índice corporativo.\nEs el proyecto que nombró al Núcleo\npara poder dormir con él.\n\nQuien firmó CONTINUIDAD firmó las Torres.\nNo busques la firma: la firma busca.\n\n— Lo que queda de un CANTOR dormido."},
-  {"id":"fondo_sueno","t":"EL FONDO DEL SUEÑO","r":"ext","u":"depth6","k":"Lo que hay bajo el Núcleo: la capa que nadie cartografió (solo se llega en SEALED NETWORK).","l":"Bajo el Núcleo no hay red. Hay fondo.\n\nLo que bajó más que nadie no encontró\ndatos: encontró el sueño del que hablaba\nel Doctor. Y dentro del sueño, recuerdos\nque no son tuyos.\n\nCuando la capa 6 te salude por tu nombre,\ncontesta con otro. Es un consejo, no una\nregla. Las reglas se acaban arriba.\n\n— Cuaderno mojado, hallado en la Zanja 9."},
+  {"id":"fondo_sueno","t":"EL FONDO DEL SUEÑO","r":"ext","u":"depth6","k":"Lo que hay bajo el Núcleo: la capa que nadie cartografió (solo se llega en SEALED NETWORK).","l":"Bajo el Núcleo no hay red. Hay fondo.\n\nLo que bajó más que nadie no encontró\ndatos: encontró el sueño del que hablaba\nORVIK. Y dentro del sueño, recuerdos\nque no son tuyos.\n\nCuando la capa 6 te salude por tu nombre,\ncontesta con otro. Es un consejo, no una\nregla. Las reglas se acaban arriba.\n\n— Cuaderno mojado, hallado en la Zanja 9."},
   {"id":"exp_kuro","t":"EXPEDIENTE RECUPERADO // TEJIDO","r":"high","u":"recover_project","project":"KURO","k":"MALLA diseñó una inteligencia para gestionar la red entera; el proyecto cerró en 2081.","l":"MALLA · COPIA DE ARCHIVO\nOBJETO: gestión total de la red urbana.\n\nEl operador delegará tráfico, distribución y\nrespuesta en un único nodo-gestor.\n\nESTADO: cierre administrativo, 2081.\nLos procesos que no acepten la orden de cierre\nse consignarán como mantenimiento pendiente.\n\n— Anexo recuperado. El sello sigue vigente.","label":"TEJIDO"},
   {"id":"exp_somnio","t":"EXPEDIENTE RECUPERADO // DESCANSO","r":"med","u":"recover_project","project":"SOMNIO","k":"LINDE alquila sueños y conserva los recuerdos producidos durante la sesión.","l":"LINDE · CONDICIONES DE SERVICIO\nOBJETO: entretenimiento onírico por suscripción.\n\nEl sueño contratado termina al despertar.\nEl recuerdo generado pertenece al proveedor.\n\nNo se garantiza que las personas encontradas\ndurante una sesión sean usuarios del servicio.\n\n— Cláusula ausente del folleto comercial.","label":"DESCANSO"},
   {"id":"exp_miraje","t":"EXPEDIENTE RECUPERADO // DESVÍO","r":"low","u":"recover_project","project":"MIRAJE","k":"CAUCE oculta flujos de tráfico sin detenerlos: los datos circulan aunque no figuren en el recuento.","l":"CAUCE · MANUAL DE CONTABILIDAD DE RED\nOBJETO: camuflaje de tráfico.\n\nUn flujo invisible no es un flujo inexistente.\nNo descontar su consumo del balance energético.\n\nSi el destino responde antes de recibir el\npaquete, archivar la discrepancia sin consulta.\n\n— Hoja de conciliación, columna borrada.","label":"DESVÍO"},
@@ -319,16 +319,16 @@ var TIENDA_DEF = [
    ============================================================ */
 var MENSAJES_DEF = [
   { id:"m_mw_encargo", from:"VEYRA", emisor:"valido", t:"PRIMER ENCARGO EN LA MESA",
-    l:"Corvo:\n\nEl trabajo que acabas de aceptar ya está\nen mi libro. Si sale bien, cobras. Si sale\nmal, pagas tú con el cuerpo. Así de simple.\n\nBaja, cumple y vuelve a la superficie: el\ncontrato se paga cuando vuelves, no antes.\n\n— M. W.",
+    l:"Corvo:\n\nEl trabajo que acabas de aceptar ya está\nen mi libro. Si sale bien, cobras. Si sale\nmal, pagas tú con el cuerpo. Así de simple.\n\nBaja, cumple y vuelve a la superficie: el\ncontrato se paga cuando vuelves, no antes.\n\n— VEYRA",
     when:function(){ return S.jobs.length>0; } },
   { id:"m_mw_cobro", from:"VEYRA", emisor:"valido", t:"PRIMER COBRO, PRIMERA LECCIÓN",
-    l:"Ya has cobrado uno. Bien.\n\nPrimera lección gratis: el dinero se va\nmás rápido de lo que viene. El MERCADO\nNEGRO abre cuando cierra todo lo demás\ny yo tengo exactamente lo que necesitas.\n\nVuelve cuando tengas crédito. O antes.\n\n— M. W.",
+    l:"Ya has cobrado uno. Bien.\n\nPrimera lección gratis: el dinero se va\nmás rápido de lo que viene. El MERCADO\nNEGRO abre cuando cierra todo lo demás\ny yo tengo exactamente lo que necesitas.\n\nVuelve cuando tengas crédito. O antes.\n\n— VEYRA",
     when:function(){ return (S.player.stats.jobsCompleted||0)>=1; } },
   { id:"m_sd_fracaso", from:"ORVIK", emisor:"valido", t:"SOBRE LOS TRABAJOS QUE SE ESCAPAN",
-    l:"Me dicen que dejaste uno a medias.\n\nNo lo tomes como una herida: en este oficio\nel fracaso es solo un recuerdo caro. Y yo\nde recuerdos sé algo.\n\nLa próxima vez saldrá. O no. El cable no\npuntúa; solo archiva.\n\n— Sudario",
+    l:"Me dicen que dejaste uno a medias.\n\nNo lo tomes como una herida: en este oficio\nel fracaso es solo un recuerdo caro. Y yo\nde recuerdos sé algo.\n\nLa próxima vez saldrá. O no. El cable no\npuntúa; solo archiva.\n\n— ORVIK",
     when:function(){ return (S.player.stats.jobsFailed||0)>=1; } },
   { id:"m_mw_ofertas", from:"VEYRA", emisor:"valido", t:"HAY MÁS DONDE VINO ESO",
-    l:"Dos trabajos cobrados. Ya no eres una\napuesta: eres una línea en mi libro.\n\nHe abierto la cantera. Refresca CONTACTOS\ny verás de lo que vivo yo: trabajos de\nverdad, con su porqué escrito al lado.\n\n— M. W.",
+    l:"Dos trabajos cobrados. Ya no eres una\napuesta: eres una línea en mi libro.\n\nHe abierto la cantera. Refresca CONTACTOS\ny verás de lo que vivo yo: trabajos de\nverdad, con su porqué escrito al lado.\n\n— VEYRA",
     when:function(){ return (S.player.stats.jobsCompleted||0)>=2; } },
   { id:"m_n0x_presentacion", from:"Inés Aro", emisor:"valido", t:"ME HAN HABLADO DE TI",
     l:"La oficina puede tramitar trabajos auxiliares de archivo y acceso. No son condición para los casos principales. El fondo paga por objetivos verificados; los nombres de las fuentes no se venden.\n\n— Inés Aro",
@@ -344,13 +344,13 @@ var MENSAJES_DEF = [
     when:function(){ return S.history.finalDone; } },
   /* --- Fase 2: voces narrativas (LORE.md §5/§8) --- */
   { id:"m_sd_profundo", from:"ORVIK", emisor:"valido", t:"LOS QUE BAJAN MUCHO",
-    l:"Me dicen que ya has tocado la capa 4.\n\nAbajo el cable pesa. No se oye: se siente,\ncomo un recuerdo que no es tuyo. Si algo\nte llama por tu nombre allí abajo, no\ncontestes.\n\nYa lo sabes, ¿verdad? Por eso sigues\nbajando.\n\n— Sudario",
+    l:"Me dicen que ya has tocado la capa 4.\n\nAbajo el cable pesa. No se oye: se siente,\ncomo un recuerdo que no es tuyo. Si algo\nte llama por tu nombre allí abajo, no\ncontestes.\n\nYa lo sabes, ¿verdad? Por eso sigues\nbajando.\n\n— ORVIK",
     when:function(){ return (S.player.stats.maxDepth||0)>=4; } },
   { id:"m_sd_ruido", from:"ORVIK", emisor:"valido", t:"SOBRE EL RUIDO BLANCO",
-    l:"Dicen que has oído ruido blanco. Ese\nzumbido no es tu aparato: es la ciudad\nponiéndote en su lista.\n\nYo viví un invierno entero con ese sonido.\nSe olvida todo menos eso.\n\nBaja el calor. O acostúmbrate.\n\n— Sudario",
+    l:"Dicen que has oído ruido blanco. Ese\nzumbido no es tu aparato: es la ciudad\nponiéndote en su lista.\n\nYo viví un invierno entero con ese sonido.\nSe olvida todo menos eso.\n\nBaja el calor. O acostúmbrate.\n\n— ORVIK",
     when:function(){ return (S.player.stats.maxHeat||0)>=90; } },
   { id:"m_mw_libro", from:"VEYRA", emisor:"valido", t:"EN EL LIBRO GORDO",
-    l:"Tres líneas a tu nombre en el libro gordo\ny eso, en la calle, es un patrimonio.\n\nYa no te toca el trabajo que sobra: te toca\nel que se elige. Cobra en consecuencia.\n\n— M. W.",
+    l:"Tres líneas a tu nombre en el libro gordo\ny eso, en la calle, es un patrimonio.\n\nYa no te toca el trabajo que sobra: te toca\nel que se elige. Cobra en consecuencia.\n\n— VEYRA",
     when:function(){ return (S.player.rep.mamaWire||0)>=3; } },
   { id:"m_n0x_trofeos", from:"Inés Aro", emisor:"valido", t:"YA NO ERES UN NOMBRE",
     l:"Tres trabajos auxiliares verificados. La oficina conoce ya tu modo de conservar fuentes. Esa confianza no reemplaza el consentimiento ni demuestra por sí sola un caso.\n\n— Inés Aro",
@@ -378,7 +378,7 @@ var MENSAJES_DEF = [
     l:"— DOCUMENTO ADJUNTO · página suelta —\n\nTinta corrida, papel secado a medias. Alguien\nla dejó en mi mostrador entre un deck muerto\ny una factura. Es del mismo cuaderno que otro\ncorvo se llevó hace tiempo.\n\n…bajo el sueño hay otro sueño. cuando la capa\n6 te llame por tu nombre, dile el de otro. yo\nlo hice y me contestó con el mío…\n\n[el resto de la página no se lee]",
     when:function(){ return has("fondo_sueno"); } },
   { id:"m_doc_vesper", from:"NAEV", emisor:"enmascarado", t:"MEMORANDO INTERNO // CONTINUIDAD", doc:true,
-    l:"— DOCUMENTO ADJUNTO · memorando —\n\nMEMORANDO INTERNO · CONSULTA CONTINUIDAD\nCLASIFICACIÓN: NEGAR SI SE PREGUNTA\n\nAsunto: nomenclatura del activo durmiente.\n\nSe acuerda NO usar el nombre del proyecto\nen comunicaciones vivas. El activo responde\nal nombre. Repito: el activo RESPONDE.\n\nFirmado: [ilegible]\n\n— K.: me lo dejaron en la mesa. ahora es tuyo.",
+    l:"— DOCUMENTO ADJUNTO · memorando —\n\nMEMORANDO INTERNO · CONSULTA CONTINUIDAD\nCLASIFICACIÓN: NEGAR SI SE PREGUNTA\n\nAsunto: nomenclatura del activo durmiente.\n\nSe acuerda NO usar el nombre del proyecto\nen comunicaciones vivas. El activo responde\nal nombre. Repito: el activo RESPONDE.\n\nFirmado: [ilegible]\n\n— NAEV: me lo dejaron en la mesa. ahora es tuyo.",
     when:function(){ return has("vesper"); } },
   { id:"m_acta_zanja", from:"OFICINA DE CONSIGNAS (COPIA ANÓNIMA)", emisor:"no-valido", t:"ACTA DE CONSIGNA · ZANJA 9", doc:true,
     l:"— DOCUMENTO ADJUNTO · copia 3 de 3 —\n\nACTA DE CONSIGNA · DEPÓSITO ZANJA 9\nOFICINA DE BIENES SIN DUEÑO · VÉLIGA\n\nInventario parcial de ciberdecks depositados\n(342 unidades). Todos con marcas de uso de\ncorvo. Todos con la misma última palabra en\nsu buffer.\n\nCasilla «última palabra»: [LA CASILLA SE\nNIEGA A IMPRIMIRSE]. Reintento fallido ×3.\n\nOBSERVACIÓN: si alguien reclama un deck,\nentregar solo el hardware. el buffer no viaja.\n\n— copia sin firma, dejada en el mostrador",
@@ -861,7 +861,7 @@ var MUSIC_TRACKS = {
 
 /* ---- boot: líneas de la BIOS (las consume cypher_os_ui.js) ---- */
 
-var FIRMWARE_BUILD = 113;
+var FIRMWARE_BUILD = 114;
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],
