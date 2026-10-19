@@ -1,0 +1,56 @@
+CYPHER://OS - Licencia de musica e imagenes
+=========================================
+
+1. Recursos cubiertos
+
+Los archivos de musica de assets/music/ y los archivos de imagen de
+assets/images/, incluidas sus subcarpetas, quedan excluidos de la licencia MIT
+del codigo. Esta licencia no se aplica al codigo, a la documentacion de esas
+carpetas ni a dependencias de terceros.
+
+2. Licencia
+
+En la medida en que marcoslm pueda conceder derechos sobre estos recursos,
+se ofrecen bajo Creative Commons Atribucion-NoComercial 4.0 Internacional
+(CC BY-NC 4.0).
+
+Resumen de la licencia:
+https://creativecommons.org/licenses/by-nc/4.0/deed.es
+
+Texto legal completo que rige este permiso:
+https://creativecommons.org/licenses/by-nc/4.0/legalcode
+
+CC BY-NC 4.0 permite compartir y adaptar los recursos para fines no
+comerciales, con atribucion adecuada, enlace a la licencia e indicacion de
+los cambios realizados. No permite imponer restricciones adicionales que
+impidan ejercer los derechos concedidos por la licencia.
+
+Este aviso resume e identifica la licencia; no la sustituye ni modifica.
+La definicion de NoComercial y las demas condiciones, excepciones,
+limitaciones y exclusiones de garantias son las del texto legal enlazado.
+No se exige permiso para usos amparados por excepciones legales ni para
+elementos de dominio publico.
+
+3. Atribucion
+
+Conservar, cuando proceda, los avisos suministrados con los recursos.
+Atribucion sugerida, adaptable al medio:
+
+"Musica e imagenes de CYPHER://OS, publicadas por marcoslm.
+https://github.com/marcoslm/cypher-os-netrunner
+CC BY-NC 4.0: https://creativecommons.org/licenses/by-nc/4.0/
+Cambios: [indicar los cambios si los hay]."
+
+Los recursos se han generado con IA; la musica se ha generado con Suno.
+La atribucion de publicacion no afirma autoria humana exclusiva ni respaldo
+de Suno u otros proveedores a este proyecto o a sus reutilizaciones.
+
+4. Usos comerciales y codigo
+
+Esta licencia no concede permiso para usos comerciales de los recursos.
+Para esos usos se debe obtener una autorizacion separada de quienes puedan
+conceder los derechos necesarios.
+
+El codigo MIT puede reutilizarse comercialmente sin estos recursos,
+sustituyendolos por otros con permisos adecuados o con autorizacion separada.
+La licencia de los recursos no restringe las libertades del codigo MIT.

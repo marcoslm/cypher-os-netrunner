@@ -861,7 +861,7 @@ var MUSIC_TRACKS = {
 
 /* ---- boot: líneas de la BIOS (las consume cypher_os_ui.js) ---- */
 
-var FIRMWARE_BUILD = 114;
+var FIRMWARE_BUILD = 115;
 
 var BOOT_LINES = [
   ["POST / diagnóstico de encendido", "brand"],
